@@ -717,6 +717,7 @@ function Evaluations({ user, onPage }) {
 function HomeOverview({ user, role, onPage }) {
   const [stats, setStats] = useState({ patients:0, sessions:0, appointments:0, instruments:0 })
   const [upcomingAppts, setUpcomingAppts] = useState([])
+  const [todayAppts, setTodayAppts] = useState([])
   const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
   const name = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Bienvenido'
@@ -730,11 +731,13 @@ function HomeOverview({ user, role, onPage }) {
       sb.from('sessions').select('id',{count:'exact'}).eq('user_id',user.id),
       sb.from('appointments').select('*').eq('user_id',user.id).gte('date',today).eq('status','programada').order('date').order('time').limit(4),
       sb.from('instrument_results').select('id',{count:'exact'}).eq('user_id',user.id),
-      sb.from('patients').select('id,name').eq('user_id',user.id)
-    ]).then(([p,s,a,ir,pts])=>{
+      sb.from('patients').select('id,name').eq('user_id',user.id),
+      sb.from('appointments').select('*').eq('user_id',user.id).eq('date',today).eq('status','programada').order('time')
+    ]).then(([p,s,a,ir,pts,todayA])=>{
       setStats({ patients:p.count||0, sessions:s.count||0, appointments:(a.data||[]).length, instruments:ir.count||0 })
       setUpcomingAppts(a.data||[])
       setPatients(pts.data||[])
+      setTodayAppts(todayA.data||[])
       setLoading(false)
     })
   },[user.id])
@@ -746,7 +749,7 @@ function HomeOverview({ user, role, onPage }) {
     { label:'Nuevo paciente', icon:'🧑‍⚕️', page:'pacientes', color:'bg-brand-50 border-brand-200 hover:border-brand-400' },
     { label:'Aplicar instrumento', icon:'📊', page:'instrumentos', color:'bg-purple-50 border-purple-200 hover:border-purple-400' },
     { label:'Agendar cita', icon:'🗓️', page:'agenda', color:'bg-green-50 border-green-200 hover:border-green-400' },
-    { label:'Generar reporte', icon:'📄', page:'reportes', color:'bg-orange-50 border-orange-200 hover:border-orange-400' },
+    { label:'Registrar cobro', icon:'💰', page:'finanzas', color:'bg-emerald-50 border-emerald-200 hover:border-emerald-400' },
   ]
 
   return (
@@ -756,6 +759,25 @@ function HomeOverview({ user, role, onPage }) {
         <h2 className="text-2xl font-display font-semibold text-slate-800">{greeting}, {name.split(' ')[0]} 👋</h2>
         <p className="text-slate-500 text-sm mt-0.5">{new Date().toLocaleDateString('es-EC',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</p>
       </div>
+
+      {/* Citas de hoy */}
+      {todayAppts.length > 0 && (
+        <div className="bg-brand-50 border border-brand-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="text-xl">🗓️</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-brand-800 text-sm">Tienes {todayAppts.length} cita{todayAppts.length>1?'s':''} hoy</p>
+            <div className="mt-1 space-y-1">
+              {todayAppts.map(a=>(
+                <p key={a.id} className="text-xs text-brand-600">
+                  {a.time?a.time.slice(0,5)+' — ':''}{patientName(a.patient_id)} · {a.duration_min} min · {a.modality}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -2795,6 +2817,452 @@ function ReportsPage({ user, role }) {
 }
 
 
+
+// ── FINANZAS ──────────────────────────────────────────────
+const PAYMENT_METHODS = ['Efectivo','Transferencia','Tarjeta','Cheque','Otro']
+const EXPENSE_CATEGORIES = ['Arriendo consultorio','Servicios básicos','Material de oficina','Software y tecnología','Capacitación','Marketing','Equipamiento','Seguros','Impuestos','Otros']
+
+const EMPTY_PAYMENT = { patient_id:'', session_id:'', amount:'', method:'Efectivo', status:'pagado', concept:'Sesión terapéutica', payment_date:'', notes:'' }
+const EMPTY_EXPENSE = { amount:'', category:'', description:'', expense_date:'', recurring:false }
+
+function FinancesPage({ user }) {
+  const [tab, setTab] = useState('dashboard')
+  const [payments, setPayments]   = useState([])
+  const [expenses, setExpenses]   = useState([])
+  const [patients, setPatients]   = useState([])
+  const [sessions, setSessions]   = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [modal, setModal]         = useState(null)
+  const [selected, setSelected]   = useState(null)
+  const [form, setForm]           = useState(EMPTY_PAYMENT)
+  const [expForm, setExpForm]     = useState(EMPTY_EXPENSE)
+  const [busy, setBusy]           = useState(false)
+  const [err, setErr]             = useState('')
+  const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0,7))
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const [py, ex, pt, se] = await Promise.all([
+      sb.from('payments').select('*').eq('user_id', user.id).order('payment_date', { ascending: false }),
+      sb.from('expenses').select('*').eq('user_id', user.id).order('expense_date', { ascending: false }),
+      sb.from('patients').select('id,name').eq('user_id', user.id).order('name'),
+      sb.from('sessions').select('id,session_number,session_date,patient_id').eq('user_id', user.id).order('session_date', { ascending: false })
+    ])
+    setPayments(py.data||[])
+    setExpenses(ex.data||[])
+    setPatients(pt.data||[])
+    setSessions(se.data||[])
+    setLoading(false)
+  }, [user.id])
+
+  useEffect(()=>{ load() },[load])
+
+  const patientName = pid => patients.find(p=>p.id===pid)?.name||'—'
+  const formatDate  = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'
+  const fmt = n => `$${parseFloat(n||0).toFixed(2)}`
+  const f = (k,v) => setForm(p=>({...p,[k]:v}))
+  const ef = (k,v) => setExpForm(p=>({...p,[k]:v}))
+
+  // ── Filtrar por mes ──────────────────────────────────────
+  const monthPayments = payments.filter(p => p.payment_date?.slice(0,7) === filterMonth)
+  const monthExpenses = expenses.filter(e => e.expense_date?.slice(0,7) === filterMonth)
+  const totalIncome   = monthPayments.filter(p=>p.status==='pagado').reduce((s,p)=>s+parseFloat(p.amount||0),0)
+  const totalPending  = monthPayments.filter(p=>p.status==='pendiente').reduce((s,p)=>s+parseFloat(p.amount||0),0)
+  const totalExpenses = monthExpenses.reduce((s,e)=>s+parseFloat(e.amount||0),0)
+  const balance       = totalIncome - totalExpenses
+
+  // Pacientes con deuda
+  const debtors = patients.map(p => {
+    const debt = payments.filter(py=>py.patient_id===p.id && py.status==='pendiente').reduce((s,py)=>s+parseFloat(py.amount||0),0)
+    return { ...p, debt }
+  }).filter(p=>p.debt>0).sort((a,b)=>b.debt-a.debt)
+
+  // Ingresos por mes (últimos 6)
+  const last6 = Array.from({length:6},(_,i)=>{
+    const d = new Date(); d.setMonth(d.getMonth()-i)
+    const key = d.toISOString().slice(0,7)
+    const label = d.toLocaleDateString('es-EC',{month:'short',year:'2-digit'})
+    const inc = payments.filter(p=>p.payment_date?.slice(0,7)===key && p.status==='pagado').reduce((s,p)=>s+parseFloat(p.amount||0),0)
+    const exp = expenses.filter(e=>e.expense_date?.slice(0,7)===key).reduce((s,e)=>s+parseFloat(e.amount||0),0)
+    return { key, label, inc, exp }
+  }).reverse()
+
+  const maxVal = Math.max(...last6.map(m=>Math.max(m.inc,m.exp)), 1)
+
+  // ── Guardar cobro ────────────────────────────────────────
+  const savePayment = async e => {
+    e.preventDefault()
+    if (!form.patient_id) return setErr('Selecciona un paciente')
+    if (!form.amount || parseFloat(form.amount)<=0) return setErr('Ingresa un monto válido')
+    setBusy(true); setErr('')
+    const payload = { user_id:user.id, patient_id:form.patient_id, session_id:form.session_id||null, amount:parseFloat(form.amount), method:form.method, status:form.status, concept:form.concept||null, payment_date:form.payment_date||new Date().toISOString().slice(0,10), notes:form.notes||null }
+    let error
+    if (modal==='edit-payment') { ;({ error } = await sb.from('payments').update(payload).eq('id', selected.id)) }
+    else { ;({ error } = await sb.from('payments').insert(payload)) }
+    if (error) setErr('Error al guardar.')
+    else { setModal(null); setSelected(null); setForm(EMPTY_PAYMENT); load() }
+    setBusy(false)
+  }
+
+  // ── Guardar gasto ────────────────────────────────────────
+  const saveExpense = async e => {
+    e.preventDefault()
+    if (!expForm.amount || parseFloat(expForm.amount)<=0) return setErr('Ingresa un monto válido')
+    if (!expForm.category) return setErr('Selecciona una categoría')
+    setBusy(true); setErr('')
+    const payload = { user_id:user.id, amount:parseFloat(expForm.amount), category:expForm.category, description:expForm.description||null, expense_date:expForm.expense_date||new Date().toISOString().slice(0,10), recurring:expForm.recurring||false }
+    let error
+    if (modal==='edit-expense') { ;({ error } = await sb.from('expenses').update(payload).eq('id', selected.id)) }
+    else { ;({ error } = await sb.from('expenses').insert(payload)) }
+    if (error) setErr('Error al guardar.')
+    else { setModal(null); setSelected(null); setExpForm(EMPTY_EXPENSE); load() }
+    setBusy(false)
+  }
+
+  const deletePayment = async id => { await sb.from('payments').delete().eq('id',id); load() }
+  const deleteExpense = async id => { await sb.from('expenses').delete().eq('id',id); load() }
+
+  const openPayment = (p=null) => {
+    if(p) { setSelected(p); setForm({patient_id:p.patient_id,session_id:p.session_id||'',amount:p.amount,method:p.method,status:p.status,concept:p.concept||'',payment_date:p.payment_date||'',notes:p.notes||''}); setModal('edit-payment') }
+    else { setSelected(null); setForm(EMPTY_PAYMENT); setModal('new-payment') }
+    setErr('')
+  }
+  const openExpense = (e=null) => {
+    if(e) { setSelected(e); setExpForm({amount:e.amount,category:e.category,description:e.description||'',expense_date:e.expense_date||'',recurring:e.recurring||false}); setModal('edit-expense') }
+    else { setSelected(null); setExpForm(EMPTY_EXPENSE); setModal('new-expense') }
+    setErr('')
+  }
+
+  const TABS = [{id:'dashboard',label:'Dashboard',icon:'📊'},{id:'cobros',label:'Cobros',icon:'💰'},{id:'gastos',label:'Gastos',icon:'📤'}]
+
+  return (
+    <div className="p-4 md:p-8 fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl md:text-2xl font-display font-semibold text-slate-800">Finanzas</h2>
+          <p className="text-slate-500 text-sm mt-0.5">Control de ingresos, gastos y balance del consultorio</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={()=>openPayment()} className="bg-green-500 hover:bg-green-600 text-white font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+            Cobro
+          </button>
+          <button onClick={()=>openExpense()} className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+            Gasto
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6">
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${tab===t.id?'bg-white text-slate-800 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>
+            <span>{t.icon}</span><span className="hidden sm:inline">{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {loading ? <div className="text-center py-16 text-slate-400">Cargando...</div> : <>
+
+      {/* ── DASHBOARD TAB ── */}
+      {tab==='dashboard' && (
+        <div className="space-y-6">
+          {/* Filtro mes */}
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-500 font-medium">Mes:</label>
+            <input type="month" className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} />
+          </div>
+
+          {/* Stats principales */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label:'Ingresos del mes', value:fmt(totalIncome), color:'text-green-600', bg:'bg-green-50', border:'border-green-200', icon:'💰' },
+              { label:'Gastos del mes', value:fmt(totalExpenses), color:'text-red-600', bg:'bg-red-50', border:'border-red-200', icon:'📤' },
+              { label:'Balance neto', value:fmt(balance), color:balance>=0?'text-brand-600':'text-red-600', bg:balance>=0?'bg-brand-50':'bg-red-50', border:balance>=0?'border-brand-200':'border-red-200', icon:'⚖️' },
+              { label:'Por cobrar', value:fmt(totalPending), color:'text-amber-600', bg:'bg-amber-50', border:'border-amber-200', icon:'⏳' },
+            ].map((s,i)=>(
+              <div key={i} className={`rounded-2xl border p-4 ${s.bg} ${s.border}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{s.icon}</span>
+                  <p className="text-xs text-slate-500 font-medium">{s.label}</p>
+                </div>
+                <p className={`text-2xl font-display font-bold ${s.color}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Gráfico de barras últimos 6 meses */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <p className="text-sm font-semibold text-slate-700 mb-4">Ingresos vs Gastos — últimos 6 meses</p>
+            <div className="flex items-end gap-3 h-36">
+              {last6.map(m=>(
+                <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full flex gap-0.5 items-end" style={{height:'100px'}}>
+                    <div className="flex-1 rounded-t-md bg-green-400 transition-all" style={{height:`${(m.inc/maxVal)*100}%`, minHeight:m.inc>0?'4px':'0'}} title={`Ingresos: ${fmt(m.inc)}`}/>
+                    <div className="flex-1 rounded-t-md bg-red-400 transition-all" style={{height:`${(m.exp/maxVal)*100}%`, minHeight:m.exp>0?'4px':'0'}} title={`Gastos: ${fmt(m.exp)}`}/>
+                  </div>
+                  <p className="text-xs text-slate-400 font-medium">{m.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-4 mt-3 justify-center">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-3 h-3 rounded-sm bg-green-400 inline-block"></span>Ingresos</span>
+              <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block"></span>Gastos</span>
+            </div>
+          </div>
+
+          {/* Pacientes con deuda */}
+          {debtors.length > 0 && (
+            <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-700 mb-3">⚠️ Pacientes con saldo pendiente</p>
+              <div className="space-y-2">
+                {debtors.map(p=>(
+                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-xs font-bold">{p.name.charAt(0)}</div>
+                      <span className="text-sm font-medium text-slate-700">{p.name}</span>
+                    </div>
+                    <span className="text-sm font-bold text-amber-600">{fmt(p.debt)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Gastos por categoría */}
+          {monthExpenses.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-700 mb-3">Gastos por categoría este mes</p>
+              {Object.entries(monthExpenses.reduce((acc,e)=>{acc[e.category]=(acc[e.category]||0)+parseFloat(e.amount||0);return acc},{}))
+                .sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>(
+                <div key={cat} className="flex items-center gap-3 mb-2">
+                  <span className="text-xs text-slate-500 w-36 truncate">{cat}</span>
+                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-red-400 rounded-full" style={{width:`${(amt/totalExpenses)*100}%`}}/>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 w-16 text-right">{fmt(amt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── COBROS TAB ── */}
+      {tab==='cobros' && (
+        <div>
+          {payments.length===0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-14 text-center">
+              <span className="text-5xl block mb-3">💰</span>
+              <p className="text-slate-500 font-medium">Sin cobros registrados</p>
+              <p className="text-slate-400 text-sm mt-1">Presiona "+ Cobro" para registrar un pago</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="table-scroll">
+              <table className="w-full text-sm" style={{minWidth:'600px'}}>
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>{['Paciente','Concepto','Monto','Método','Estado','Fecha',''].map((h,i)=>(
+                    <th key={i} className={`px-4 py-3 font-medium text-slate-500 ${i===6?'text-right':'text-left'}`}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {payments.map(p=>(
+                    <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-slate-800">{patientName(p.patient_id)}</td>
+                      <td className="px-4 py-3 text-slate-600 text-xs">{p.concept||'—'}</td>
+                      <td className="px-4 py-3 font-bold text-green-600">{fmt(p.amount)}</td>
+                      <td className="px-4 py-3 text-slate-600 text-xs">{p.method}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.status==='pagado'?'bg-green-100 text-green-700':p.status==='pendiente'?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700'}`}>
+                          {p.status==='pagado'?'Pagado':p.status==='pendiente'?'Pendiente':'Anulado'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(p.payment_date)}</td>
+                      <td className="px-4 py-3 text-right space-x-1">
+                        <button onClick={()=>openPayment(p)} className="text-brand-500 hover:text-brand-700 text-xs font-medium px-2 py-1 rounded hover:bg-brand-50">Editar</button>
+                        <button onClick={()=>deletePayment(p.id)} className="text-red-400 hover:text-red-600 text-xs font-medium px-2 py-1 rounded hover:bg-red-50">✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── GASTOS TAB ── */}
+      {tab==='gastos' && (
+        <div>
+          {expenses.length===0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-14 text-center">
+              <span className="text-5xl block mb-3">📤</span>
+              <p className="text-slate-500 font-medium">Sin gastos registrados</p>
+              <p className="text-slate-400 text-sm mt-1">Presiona "+ Gasto" para registrar un egreso</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="table-scroll">
+              <table className="w-full text-sm" style={{minWidth:'500px'}}>
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>{['Categoría','Descripción','Monto','Fecha','Recurrente',''].map((h,i)=>(
+                    <th key={i} className={`px-4 py-3 font-medium text-slate-500 ${i===5?'text-right':'text-left'}`}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {expenses.map(e=>(
+                    <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-slate-800">{e.category}</td>
+                      <td className="px-4 py-3 text-slate-600 text-xs">{e.description||'—'}</td>
+                      <td className="px-4 py-3 font-bold text-red-600">{fmt(e.amount)}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{formatDate(e.expense_date)}</td>
+                      <td className="px-4 py-3">{e.recurring?<span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium">Fijo</span>:<span className="text-xs text-slate-400">—</span>}</td>
+                      <td className="px-4 py-3 text-right space-x-1">
+                        <button onClick={()=>openExpense(e)} className="text-brand-500 hover:text-brand-700 text-xs font-medium px-2 py-1 rounded hover:bg-brand-50">Editar</button>
+                        <button onClick={()=>deleteExpense(e.id)} className="text-red-400 hover:text-red-600 text-xs font-medium px-2 py-1 rounded hover:bg-red-50">✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      </>}
+
+      {/* Modal nuevo/editar cobro */}
+      {(modal==='new-payment'||modal==='edit-payment') && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl fade-in my-4">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-slate-800">{modal==='edit-payment'?'Editar cobro':'Registrar cobro'}</h3>
+              <button onClick={()=>setModal(null)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {err && <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{err}</div>}
+            <form onSubmit={savePayment} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Paciente *</label>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.patient_id} onChange={e=>f('patient_id',e.target.value)} required>
+                  <option value="">— Seleccionar paciente —</option>
+                  {patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Concepto</label>
+                <input className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  placeholder="Ej: Sesión terapéutica, Evaluación inicial..." value={form.concept} onChange={e=>f('concept',e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Monto (USD) *</label>
+                  <input type="number" min="0" step="0.01" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    placeholder="0.00" value={form.amount} onChange={e=>f('amount',e.target.value)} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Método de pago</label>
+                  <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={form.method} onChange={e=>f('method',e.target.value)}>
+                    {PAYMENT_METHODS.map(m=><option key={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+                  <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={form.status} onChange={e=>f('status',e.target.value)}>
+                    <option value="pagado">Pagado</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="anulado">Anulado</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
+                  <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={form.payment_date} onChange={e=>f('payment_date',e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Notas</label>
+                <textarea rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                  placeholder="Observaciones opcionales..." value={form.notes} onChange={e=>f('notes',e.target.value)}/>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={()=>setModal(null)} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
+                <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium disabled:opacity-50">
+                  {busy?'Guardando...':modal==='edit-payment'?'Guardar cambios':'Registrar cobro'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nuevo/editar gasto */}
+      {(modal==='new-expense'||modal==='edit-expense') && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl fade-in my-4">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-slate-800">{modal==='edit-expense'?'Editar gasto':'Registrar gasto'}</h3>
+              <button onClick={()=>setModal(null)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {err && <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">{err}</div>}
+            <form onSubmit={saveExpense} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Monto (USD) *</label>
+                  <input type="number" min="0" step="0.01" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    placeholder="0.00" value={expForm.amount} onChange={e=>ef('amount',e.target.value)} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
+                  <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={expForm.expense_date} onChange={e=>ef('expense_date',e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Categoría *</label>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={expForm.category} onChange={e=>ef('category',e.target.value)} required>
+                  <option value="">— Seleccionar categoría —</option>
+                  {EXPENSE_CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
+                <input className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  placeholder="Detalle del gasto..." value={expForm.description} onChange={e=>ef('description',e.target.value)} />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={expForm.recurring} onChange={e=>ef('recurring',e.target.checked)} className="w-4 h-4 accent-brand-500"/>
+                <span className="text-sm text-slate-700">Gasto fijo / recurrente mensual</span>
+              </label>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={()=>setModal(null)} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
+                <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-50">
+                  {busy?'Guardando...':modal==='edit-expense'?'Guardar cambios':'Registrar gasto'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 // ── ADMIN PANEL ───────────────────────────────────────────
 function AdminPanel() {
   const [users, setUsers] = useState([])
@@ -2950,6 +3418,7 @@ function Sidebar({ page, onPage, user, role, onLogout, onTutorial }) {
         {navItem('instrumentos','Instrumentos',<Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>)}
         {navItem('sesiones','Sesiones',<Icon d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>)}
         {navItem('reportes','Reportes',<Icon d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>)}
+        {navItem('finanzas','Finanzas',<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>)}
         {role==='admin' && <div className="pt-3 pb-1"><p className="text-xs font-semibold text-brand-400 uppercase tracking-wider px-3">Administración</p></div>}
         {navItem('admin','Panel Admin',<Icon d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>,true)}
         <button onClick={onTutorial} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-100 hover:bg-brand-700 hover:text-white transition-colors text-left">
@@ -3302,6 +3771,7 @@ function Dashboard({ user, role, onLogout }) {
           {page==='pacientes'    && <Patients user={user} role={role} />}
           {page==='agenda'       && <Appointments user={user} />}
           {page==='reportes'     && <ReportsPage user={user} role={role} />}
+          {page==='finanzas'     && <FinancesPage user={user} />}
           {page==='evaluaciones' && <Evaluations user={user} onPage={go} />}
           {page==='instrumentos' && <InstrumentsPage user={user} />}
           {page==='sesiones'     && <Sessions user={user} />}
