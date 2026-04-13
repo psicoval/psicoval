@@ -240,7 +240,7 @@
       <div class="fade-up">
         <span class="tag hero-badge">Para psicólogos independientes</span>
         <h1>Tu consulta,<br/><em>digitalizada</em><br/>por completo.</h1>
-        <p>Gestiona pacientes, aplica 17 instrumentos validados, registra sesiones, controla tus finanzas y genera reportes PDF — todo en un solo lugar.</p>
+        <p>Gestiona pacientes, aplica 17 instrumentos validados, registra sesiones, controla las finanzas de tu consultorio y genera reportes PDF — todo en un solo lugar.</p>
         <div class="hero-btns">
           <a href="https://psicoval.vercel.app" class="btn-primary">Comenzar gratis →</a>
           <a href="#funciones" class="btn-outline">Ver funciones</a>
@@ -318,8 +318,8 @@
         <p>La mayoría trabaja con papel, hojas de cálculo dispersas o sistemas caros diseñados para clínicas grandes. El resultado: horas perdidas en administración y finanzas desorganizadas.</p>
         <div class="problem-points">
           <div class="problem-point"><div class="problem-point-icon">📂</div><div class="problem-point-text"><strong>Expedientes en papel o dispersos</strong><span>Difícil de encontrar, imposible de analizar.</span></div></div>
-          <div class="problem-point"><div class="problem-point-icon">💸</div><div class="problem-point-text"><strong>Finanzas sin control</strong><span>Sin saber cuánto cobrar, quién debe o cuánto gana el consultorio.</span></div></div>
-          <div class="problem-point"><div class="problem-point-icon">📊</div><div class="problem-point-text"><strong>Evaluaciones manuales</strong><span>Sin forma de ver si el paciente realmente está mejorando.</span></div></div>
+          <div class="problem-point"><div class="problem-point-icon">💸</div><div class="problem-point-text"><strong>Finanzas sin visibilidad</strong><span>Sin un registro claro de ingresos, quién tiene pagos pendientes o cuánto genera el consultorio.</span></div></div>
+          <div class="problem-point"><div class="problem-point-icon">📊</div><div class="problem-point-text"><strong>Evaluaciones sin centralización</strong><span>Aplicar instrumentos manualmente y dispersos en papel dificulta visualizar la evolución del proceso de forma organizada y comparativa.</span></div></div>
         </div>
       </div>
       <div class="problem-solution fade-up" style="animation-delay:.15s">
@@ -342,7 +342,7 @@
     <div class="section-header centered fade-up">
       <span class="tag section-tag">Funciones</span>
       <h2 class="section-title">Todo lo que necesitas en un solo lugar</h2>
-      <p class="section-sub">Diseñado para psicólogos independientes de cualquier enfoque terapéutico. Funciona en computadora y móvil.</p>
+      <p class="section-sub">Diseñado para psicólogos independientes. Funciona en computadora y móvil.</p>
     </div>
     <div class="features-grid">
       <div class="feature-card fade-up"><div class="feature-icon">🏠</div><h3>Dashboard inteligente</h3><p>Al entrar verás tus citas del día, estadísticas de actividad y accesos rápidos a las funciones más usadas.</p></div>
@@ -429,7 +429,22 @@
       <h2 class="section-title">Precios pensados para<br/>la realidad latinoamericana</h2>
       <p class="section-sub">Sin contratos. Cancela cuando quieras. Todos los planes incluyen actualizaciones gratuitas.</p>
     </div>
+    <!-- Toggle mensual/anual -->
+    <div style="display:flex;justify-content:center;margin-bottom:40px" class="fade-up">
+      <div style="display:flex;background:#f1f5f9;border-radius:50px;padding:4px;gap:4px">
+        <button id="btn-monthly" onclick="setPricing('monthly')"
+          style="padding:8px 24px;border-radius:50px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:14px;transition:all .2s;background:#4361ee;color:white">
+          Mensual
+        </button>
+        <button id="btn-annual" onclick="setPricing('annual')"
+          style="padding:8px 24px;border-radius:50px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:14px;transition:all .2s;background:transparent;color:#64748b">
+          Anual <span style="background:#06d6a0;color:#0d1117;font-size:10px;font-weight:800;padding:2px 7px;border-radius:50px;margin-left:4px">-17%</span>
+        </button>
+      </div>
+    </div>
+
     <div class="pricing-grid fade-up">
+      <!-- GRATIS -->
       <div class="plan-card">
         <p class="plan-label">Plan Gratuito</p>
         <div class="plan-price"><span class="plan-currency">$</span><span class="plan-amount">0</span></div>
@@ -448,11 +463,17 @@
         </ul>
         <a href="https://psicoval.vercel.app" class="plan-cta outline">Crear cuenta gratis</a>
       </div>
+
+      <!-- BÁSICO -->
       <div class="plan-card featured">
         <span class="plan-badge">✦ Más popular</span>
         <p class="plan-label">Plan Básico</p>
-        <div class="plan-price"><span class="plan-currency">$</span><span class="plan-amount">6</span></div>
-        <p class="plan-period">por mes · facturación mensual</p>
+        <div class="plan-price"><span class="plan-currency">$</span><span class="plan-amount" id="price-basic">10</span></div>
+        <p class="plan-period" id="period-basic">por mes · facturación mensual</p>
+        <div id="saving-basic" style="display:none;background:rgba(6,214,160,.15);border-radius:8px;padding:8px 12px;margin-bottom:12px;text-align:center">
+          <span style="color:#06d6a0;font-weight:700;font-size:13px">✦ Ahorras $20 al año</span>
+          <br/><span style="color:rgba(255,255,255,.6);font-size:12px">$100/año en vez de $120</span>
+        </div>
         <p class="plan-desc">Todo lo que necesitas para tu práctica diaria.</p>
         <ul class="plan-features">
           <li>Hasta 30 pacientes</li>
@@ -465,12 +486,18 @@
           <li>Todos los reportes PDF</li>
           <li class="no">Todos los instrumentos (17)</li>
         </ul>
-        <a href="https://psicoval.vercel.app" class="plan-cta solid">Comenzar por $6/mes</a>
+        <a href="https://psicoval.vercel.app" class="plan-cta solid" id="cta-basic">Comenzar por $10/mes</a>
       </div>
+
+      <!-- PREMIUM -->
       <div class="plan-card">
         <p class="plan-label">Plan Premium</p>
-        <div class="plan-price"><span class="plan-currency">$</span><span class="plan-amount">9</span></div>
-        <p class="plan-period">por mes · facturación mensual</p>
+        <div class="plan-price"><span class="plan-currency">$</span><span class="plan-amount" id="price-premium">15</span></div>
+        <p class="plan-period" id="period-premium">por mes · facturación mensual</p>
+        <div id="saving-premium" style="display:none;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;text-align:center">
+          <span style="color:#059669;font-weight:700;font-size:13px">✦ Ahorras $30 al año</span>
+          <br/><span style="color:#64748b;font-size:12px">$150/año en vez de $180</span>
+        </div>
         <p class="plan-desc">Para aprovechar al máximo todas las herramientas.</p>
         <ul class="plan-features">
           <li>Pacientes ilimitados</li>
@@ -484,7 +511,7 @@
           <li>Comparativo pre-post (3 momentos)</li>
           <li>Reporte de alta terapéutica</li>
         </ul>
-        <a href="https://psicoval.vercel.app" class="plan-cta outline">Comenzar por $9/mes</a>
+        <a href="https://psicoval.vercel.app" class="plan-cta outline" id="cta-premium">Comenzar por $15/mes</a>
       </div>
     </div>
     <p style="text-align:center;margin-top:32px;font-size:13px;color:var(--c-muted)" class="fade-up">
@@ -570,7 +597,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 Psicoval. Todos los derechos reservados.</span>
+      <span>© 2026 Psicoval. Todos los derechos reservados.</span>
       <span>Hecho con ❤️ para psicólogos latinoamericanos</span>
     </div>
   </div>
@@ -579,6 +606,25 @@
 <script>
   const navbar = document.getElementById('navbar')
   window.addEventListener('scroll', () => { navbar.classList.toggle('scrolled', window.scrollY > 20) })
+
+  function setPricing(mode) {
+    const isAnnual = mode === 'annual'
+    // Toggle buttons
+    document.getElementById('btn-monthly').style.background = isAnnual ? 'transparent' : '#4361ee'
+    document.getElementById('btn-monthly').style.color = isAnnual ? '#64748b' : 'white'
+    document.getElementById('btn-annual').style.background = isAnnual ? '#4361ee' : 'transparent'
+    document.getElementById('btn-annual').style.color = isAnnual ? 'white' : '#64748b'
+    // Basic
+    document.getElementById('price-basic').textContent = isAnnual ? '8.33' : '10'
+    document.getElementById('period-basic').textContent = isAnnual ? 'por mes · facturación anual ($100/año)' : 'por mes · facturación mensual'
+    document.getElementById('saving-basic').style.display = isAnnual ? 'block' : 'none'
+    document.getElementById('cta-basic').textContent = isAnnual ? 'Comenzar por $100/año' : 'Comenzar por $10/mes'
+    // Premium
+    document.getElementById('price-premium').textContent = isAnnual ? '12.50' : '15'
+    document.getElementById('period-premium').textContent = isAnnual ? 'por mes · facturación anual ($150/año)' : 'por mes · facturación mensual'
+    document.getElementById('saving-premium').style.display = isAnnual ? 'block' : 'none'
+    document.getElementById('cta-premium').textContent = isAnnual ? 'Comenzar por $150/año' : 'Comenzar por $15/mes'
+  }
   const observer = new IntersectionObserver(entries => { entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible') }) }, { threshold: 0.1 })
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el))
   function toggleFaq(btn) {
