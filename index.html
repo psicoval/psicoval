@@ -533,7 +533,7 @@ function Evaluations({ user, onPage }) {
 
   useEffect(()=>{ load() },[load])
 
-  const filtered = patients.filter(p =>
+  const filteredPatients = patients.filter(p =>
     search.trim() === '' ||
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
     p.occupation?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1045,7 +1045,7 @@ function Sessions({ user }) {
 
   useEffect(()=>{ load() },[load])
 
-  const filtered = patients.filter(p =>
+  const filteredPatients = patients.filter(p =>
     search.trim() === '' ||
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
     p.occupation?.toLowerCase().includes(search.toLowerCase()) ||
@@ -3078,7 +3078,7 @@ function Patients({ user, role }) {
     setPatients(data || []); setLoading(false)
   }, [user.id])
   useEffect(()=>{ load() },[load])
-  const filtered = patients.filter(p =>
+  const filteredPatients = patients.filter(p =>
     search.trim() === '' ||
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
     p.occupation?.toLowerCase().includes(search.toLowerCase()) ||
@@ -3149,9 +3149,9 @@ function Patients({ user, role }) {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200"><tr>{['Nombre','Edad','Ocupación','Estado',''].map((h,i)=><th key={i} className={`px-5 py-3 font-medium text-slate-500 ${i===4?'text-right':'text-left'}`}>{h}</th>)}</tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 && search ? (
+              {filteredPatients.length === 0 && search ? (
                 <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-400 text-sm">No se encontraron pacientes con "{search}"</td></tr>
-              ) : filtered.map(p=>(
+              ) : filteredPatients.map(p=>(
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-3.5"><button onClick={()=>openView(p)} className="font-medium text-brand-600 hover:text-brand-800 hover:underline text-left">{p.name}</button></td>
                   <td className="px-5 py-3.5 text-slate-600">{p.age??'—'}</td>
