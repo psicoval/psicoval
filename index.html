@@ -525,6 +525,7 @@ function Evaluations({ user, onPage }) {
   const [err, setErr]               = useState('')
   const [busy, setBusy]             = useState(false)
   const [filterPatient, setFilterPatient] = useState('')
+  const [searchEval, setSearchEval] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -578,9 +579,12 @@ function Evaluations({ user, onPage }) {
 
   const patientName = (pid) => patients.find(p=>p.id===pid)?.name || '—'
 
-  const filtered = filterPatient
-    ? interviews.filter(iv=>iv.patient_id===filterPatient)
-    : interviews
+  const filteredEvals = interviews.filter(iv => {
+    const matchPatient = !filterPatient || iv.patient_id === filterPatient
+    const pName = patientName(iv.patient_id).toLowerCase()
+    const matchSearch = !searchEval || pName.includes(searchEval.toLowerCase())
+    return matchPatient && matchSearch
+  })
 
   const formatDate = d => d ? new Date(d).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'
 
@@ -632,16 +636,25 @@ function Evaluations({ user, onPage }) {
         </div>
       </div>
 
-      {/* Filtro por paciente */}
-      {patients.length > 0 && (
-        <div className="flex items-center gap-3 mb-4">
-          <label className="text-sm text-slate-500 font-medium whitespace-nowrap">Filtrar por paciente:</label>
-          <select className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+      {/* Búsqueda y filtros */}
+      {(patients.length > 0 || interviews.length > 0) && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <input className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              placeholder="Buscar por paciente o instrumento..." value={searchEval} onChange={e=>setSearchEval(e.target.value)} />
+            {searchEval && <button onClick={()=>setSearchEval('')} className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>}
+          </div>
+          <select className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
             value={filterPatient} onChange={e=>setFilterPatient(e.target.value)}>
             <option value="">Todos los pacientes</option>
             {patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          {filterPatient && <button onClick={()=>setFilterPatient('')} className="text-xs text-slate-400 hover:text-slate-600">✕ Limpiar</button>}
+          {(filterPatient||searchEval) && <button onClick={()=>{setFilterPatient('');setSearchEval('')}} className="text-xs text-slate-400 hover:text-slate-600 whitespace-nowrap">✕ Limpiar</button>}
         </div>
       )}
 
@@ -712,6 +725,94 @@ function Evaluations({ user, onPage }) {
               <button onClick={close} className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
               <button onClick={destroy} className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium">Eliminar</button>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ── Estadísticas mensuales ────────────────────────────────
+function MonthlyStats({ user }) {
+  const [data, setData] = useState(null)
+
+  useEffect(()=>{
+    const firstDay = new Date()
+    firstDay.setDate(1)
+    firstDay.setHours(0,0,0,0)
+    const firstISO = firstDay.toISOString().slice(0,10)
+
+    Promise.all([
+      sb.from('sessions').select('id,patient_id,created_at,interventions').eq('user_id',user.id).gte('session_date',firstISO),
+      sb.from('instrument_results').select('id,instrument_name,created_at').eq('user_id',user.id).gte('created_at',firstDay.toISOString()),
+      sb.from('appointments').select('id,status').eq('user_id',user.id).gte('date',firstISO),
+      sb.from('payments').select('amount,status').eq('user_id',user.id).gte('payment_date',firstISO)
+    ]).then(([sess, instr, appts, pays])=>{
+      const sessions = sess.data||[]
+      const instruments = instr.data||[]
+      const appointments = appts.data||[]
+      const payments = pays.data||[]
+
+      // Instrumentos más usados
+      const instrCount = instruments.reduce((acc,r)=>{
+        acc[r.instrument_name]=(acc[r.instrument_name]||0)+1; return acc
+      },{})
+      const topInstr = Object.entries(instrCount).sort((a,b)=>b[1]-a[1]).slice(0,3)
+
+      // Pacientes únicos atendidos
+      const uniquePatients = new Set(sessions.map(s=>s.patient_id)).size
+
+      // Ingresos del mes
+      const income = payments.filter(p=>p.status==='pagado').reduce((s,p)=>s+parseFloat(p.amount||0),0)
+
+      setData({
+        sessions: sessions.length,
+        uniquePatients,
+        instruments: instruments.length,
+        topInstr,
+        apptsDone: appointments.filter(a=>a.status==='realizada').length,
+        income
+      })
+    })
+  },[user.id])
+
+  if (!data) return <div className="text-slate-400 text-sm text-center py-4">Cargando estadísticas...</div>
+
+  const month = new Date().toLocaleDateString('es-EC',{month:'long',year:'numeric'})
+
+  return (
+    <div>
+      <p className="text-xs text-slate-400 mb-4 capitalize">{month}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+        {[
+          { label:'Sesiones realizadas', value:data.sessions, icon:'📋', color:'text-brand-600' },
+          { label:'Pacientes atendidos', value:data.uniquePatients, icon:'👤', color:'text-green-600' },
+          { label:'Instrumentos aplicados', value:data.instruments, icon:'📊', color:'text-purple-600' },
+          { label:'Ingresos cobrados', value:`$${data.income.toFixed(2)}`, icon:'💰', color:'text-emerald-600' },
+        ].map((s,i)=>(
+          <div key={i} className="text-center">
+            <div className="text-2xl mb-1">{s.icon}</div>
+            <p className={`text-2xl font-display font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      {data.topInstr.length > 0 && (
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Instrumentos más usados este mes</p>
+          <div className="space-y-2">
+            {data.topInstr.map(([name, count])=>(
+              <div key={name} className="flex items-center gap-3">
+                <span className="text-xs text-slate-600 flex-1 truncate">{name}</span>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden" style={{width:'80px'}}>
+                    <div className="h-full bg-brand-400 rounded-full" style={{width:`${(count/data.instruments)*100}%`}}/>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 w-4">{count}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -845,6 +946,17 @@ function HomeOverview({ user, role, planExpiry, onPage }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Estadísticas del mes */}
+      {!loading && (
+        <div className="mt-6">
+          <p className="text-sm font-semibold text-slate-700 mb-3">📊 Actividad de este mes</p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <MonthlyStats user={user} />
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Plan info */}
@@ -1059,6 +1171,7 @@ function Sessions({ user }) {
   const [err, setErr]             = useState('')
   const [busy, setBusy]           = useState(false)
   const [filterPatient, setFilterPatient] = useState('')
+  const [searchSession, setSearchSession] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -1124,7 +1237,15 @@ function Sessions({ user }) {
 
   const destroy = async () => { await sb.from('sessions').delete().eq('id', selected.id); close(); load() }
   const patientName = (pid) => patients.find(p=>p.id===pid)?.name || '—'
-  const filtered = filterPatient ? sessions.filter(s=>s.patient_id===filterPatient) : sessions
+  const filteredSessions = sessions.filter(s => {
+    const matchPatient = !filterPatient || s.patient_id === filterPatient
+    const q = searchSession.toLowerCase()
+    const matchSearch = !searchSession ||
+      patientName(s.patient_id).toLowerCase().includes(q) ||
+      (s.content||'').toLowerCase().includes(q) ||
+      (s.interventions||'').toLowerCase().includes(q)
+    return matchPatient && matchSearch
+  })
   const formatDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'
 
   // Estadísticas rápidas
@@ -1165,23 +1286,32 @@ function Sessions({ user }) {
         </div>
       )}
 
-      {/* Filtro */}
-      {patients.length > 0 && (
-        <div className="flex items-center gap-3 mb-4">
-          <label className="text-sm text-slate-500 font-medium whitespace-nowrap">Filtrar por paciente:</label>
-          <select className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+      {/* Búsqueda y filtro */}
+      {(patients.length > 0 || sessions.length > 0) && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <input className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              placeholder="Buscar por paciente, contenido o intervención..." value={searchSession} onChange={e=>setSearchSession(e.target.value)} />
+            {searchSession && <button onClick={()=>setSearchSession('')} className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>}
+          </div>
+          <select className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
             value={filterPatient} onChange={e=>setFilterPatient(e.target.value)}>
             <option value="">Todos los pacientes</option>
             {patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          {filterPatient && <button onClick={()=>setFilterPatient('')} className="text-xs text-slate-400 hover:text-slate-600">✕ Limpiar</button>}
+          {(filterPatient||searchSession) && <button onClick={()=>{setFilterPatient('');setSearchSession('')}} className="text-xs text-slate-400 hover:text-slate-600 whitespace-nowrap">✕ Limpiar</button>}
         </div>
       )}
 
       {/* Lista */}
       {loading ? (
         <div className="text-center py-16 text-slate-400">Cargando...</div>
-      ) : filtered.length === 0 ? (
+      ) : filteredSessions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-14 text-center">
           <span className="text-5xl block mb-4">🗓️</span>
           <p className="text-slate-500 font-medium">Sin sesiones registradas</p>
@@ -1196,7 +1326,7 @@ function Sessions({ user }) {
               ))}</tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(s=>(
+              {filteredSessions.map(s=>(
                 <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3.5">
                     <button onClick={()=>openView(s)} className="font-medium text-brand-600 hover:text-brand-800 hover:underline text-left">{patientName(s.patient_id)}</button>
@@ -3488,6 +3618,11 @@ function Sidebar({ page, onPage, user, role, onLogout, onTutorial }) {
             <RoleBadge role={role} />
           </div>
         </div>
+        <div className="flex gap-3 mb-2">
+          <a href="psicoval_legal.html" target="_blank" className="text-brand-300 hover:text-white text-xs transition-colors">Términos</a>
+          <span className="text-brand-600 text-xs">·</span>
+          <a href="psicoval_legal.html" target="_blank" className="text-brand-300 hover:text-white text-xs transition-colors">Privacidad</a>
+        </div>
         <button onClick={onLogout} className="w-full text-left flex items-center gap-2 text-brand-200 hover:text-white text-sm py-1 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           Cerrar sesión
@@ -3560,7 +3695,128 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
   )
 }
 
-function PatientDetail({ patient: p, onEdit, onClose }) {
+
+// ── Exportar ficha paciente PDF ───────────────────────────
+function exportPatientPDF(patient, profile, interviews, sessions, instrResults) {
+  const p = patient
+  const prof = profile || {}
+  const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+  const iv = interviews?.find(i=>i.patient_id===p.id)
+
+  const patSessions = (sessions||[]).filter(s=>s.patient_id===p.id).sort((a,b)=>new Date(a.session_date)-new Date(b.session_date))
+  const patInstr = (instrResults||[]).filter(r=>r.patient_id===p.id)
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+  <title>Ficha — ${p.name}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
+    .header{border-bottom:2px solid #4361ee;padding-bottom:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start}
+    .logo{font-family:Georgia,serif;font-size:22px;color:#1a2460;font-weight:bold}
+    .prof-info{text-align:right;font-size:11px;color:#64748b}
+    h2{color:#1a2460;font-size:16px;margin:20px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    .field{margin-bottom:8px}
+    .label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px}
+    .value{color:#1e293b;line-height:1.5;margin-top:2px}
+    .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th{background:#f1f5f9;text-align:left;padding:6px 8px;font-size:11px;color:#64748b;text-transform:uppercase}
+    td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold}
+    .footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
+    .sign-box{margin-top:40px;display:flex;justify-content:flex-end}
+    .sign{text-align:center;border-top:1px solid #334155;padding-top:6px;min-width:200px;font-size:11px}
+    @media print{body{padding:10px}}
+  </style></head><body>
+  <div class="header">
+    <div><div class="logo">Psicoval</div><div style="font-size:11px;color:#64748b">Plataforma de evaluación psicológica</div></div>
+    <div class="prof-info">
+      <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
+      <div>${prof.specialty||''} ${prof.license_number?'· Reg. '+prof.license_number:''}</div>
+      <div>${prof.city||''}</div>
+      <div>Fecha: ${now}</div>
+    </div>
+  </div>
+
+  <h2>Ficha Clínica del Paciente</h2>
+  <div class="section">
+    <div class="grid">
+      <div class="field"><div class="label">Nombre completo</div><div class="value">${p.name||'—'}</div></div>
+      <div class="field"><div class="label">Edad</div><div class="value">${p.age?p.age+' años':'—'}</div></div>
+      <div class="field"><div class="label">Sexo</div><div class="value">${p.sex||'—'}</div></div>
+      <div class="field"><div class="label">Ocupación</div><div class="value">${p.occupation||'—'}</div></div>
+      <div class="field"><div class="label">Fuente de derivación</div><div class="value">${p.referral_source||'—'}</div></div>
+      <div class="field"><div class="label">Frecuencia de sesión</div><div class="value">${p.session_frequency||'—'}</div></div>
+      <div class="field"><div class="label">Fecha de inicio</div><div class="value">${p.process_start_date||'—'}</div></div>
+      <div class="field"><div class="label">Estado del proceso</div><div class="value">${p.process_status||'—'}</div></div>
+    </div>
+  </div>
+
+  ${p.consultation_reason||p.presumptive_diagnosis||p.therapeutic_approach ? `
+  <h2>Información Clínica</h2>
+  <div class="section">
+    ${p.consultation_reason?`<div class="field"><div class="label">Motivo de consulta</div><div class="value">${p.consultation_reason}</div></div>`:''}
+    ${p.presumptive_diagnosis?`<div class="field"><div class="label">Diagnóstico presuntivo</div><div class="value">${p.presumptive_diagnosis}</div></div>`:''}
+    ${p.diagnostic_axes?`<div class="field"><div class="label">Formulación del caso</div><div class="value">${p.diagnostic_axes}</div></div>`:''}
+    ${p.therapeutic_approach?`<div class="field"><div class="label">Enfoque terapéutico</div><div class="value">${p.therapeutic_approach}</div></div>`:''}
+  </div>` : ''}
+
+  ${p.background_personal||p.background_family||p.background_medical ? `
+  <h2>Antecedentes</h2>
+  <div class="section">
+    ${p.background_personal?`<div class="field"><div class="label">Personales</div><div class="value">${p.background_personal}</div></div>`:''}
+    ${p.background_family?`<div class="field"><div class="label">Familiares</div><div class="value">${p.background_family}</div></div>`:''}
+    ${p.background_medical?`<div class="field"><div class="label">Médicos</div><div class="value">${p.background_medical}</div></div>`:''}
+  </div>` : ''}
+
+  ${iv ? `
+  <h2>Entrevista Inicial</h2>
+  <div class="section">
+    ${iv.problem_description?`<div class="field"><div class="label">Descripción del problema</div><div class="value">${iv.problem_description}</div></div>`:''}
+    ${iv.patient_goals?`<div class="field"><div class="label">Objetivos del paciente</div><div class="value">${iv.patient_goals}</div></div>`:''}
+    ${iv.clinical_goals?`<div class="field"><div class="label">Objetivos clínicos</div><div class="value">${iv.clinical_goals}</div></div>`:''}
+  </div>` : ''}
+
+  ${patInstr.length>0 ? `
+  <h2>Instrumentos Aplicados</h2>
+  <table>
+    <thead><tr><th>Instrumento</th><th>Fecha</th><th>Resultado</th></tr></thead>
+    <tbody>${patInstr.map(r=>`<tr><td>${r.instrument_name}</td><td>${r.applied_at||'—'}</td><td>${(r.interpretation||'').slice(0,80)}${r.interpretation?.length>80?'...':''}</td></tr>`).join('')}</tbody>
+  </table>` : ''}
+
+  ${patSessions.length>0 ? `
+  <h2>Historial de Sesiones (${patSessions.length})</h2>
+  <table>
+    <thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Ánimo</th><th>Estado</th></tr></thead>
+    <tbody>${patSessions.map(s=>`<tr>
+      <td>${s.session_number||'—'}</td>
+      <td>${s.session_date||'—'}</td>
+      <td>${s.session_type||'—'}</td>
+      <td>${s.mood_start&&s.mood_end?s.mood_start+'→'+s.mood_end:'—'}</td>
+      <td>${s.status||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>` : ''}
+
+  <div class="sign-box">
+    <div class="sign">
+      <div style="height:40px"></div>
+      <div>${prof.full_name||'Profesional'}</div>
+      <div style="color:#64748b">${prof.specialty||''}</div>
+      <div style="color:#64748b">${prof.license_number?'Reg. '+prof.license_number:''}</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Documento generado por Psicoval · ${now} · Confidencial — uso clínico exclusivo</p>
+  </div>
+  </body></html>`
+
+  const w = window.open('','_blank')
+  if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500) }
+}
+
+function PatientDetail({ patient: p, onEdit, onClose, onExport, patSessions=[], patInstr=[] }) {
+  const [detailTab, setDetailTab] = useState('ficha')
   const Field = ({ label, value }) => !value ? null : <div><p className="text-xs text-slate-400 mb-0.5">{label}</p><p className="text-sm text-slate-700 leading-relaxed">{value}</p></div>
   const Section = ({ title, children }) => <div className="mb-5"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{title}</p><div className="space-y-3">{children}</div></div>
   return (
@@ -3572,14 +3828,65 @@ function PatientDetail({ patient: p, onEdit, onClose }) {
         </div>
         {p.process_status && <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[p.process_status]||STATUS_COLORS.activo}`}>{STATUS_LABELS[p.process_status]}</span>}
       </div>
-      <div className="max-h-96 overflow-y-auto pr-1 space-y-1">
-        <Section title="Consulta"><Field label="Motivo de consulta" value={p.consultation_reason}/><Field label="Fuente de derivación" value={p.referral_source}/><Field label="Frecuencia de sesión" value={p.session_frequency}/><Field label="Fecha de inicio" value={p.process_start_date}/><Field label="Enfoque terapéutico" value={p.therapeutic_approach}/></Section>
-        <Section title="Antecedentes"><Field label="Personales" value={p.background_personal}/><Field label="Familiares" value={p.background_family}/><Field label="Médicos" value={p.background_medical}/></Section>
-        <Section title="Diagnóstico"><Field label="Diagnóstico presuntivo" value={p.presumptive_diagnosis}/><Field label="Formulación del caso" value={p.diagnostic_axes}/></Section>
-        {p.notes && <Section title="Notas"><Field label="" value={p.notes}/></Section>}
+      {/* Tabs dentro de ficha */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4">
+        {['ficha','sesiones','instrumentos'].map(t=>(
+          <button key={t} type="button" onClick={()=>setDetailTab(t)}
+            className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${detailTab===t?'bg-white text-slate-800 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>
+            {t==='ficha'?'Ficha clínica':t==='sesiones'?`Sesiones (${patSessions.length})`:`Instrumentos (${patInstr.length})`}
+          </button>
+        ))}
+      </div>
+      <div className="max-h-80 overflow-y-auto pr-1 space-y-1">
+        {detailTab==='ficha' && <>
+          <Section title="Consulta"><Field label="Motivo de consulta" value={p.consultation_reason}/><Field label="Fuente de derivación" value={p.referral_source}/><Field label="Frecuencia de sesión" value={p.session_frequency}/><Field label="Fecha de inicio" value={p.process_start_date}/><Field label="Enfoque terapéutico" value={p.therapeutic_approach}/></Section>
+          <Section title="Antecedentes"><Field label="Personales" value={p.background_personal}/><Field label="Familiares" value={p.background_family}/><Field label="Médicos" value={p.background_medical}/></Section>
+          <Section title="Diagnóstico"><Field label="Diagnóstico presuntivo" value={p.presumptive_diagnosis}/><Field label="Formulación del caso" value={p.diagnostic_axes}/></Section>
+          {p.notes && <Section title="Notas"><Field label="" value={p.notes}/></Section>}
+        </>}
+        {detailTab==='sesiones' && (
+          patSessions.length===0 ? (
+            <div className="text-center py-8 text-slate-400 text-sm">Sin sesiones registradas para este paciente</div>
+          ) : (
+            <div className="space-y-3">
+              {patSessions.map(s=>(
+                <div key={s.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-slate-700 text-sm">Sesión #{s.session_number||'—'} — {s.session_date||'—'}</span>
+                    {s.mood_start&&s.mood_end&&<span className={`text-xs font-medium ${s.mood_end>s.mood_start?'text-green-600':s.mood_end<s.mood_start?'text-red-500':'text-slate-500'}`}>{s.mood_start}→{s.mood_end} {s.mood_end>s.mood_start?'↑':s.mood_end<s.mood_start?'↓':'→'}</span>}
+                  </div>
+                  {s.content&&<div className="mb-1"><p className="text-xs text-slate-400">Contenido</p><p className="text-xs text-slate-700">{s.content}</p></div>}
+                  {s.interventions&&<div className="mb-1"><p className="text-xs text-slate-400">Intervenciones</p><p className="text-xs text-slate-700">{s.interventions}</p></div>}
+                  {s.homework&&<div><p className="text-xs text-slate-400">Tareas</p><p className="text-xs text-slate-700">{s.homework}</p></div>}
+                </div>
+              ))}
+            </div>
+          )
+        )}
+        {detailTab==='instrumentos' && (
+          patInstr.length===0 ? (
+            <div className="text-center py-8 text-slate-400 text-sm">Sin instrumentos aplicados a este paciente</div>
+          ) : (
+            <div className="space-y-2">
+              {patInstr.map(r=>(
+                <div key={r.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-slate-700 text-sm">{r.instrument_name}</span>
+                    <span className="text-xs text-slate-400">{r.applied_at}</span>
+                  </div>
+                  <p className="text-xs text-slate-600">{r.interpretation?.slice(0,120)}{r.interpretation?.length>120?'...':''}</p>
+                </div>
+              ))}
+            </div>
+          )
+        )}
       </div>
       <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-slate-100">
         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cerrar</button>
+        <button onClick={onExport} className="px-4 py-2 rounded-lg border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 text-sm font-medium flex items-center gap-1.5">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar PDF
+        </button>
         <button onClick={onEdit} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium">Editar ficha</button>
       </div>
     </div>
@@ -3594,10 +3901,22 @@ function Patients({ user, role }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [search, setSearch] = useState('')
+  const [sessions, setSessions] = useState([])
+  const [instrResults, setInstrResults] = useState([])
+  const [profile, setProfile] = useState(null)
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await sb.from('patients').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-    setPatients(data || []); setLoading(false)
+    const [pRes, sRes, iRes, prRes] = await Promise.all([
+      sb.from('patients').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      sb.from('sessions').select('*').eq('user_id', user.id),
+      sb.from('instrument_results').select('*').eq('user_id', user.id),
+      sb.from('psychologist_profiles').select('*').eq('user_id', user.id).single()
+    ])
+    setPatients(pRes.data || [])
+    setSessions(sRes.data || [])
+    setInstrResults(iRes.data || [])
+    setProfile(prRes.data || null)
+    setLoading(false)
   }, [user.id])
   useEffect(()=>{ load() },[load])
   const filteredPatients = patients.filter(p =>
@@ -4023,7 +4342,13 @@ function Register({ onGo }) {
             <Input label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={f.password} onChange={e=>setF({...f,password:e.target.value})} required />
             <button disabled={busy} className="w-full bg-brand-500 hover:bg-brand-600 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50">{busy?'Creando cuenta...':'Crear cuenta gratis'}</button>
           </form>
-          <p className="text-center text-sm text-slate-500 mt-6">¿Ya tienes cuenta?{' '}<button onClick={()=>onGo('login')} className="text-brand-500 font-medium hover:underline">Inicia sesión</button></p>
+          <p className="text-center text-sm text-slate-500 mt-4">
+            Al registrarte aceptas nuestros{' '}
+            <a href="psicoval_legal.html" target="_blank" className="text-brand-500 hover:underline">Términos y Condiciones</a>
+            {' '}y{' '}
+            <a href="psicoval_legal.html" target="_blank" className="text-brand-500 hover:underline">Política de Privacidad</a>
+          </p>
+          <p className="text-center text-sm text-slate-500 mt-3">¿Ya tienes cuenta?{' '}<button onClick={()=>onGo('login')} className="text-brand-500 font-medium hover:underline">Inicia sesión</button></p>
         </div>
       </div>
     </div>
