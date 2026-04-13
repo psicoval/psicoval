@@ -540,13 +540,6 @@ function Evaluations({ user, onPage }) {
 
   useEffect(()=>{ load() },[load])
 
-  const filteredPatients = patients.filter(p =>
-    search.trim() === '' ||
-    p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.occupation?.toLowerCase().includes(search.toLowerCase()) ||
-    p.presumptive_diagnosis?.toLowerCase().includes(search.toLowerCase())
-  )
-
   const openCreate = () => {
     if (!canAddPatient(role, patients.length)) {
       const limit = PLAN_LIMITS[role]?.maxPatients || 5
