@@ -63,9 +63,14 @@ function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState('free')
   const [loading, setLoading] = useState(true)
+  const [planExpiry, setPlanExpiry] = useState(null)
+
   const loadRole = async (uid) => {
-    const { data } = await sb.from('profiles').select('role').eq('id', uid).single()
-    if (data) setRole(data.role)
+    const { data } = await sb.from('profiles').select('role,expires_at').eq('id', uid).single()
+    if (data) {
+      setRole(data.role)
+      setPlanExpiry(data.expires_at || null)
+    }
   }
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
@@ -81,6 +86,7 @@ function AuthProvider({ children }) {
   }, [])
   return (
     <AuthCtx.Provider value={{ user, role, loading,
+      planExpiry,
       signUp: (email, pass, name) => sb.auth.signUp({ email, password: pass, options: { data: { name } } }),
       signIn: (email, pass) => sb.auth.signInWithPassword({ email, password: pass }),
       signOut: () => sb.auth.signOut(),
@@ -714,7 +720,7 @@ function Evaluations({ user, onPage }) {
 }
 
 // ── HOME OVERVIEW ─────────────────────────────────────────
-function HomeOverview({ user, role, onPage }) {
+function HomeOverview({ user, role, planExpiry, onPage }) {
   const [stats, setStats] = useState({ patients:0, sessions:0, appointments:0, instruments:0 })
   const [upcomingAppts, setUpcomingAppts] = useState([])
   const [todayAppts, setTodayAppts] = useState([])
@@ -1541,20 +1547,34 @@ const PLAN_LIMITS = {
   admin:   { maxPatients: null, instruments: 'all',                                    reports: true,  label: 'Admin' },
 }
 
-function canUseInstrument(role, instrumentKey) {
-  const plan = PLAN_LIMITS[role] || PLAN_LIMITS.free
+function isPlanExpired(planExpiry) {
+  if (!planExpiry) return false
+  return new Date(planExpiry) < new Date()
+}
+
+function effectiveRole(role, planExpiry) {
+  if (role === 'admin') return 'admin'
+  if (role !== 'free' && isPlanExpired(planExpiry)) return 'free'
+  return role
+}
+
+function canUseInstrument(role, instrumentKey, planExpiry) {
+  const r = effectiveRole(role, planExpiry)
+  const plan = PLAN_LIMITS[r] || PLAN_LIMITS.free
   if (plan.instruments === 'all') return true
   return plan.instruments.includes(instrumentKey)
 }
 
-function canAddPatient(role, currentCount) {
-  const plan = PLAN_LIMITS[role] || PLAN_LIMITS.free
+function canAddPatient(role, currentCount, planExpiry) {
+  const r = effectiveRole(role, planExpiry)
+  const plan = PLAN_LIMITS[r] || PLAN_LIMITS.free
   if (plan.maxPatients === null) return true
   return currentCount < plan.maxPatients
 }
 
-function canUseReports(role) {
-  return (PLAN_LIMITS[role] || PLAN_LIMITS.free).reports
+function canUseReports(role, planExpiry) {
+  const r = effectiveRole(role, planExpiry)
+  return (PLAN_LIMITS[r] || PLAN_LIMITS.free).reports
 }
 
 // ── Banner de upgrade ─────────────────────────────────────
@@ -3282,9 +3302,19 @@ function AdminPanel() {
   const stats = { total:users.length, premium:users.filter(u=>u.role==='premium').length, basic:users.filter(u=>u.role==='basic').length, free:users.filter(u=>u.role==='free'||!u.role).length, admin:users.filter(u=>u.role==='admin').length, patients:users.reduce((s,u)=>s+(parseInt(u.patient_count)||0),0) }
   const openEdit = u => { setEditUser(u); setNewRole(u.role||'free'); setMsg('') }
   const closeEdit = () => { setEditUser(null); setMsg('') }
+  const [duration, setDuration] = useState('1')
+
   const saveRole = async () => {
     setSaving(true)
-    const { error } = await sb.from('profiles').upsert({ id: editUser.id, role: newRole }, { onConflict:'id' })
+    const months = parseInt(duration)
+    let expiresAt = null
+    if (newRole !== 'free' && newRole !== 'admin' && months > 0) {
+      const d = new Date()
+      d.setMonth(d.getMonth() + months)
+      expiresAt = d.toISOString()
+    }
+    const payload = { id: editUser.id, role: newRole, expires_at: expiresAt }
+    const { error } = await sb.from('profiles').upsert(payload, { onConflict:'id' })
     if (error) setMsg('Error al actualizar.')
     else { setMsg('Plan actualizado ✓'); load(); setTimeout(closeEdit, 1000) }
     setSaving(false)
@@ -3345,7 +3375,14 @@ function AdminPanel() {
                   <td className="px-5 py-3.5 text-slate-500 text-xs">{u.email}</td>
                   <td className="px-5 py-3.5"><RoleBadge role={u.role||'free'} /></td>
                   <td className="px-5 py-3.5 text-slate-600 text-center">{u.patient_count||0}</td>
-                  <td className="px-5 py-3.5 text-slate-400 text-xs">{formatDate(u.created_at)}</td>
+                  <td className="px-5 py-3.5 text-slate-400 text-xs">
+                    <div>{formatDate(u.created_at)}</div>
+                    {u.expires_at && u.role !== 'free' && u.role !== 'admin' && (
+                      <div className={`text-xs font-medium mt-0.5 ${new Date(u.expires_at) < new Date() ? 'text-red-500' : new Date(u.expires_at) < new Date(Date.now()+7*86400000) ? 'text-amber-500' : 'text-green-600'}`}>
+                        {new Date(u.expires_at) < new Date() ? '🔒 Vencido' : `⏰ Vence ${formatDate(u.expires_at)}`}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 text-right"><button onClick={()=>openEdit(u)} className="text-brand-500 hover:text-brand-700 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">Cambiar plan</button></td>
                 </tr>
               ))}
@@ -3370,9 +3407,25 @@ function AdminPanel() {
               </label>
             ))}
           </div>
+          {newRole !== 'free' && newRole !== 'admin' && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-slate-700 mb-2">Duración del plan:</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[['1','1 mes'],['3','3 meses'],['6','6 meses'],['12','1 año']].map(([val,label])=>(
+                  <button key={val} type="button" onClick={()=>setDuration(val)}
+                    className={`py-2 rounded-xl text-xs font-semibold border-2 transition-all ${duration===val?'bg-brand-500 text-white border-brand-500':'bg-white text-slate-600 border-slate-200 hover:border-brand-300'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400 mt-2">
+                Vence el: <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth()+parseInt(duration)); return d.toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'}) })()}</strong>
+              </p>
+            </div>
+          )}
           <div className="flex gap-3">
             <button onClick={closeEdit} className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
-            <button onClick={saveRole} disabled={saving||newRole===editUser.role} className="flex-1 px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">{saving?'Guardando...':'Confirmar cambio'}</button>
+            <button onClick={saveRole} disabled={saving} className="flex-1 px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">{saving?'Guardando...':'Confirmar cambio'}</button>
           </div>
         </Modal>
       )}
@@ -3709,7 +3762,7 @@ function Profile({ user }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────
-function Dashboard({ user, role, onLogout }) {
+function Dashboard({ user, role, planExpiry, onLogout }) {
   const [page, setPage] = useState('inicio')
   const [showTutorial, setShowTutorial] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -3767,7 +3820,7 @@ function Dashboard({ user, role, onLogout }) {
 
         {/* Main */}
         <main style={{flex:1, overflowY:'auto'}}>
-          {page==='inicio'       && <HomeOverview user={user} role={role} onPage={go} />}
+          {page==='inicio'       && <HomeOverview user={user} role={role} planExpiry={planExpiry} onPage={go} />}
           {page==='pacientes'    && <Patients user={user} role={role} />}
           {page==='agenda'       && <Appointments user={user} />}
           {page==='reportes'     && <ReportsPage user={user} role={role} />}
@@ -3979,7 +4032,7 @@ function Register({ onGo }) {
 
 // ── App ───────────────────────────────────────────────────
 function App() {
-  const { user, role, loading, signOut } = useAuth()
+  const { user, role, loading, signOut, planExpiry } = useAuth()
   const [screen, setScreen] = useState('login')
   const [isRecovery, setIsRecovery] = useState(false)
 
@@ -4002,7 +4055,7 @@ function App() {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-slate-400 text-sm">Cargando...</p></div>
   if (isRecovery) return <ResetPassword onDone={()=>{ setIsRecovery(false); setScreen('login') }} />
-  if (user) return <Dashboard user={user} role={role} onLogout={signOut} />
+  if (user) return <Dashboard user={user} role={role} planExpiry={planExpiry} onLogout={signOut} />
   if (screen==='register') return <Register onGo={setScreen} />
   if (screen==='forgot')   return <ForgotPassword onBack={()=>setScreen('login')} />
   return <Login onGo={setScreen} />
