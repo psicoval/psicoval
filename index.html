@@ -1185,21 +1185,7 @@ function Sessions({ user }) {
 
   useEffect(()=>{ load() },[load])
 
-  const filteredPatients = patients.filter(p =>
-    search.trim() === '' ||
-    p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.occupation?.toLowerCase().includes(search.toLowerCase()) ||
-    p.presumptive_diagnosis?.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const openCreate = () => {
-    if (!canAddPatient(role, patients.length)) {
-      const limit = PLAN_LIMITS[role]?.maxPatients || 5
-      setErr(`Tu plan ${PLAN_LIMITS[role]?.label||'Gratis'} permite hasta ${limit} pacientes. Actualiza para agregar más.`)
-      return
-    }
-    setSelected(null); setErr(''); setModal('create')
-  }
+  const openCreate = () => { setSelected(null); setErr(''); setModal('create') }
   const openEdit   = s  => { setSelected(s); setErr(''); setModal('edit') }
   const openView   = s  => { setSelected(s); setModal('view') }
   const openDelete = s  => { setSelected(s); setModal('delete') }
