@@ -654,7 +654,7 @@ function Evaluations({ user, onPage }) {
       {/* Lista de entrevistas */}
       {loading ? (
         <div className="text-center py-16 text-slate-400">Cargando...</div>
-      ) : filtered.length === 0 ? (
+      ) : filteredEvals.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-14 text-center">
           <span className="text-5xl block mb-4">📝</span>
           <p className="text-slate-500 font-medium">Sin entrevistas todavía</p>
@@ -669,7 +669,7 @@ function Evaluations({ user, onPage }) {
               ))}</tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(iv=>(
+              {filteredEvals.map(iv=>(
                 <tr key={iv.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-3.5">
                     <button onClick={()=>openView(iv)} className="font-medium text-brand-600 hover:text-brand-800 hover:underline text-left">{patientName(iv.patient_id)}</button>
