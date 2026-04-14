@@ -541,7 +541,7 @@ function Evaluations({ user, onPage }) {
   useEffect(()=>{ load() },[load])
 
   const openCreate = () => {
-    if (!canAddPatient(role, patients.length)) {
+    if (!canAddPatient(role, patients.length, planExpiry)) {
       const limit = PLAN_LIMITS[role]?.maxPatients || 5
       setErr(`Tu plan ${PLAN_LIMITS[role]?.label||'Gratis'} permite hasta ${limit} pacientes. Actualiza para agregar más.`)
       return
@@ -2063,10 +2063,14 @@ const INSTRUMENT_CATEGORIES = [
   { label:'Depresión', value:'Depresión' },
   { label:'Ansiedad', value:'Ansiedad' },
   { label:'Dep/Ans/Estrés', value:'Depresión / Ansiedad / Estrés' },
-  { label:'Ansiedad específica', value:'Ansiedad específica' },
+  { label:'Ansiedad social', value:'Ansiedad social' },
+  { label:'Ansiedad estado', value:'Ansiedad estado' },
+  { label:'Ansiedad rasgo', value:'Ansiedad rasgo' },
   { label:'Autoestima', value:'Autoestima' },
   { label:'Reg. emocional', value:'Regulación emocional' },
   { label:'ACT', value:'Terapias contextuales (ACT)' },
+  { label:'Fusión cognitiva', value:'Fusión cognitiva' },
+  { label:'Valores ACT', value:'Valores y acción comprometida' },
   { label:'Sueño', value:'Calidad del sueño' },
   { label:'Trauma', value:'Estrés postraumático' },
   { label:'Funcionamiento', value:'Funcionamiento y discapacidad' },
@@ -2293,7 +2297,7 @@ function InstrumentApply({ instrument, patient, onSave, onClose, busy }) {
   )
 }
 
-function InstrumentsPage({ user, role }) {
+function InstrumentsPage({ user, role, planExpiry }) {
   const [results, setResults]     = useState([])
   const [patients, setPatients]   = useState([])
   const [loading, setLoading]     = useState(true)
@@ -2341,7 +2345,7 @@ function InstrumentsPage({ user, role }) {
 
   const patientName = pid => patients.find(p=>p.id===pid)?.name || '—'
   const instrList = Object.values(INSTRUMENTS)
-  const filteredInstr = categoryFilter==='all' ? instrList : categoryFilter==='screening' ? instrList.filter(i=>['Depresión','Ansiedad','Depresión / Ansiedad / Estrés'].includes(i.category)) : instrList.filter(i=>i.category===categoryFilter)
+  const filteredInstr = categoryFilter==='all' ? instrList : categoryFilter==='screening' ? instrList.filter(i=>i.group==='Screening general') : instrList.filter(i=>i.category===categoryFilter || i.group===categoryFilter)
   const filteredResults = patientFilter ? results.filter(r=>r.patient_id===patientFilter) : results
   const formatDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'
 
@@ -2373,7 +2377,7 @@ function InstrumentsPage({ user, role }) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredInstr.map(inst=>{
-            const locked = !canUseInstrument(role, inst.key)
+            const locked = !canUseInstrument(role, inst.key, planExpiry)
             return (
               <div key={inst.key} className={`rounded-xl border p-4 transition-all relative ${locked?'bg-slate-50 border-slate-200 opacity-70':'bg-white border-slate-200 hover:border-brand-300 hover:shadow-sm'}`}>
                 {locked && (
@@ -2466,7 +2470,7 @@ function InstrumentsPage({ user, role }) {
                 <p className="text-sm text-slate-500 mb-4">Selecciona el instrumento que deseas aplicar:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {Object.values(INSTRUMENTS).map(inst=>{
-                    const locked = !canUseInstrument(role, inst.key)
+                    const locked = !canUseInstrument(role, inst.key, planExpiry)
                     return (
                       <button key={inst.key}
                         onClick={()=>{ if(!locked){setSelectedInstrument(inst);setStep('patient')} }}
@@ -2785,7 +2789,7 @@ function generateReportHTML(type, data) {
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Psicoval — Reporte</title>${styles}</head><body>${header}${body}</body></html>`
 }
 
-function ReportsPage({ user, role }) {
+function ReportsPage({ user, role, planExpiry }) {
   const [patients, setPatients]           = useState([])
   const [sessions, setSessions]           = useState([])
   const [appointments, setAppointments]   = useState([])
@@ -2864,13 +2868,13 @@ function ReportsPage({ user, role }) {
         <h2 className="text-2xl font-display font-semibold text-slate-800">Reportes</h2>
         <p className="text-slate-500 text-sm mt-0.5">Genera informes clínicos y administrativos listos para imprimir o guardar como PDF</p>
       </div>
-      {!canUseReports(role) && (
+      {!canUseReports(role, planExpiry) && (
         <UpgradeBanner
           feature="Reportes clínicos"
           message="Los reportes en PDF están disponibles desde el plan Básico ($6/mes). Incluye 6 tipos de informe profesional."
         />
       )}
-      {canUseReports(role) && <>
+      {canUseReports(role, planExpiry) && <>
 
       {/* Selector de paciente (para reportes clínicos) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
@@ -3871,7 +3875,7 @@ function PatientDetail({ patient: p, onEdit, onClose, onExport, patSessions=[], 
   )
 }
 
-function Patients({ user, role }) {
+function Patients({ user, role, planExpiry }) {
   const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
@@ -3905,7 +3909,7 @@ function Patients({ user, role }) {
   )
 
   const openCreate = () => {
-    if (!canAddPatient(role, patients.length)) {
+    if (!canAddPatient(role, patients.length, planExpiry)) {
       const limit = PLAN_LIMITS[role]?.maxPatients || 5
       setErr(`Tu plan ${PLAN_LIMITS[role]?.label||'Gratis'} permite hasta ${limit} pacientes. Actualiza para agregar más.`)
       return
@@ -4118,9 +4122,9 @@ function Dashboard({ user, role, planExpiry, onLogout }) {
         {/* Main */}
         <main style={{flex:1, overflowY:'auto'}}>
           {page==='inicio'       && <HomeOverview user={user} role={role} planExpiry={planExpiry} onPage={go} />}
-          {page==='pacientes'    && <Patients user={user} role={role} />}
+          {page==='pacientes'    && <Patients user={user} role={role} planExpiry={planExpiry} />}
           {page==='agenda'       && <Appointments user={user} />}
-          {page==='reportes'     && <ReportsPage user={user} role={role} />}
+          {page==='reportes'     && <ReportsPage user={user} role={role} planExpiry={planExpiry} />}
           {page==='finanzas'     && <FinancesPage user={user} />}
           {page==='evaluaciones' && <Evaluations user={user} onPage={go} />}
           {page==='instrumentos' && <InstrumentsPage user={user} />}
