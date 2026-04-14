@@ -2468,7 +2468,7 @@ function InstrumentsPage({ user, role, planExpiry }) {
             {step==='select' && (
               <div>
                 <p className="text-sm text-slate-500 mb-4">Selecciona el instrumento que deseas aplicar:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
                   {Object.values(INSTRUMENTS).map(inst=>{
                     const locked = !canUseInstrument(role, inst.key, planExpiry)
                     return (
@@ -4127,7 +4127,7 @@ function Dashboard({ user, role, planExpiry, onLogout }) {
           {page==='reportes'     && <ReportsPage user={user} role={role} planExpiry={planExpiry} />}
           {page==='finanzas'     && <FinancesPage user={user} />}
           {page==='evaluaciones' && <Evaluations user={user} onPage={go} />}
-          {page==='instrumentos' && <InstrumentsPage user={user} />}
+          {page==='instrumentos' && <InstrumentsPage user={user} role={role} planExpiry={planExpiry} />}
           {page==='sesiones'     && <Sessions user={user} />}
           {page==='perfil'       && <Profile user={user} />}
           {page==='admin' && role==='admin' && <AdminPanel />}
