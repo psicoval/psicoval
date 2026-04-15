@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Psicoval</title>
+  <meta name="application-name" content="Psicoval"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Psicoval"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="theme-color" content="#1a2460"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234361ee'/><path d='M6 16 Q9 9 12 16 Q15 23 18 16 Q21 9 24 14' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='6' cy='16' r='1.8' fill='white'/><circle cx='24' cy='14' r='1.8' fill='white'/></svg>"/>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234361ee'/><path d='M6 16 Q9 9 12 16 Q15 23 18 16 Q21 9 24 14' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='6' cy='16' r='1.8' fill='white'/><circle cx='24' cy='14' r='1.8' fill='white'/></svg>"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -3395,6 +3403,584 @@ function FinancesPage({ user }) {
     </div>
   )
 }
+
+// ── CONSENTIMIENTO INFORMADO ──────────────────────────────
+const CONSENT_TEMPLATE = `CONSENTIMIENTO INFORMADO PARA PROCESO PSICOLÓGICO
+
+Psicólogo/a: {PROF_NAME}
+{PROF_SPEC}
+{PROF_LIC}
+Ciudad: {PROF_CITY}
+Fecha: {DATE}
+
+Yo, {PATIENT_NAME}, habiendo sido informado/a de manera clara y comprensible sobre el proceso terapéutico que iniciaré, otorgo mi consentimiento libre e informado para participar en el mismo.
+
+INFORMACIÓN SOBRE EL PROCESO TERAPÉUTICO
+
+1. NATURALEZA DEL PROCESO
+El proceso psicológico consiste en sesiones de evaluación, orientación y acompañamiento profesional. El/la psicólogo/a utilizará técnicas y procedimientos validados por la comunidad científica, adaptados a mi situación particular. Las sesiones tienen una duración aproximada de 50 minutos.
+
+2. OBJETIVOS
+Los objetivos del proceso terapéutico serán definidos de manera conjunta entre el/la profesional y yo, y podrán ser revisados y ajustados a lo largo del proceso.
+
+3. PARTICIPACIÓN VOLUNTARIA
+Mi participación en este proceso es completamente voluntaria. Puedo retirar mi consentimiento y dar por terminado el proceso en cualquier momento, sin que ello suponga consecuencia negativa alguna.
+
+4. CONFIDENCIALIDAD
+Toda la información compartida durante el proceso terapéutico es estrictamente confidencial. El/la profesional únicamente puede romper esta confidencialidad en los siguientes casos excepcionales:
+• Riesgo inminente para la vida del paciente u otras personas.
+• Mandato legal o requerimiento judicial.
+• Supervisión clínica profesional (manteniendo la anonimización de datos).
+
+5. USO DE HERRAMIENTAS DIGITALES
+Autorizo el uso de la plataforma Psicoval para el registro y gestión de mi información clínica. Los datos son tratados con estricta confidencialidad y almacenados de manera segura conforme a la Política de Privacidad de Psicoval (psicoval.app/psicoval_legal.html).
+
+6. INSTRUMENTOS DE EVALUACIÓN
+Doy mi consentimiento para la aplicación de instrumentos psicométricos validados que el/la profesional considere pertinentes para la evaluación de mi situación.
+
+7. DERECHOS DEL PACIENTE
+- Recibir información clara sobre el proceso, las técnicas y los objetivos.
+- Hacer preguntas en cualquier momento del proceso.
+- Acceder a la información registrada sobre mi caso.
+- Solicitar derivación a otro profesional si lo considero necesario.
+- Dar por terminado el proceso en cualquier momento.
+
+8. HONORARIOS Y MODALIDAD
+Los honorarios, frecuencia de sesiones y modalidad (presencial/online) han sido acordados previamente con el/la profesional.
+
+DECLARACIÓN DE CONSENTIMIENTO
+
+He leído y comprendido la información anterior. He tenido la oportunidad de hacer preguntas y han sido respondidas satisfactoriamente. Otorgo mi consentimiento libre e informado para participar en el proceso psicológico con el/la profesional indicado/a.
+
+Nombre del paciente: ___________________________________
+Firma: ___________________________________
+Fecha: ___________________________________
+
+Nombre del/la profesional: {PROF_NAME}
+Firma del/la profesional: ___________________________________`
+
+function ConsentPage({ user }) {
+  const [patients, setPatients]   = useState([])
+  const [profile, setProfile]     = useState(null)
+  const [selectedPatient, setSelectedPatient] = useState('')
+  const [loading, setLoading]     = useState(true)
+  const [consents, setConsents]   = useState([])
+  const [modal, setModal]         = useState(false)
+  const [saving, setSaving]       = useState(false)
+  const [signedDate, setSignedDate] = useState(new Date().toISOString().slice(0,10))
+  const [notes, setNotes]         = useState('')
+
+  useEffect(()=>{
+    Promise.all([
+      sb.from('patients').select('id,name').eq('user_id',user.id).order('name'),
+      sb.from('psychologist_profiles').select('*').eq('user_id',user.id).single(),
+      sb.from('informed_consents').select('*').eq('user_id',user.id).order('created_at',{ascending:false})
+    ]).then(([p,pr,c])=>{
+      setPatients(p.data||[])
+      setProfile(pr.data||null)
+      setConsents(c.data||[])
+      setLoading(false)
+    })
+  },[user.id])
+
+  const patientName = pid => patients.find(p=>p.id===pid)?.name||'—'
+  const formatDate  = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'}) : '—'
+
+  const generatePDF = (patientId) => {
+    const pat  = patients.find(p=>p.id===patientId)
+    const prof = profile||{}
+    const now  = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    const text = CONSENT_TEMPLATE
+      .replace(/{PROF_NAME}/g, prof.full_name||'Profesional')
+      .replace(/{PROF_SPEC}/g, prof.specialty ? `Especialidad: ${prof.specialty}` : '')
+      .replace(/{PROF_LIC}/g,  prof.license_number ? `Registro: ${prof.license_number}` : '')
+      .replace(/{PROF_CITY}/g, prof.city||'')
+      .replace(/{DATE}/g,      now)
+      .replace(/{PATIENT_NAME}/g, pat?.name||'Paciente')
+
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+    <title>Consentimiento Informado — ${pat?.name}</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:13px;line-height:1.8;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
+      h1{font-size:18px;text-align:center;color:#1a2460;margin-bottom:4px}
+      .header{text-align:center;border-bottom:2px solid #4361ee;padding-bottom:16px;margin-bottom:20px}
+      .logo{font-family:Georgia,serif;font-size:13px;color:#64748b}
+      pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:12px;line-height:1.8}
+      @media print{body{padding:10px}}
+    </style></head><body>
+    <div class="header">
+      <div class="logo">Psicoval — Plataforma de Evaluación Psicológica</div>
+    </div>
+    <pre>${text}</pre>
+    </body></html>`
+    const w = window.open('','_blank')
+    if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500)}
+  }
+
+  const saveConsent = async () => {
+    if(!selectedPatient) return
+    setSaving(true)
+    await sb.from('informed_consents').insert({
+      user_id:user.id, patient_id:selectedPatient,
+      signed_date:signedDate, notes:notes||null, status:'firmado'
+    })
+    const {data} = await sb.from('informed_consents').select('*').eq('user_id',user.id).order('created_at',{ascending:false})
+    setConsents(data||[])
+    setModal(false); setSelectedPatient(''); setNotes('')
+    setSaving(false)
+  }
+
+  return (
+    <div className="p-4 md:p-8 fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl md:text-2xl font-display font-semibold text-slate-800">Consentimiento Informado</h2>
+          <p className="text-slate-500 text-sm mt-0.5">Genera, registra y gestiona los consentimientos informados de tus pacientes</p>
+        </div>
+        <button onClick={()=>setModal(true)} className="bg-brand-500 hover:bg-brand-600 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+          Nuevo consentimiento
+        </button>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 mb-6">
+        <span className="text-blue-500 flex-shrink-0 text-lg">ℹ️</span>
+        <p className="text-xs text-blue-700 leading-relaxed">El consentimiento informado es un documento ético y legal obligatorio antes de iniciar cualquier proceso terapéutico. Protege tanto al paciente como al profesional. Genera el documento, imprímelo, fírmalo con el paciente y regístralo aquí.</p>
+      </div>
+
+      {loading ? <div className="text-center py-10 text-slate-400">Cargando...</div> : (
+        <>
+        {/* Botón generar documento */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm mb-6">
+          <p className="font-semibold text-slate-700 text-sm mb-3">Generar documento para imprimir</p>
+          <div className="flex gap-3 flex-wrap">
+            <select className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              onChange={e=>setSelectedPatient(e.target.value)} defaultValue="">
+              <option value="">— Seleccionar paciente —</option>
+              {patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <button onClick={()=>selectedPatient&&generatePDF(selectedPatient)}
+              disabled={!selectedPatient}
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg disabled:opacity-40 flex items-center gap-2 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Generar PDF
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de consentimientos */}
+        <h3 className="text-sm font-semibold text-slate-600 mb-3">Consentimientos registrados ({consents.length})</h3>
+        {consents.length===0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+            <span className="text-5xl block mb-3">📋</span>
+            <p className="text-slate-500 font-medium">Sin consentimientos registrados</p>
+            <p className="text-slate-400 text-sm mt-1">Genera un documento, fírmalo con el paciente y regístralo aquí.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>{['Paciente','Fecha de firma','Estado','Notas',''].map((h,i)=>(
+                  <th key={i} className={`px-5 py-3 font-medium text-slate-500 text-left`}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {consents.map(c=>(
+                  <tr key={c.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-3 font-medium text-slate-800">{patientName(c.patient_id)}</td>
+                    <td className="px-5 py-3 text-slate-600">{formatDate(c.signed_date)}</td>
+                    <td className="px-5 py-3"><span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">✓ {c.status}</span></td>
+                    <td className="px-5 py-3 text-slate-500 text-xs">{c.notes||'—'}</td>
+                    <td className="px-5 py-3 text-right">
+                      <button onClick={()=>generatePDF(c.patient_id)} className="text-brand-500 hover:text-brand-700 text-xs font-medium px-2 py-1 rounded hover:bg-brand-50">
+                        Reimprimir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        </>
+      )}
+
+      {/* Modal registrar consentimiento firmado */}
+      {modal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl fade-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-slate-800">Registrar consentimiento firmado</h3>
+              <button onClick={()=>setModal(false)} className="text-slate-400 hover:text-slate-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Paciente *</label>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={selectedPatient} onChange={e=>setSelectedPatient(e.target.value)}>
+                  <option value="">— Seleccionar paciente —</option>
+                  {patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Fecha de firma *</label>
+                <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={signedDate} onChange={e=>setSignedDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones (opcional)</label>
+                <textarea rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                  placeholder="Ej: Firmado en consulta presencial..." value={notes} onChange={e=>setNotes(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={()=>setModal(false)} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm">Cancelar</button>
+              <button onClick={saveConsent} disabled={!selectedPatient||saving} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">
+                {saving?'Guardando...':'Registrar consentimiento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── PROTOCOLO DE RIESGO SUICIDA ───────────────────────────
+const SUICIDE_RISK_LEVELS = [
+  { level:'Bajo', color:'text-green-700', bg:'bg-green-50', border:'border-green-200', badge:'bg-green-100 text-green-800' },
+  { level:'Moderado', color:'text-amber-700', bg:'bg-amber-50', border:'border-amber-200', badge:'bg-amber-100 text-amber-800' },
+  { level:'Alto', color:'text-orange-700', bg:'bg-orange-50', border:'border-orange-200', badge:'bg-orange-100 text-orange-800' },
+  { level:'Muy alto / Inminente', color:'text-red-700', bg:'bg-red-50', border:'border-red-200', badge:'bg-red-100 text-red-800' },
+]
+
+const SUICIDE_RISK_QUESTIONS = [
+  {
+    id:'ideation', label:'Ideación suicida',
+    options:[
+      { score:0, text:'No reporta pensamientos de muerte ni suicidio' },
+      { score:1, text:'Pensamientos pasivos de muerte ("estaría mejor muerto")' },
+      { score:2, text:'Ideación suicida sin plan definido' },
+      { score:3, text:'Ideación suicida con plan específico' },
+      { score:4, text:'Ideación suicida con plan, intención y acceso a medios' },
+    ]
+  },
+  {
+    id:'plan', label:'Plan e intención',
+    options:[
+      { score:0, text:'Sin plan ni intención' },
+      { score:1, text:'Pensó en métodos pero sin plan concreto' },
+      { score:2, text:'Tiene un plan pero sin intención inmediata' },
+      { score:3, text:'Plan definido con intención de actuar' },
+      { score:4, text:'Plan elaborado con preparativos activos' },
+    ]
+  },
+  {
+    id:'history', label:'Intentos previos',
+    options:[
+      { score:0, text:'Sin intentos previos' },
+      { score:1, text:'Autolesiones sin intención suicida' },
+      { score:2, text:'Un intento previo de baja letalidad' },
+      { score:3, text:'Múltiples intentos o un intento de alta letalidad' },
+      { score:4, text:'Intento reciente de alta letalidad' },
+    ]
+  },
+  {
+    id:'protective', label:'Factores protectores',
+    options:[
+      { score:0, text:'Fuertes factores protectores (familia, fe, razones para vivir)' },
+      { score:1, text:'Algunos factores protectores presentes' },
+      { score:2, text:'Factores protectores débiles o ambivalentes' },
+      { score:3, text:'Pocos factores protectores' },
+      { score:4, text:'Ausencia de factores protectores' },
+    ]
+  },
+  {
+    id:'hopelessness', label:'Desesperanza',
+    options:[
+      { score:0, text:'Sin desesperanza — visión positiva del futuro' },
+      { score:1, text:'Desesperanza leve o situacional' },
+      { score:2, text:'Desesperanza moderada' },
+      { score:3, text:'Desesperanza severa — no ve salida' },
+      { score:4, text:'Desesperanza extrema y rígida' },
+    ]
+  },
+  {
+    id:'substance', label:'Uso de sustancias / impulsividad',
+    options:[
+      { score:0, text:'Sin consumo ni impulsividad relevante' },
+      { score:1, text:'Consumo ocasional sin impacto significativo' },
+      { score:2, text:'Consumo regular o impulsividad moderada' },
+      { score:3, text:'Consumo problemático o alta impulsividad' },
+      { score:4, text:'Intoxicación actual o impulsividad extrema' },
+    ]
+  },
+]
+
+const INTERVENTIONS = {
+  'Bajo': [
+    'Psicoeducación sobre salud mental y factores de riesgo.',
+    'Fortalecer factores protectores existentes.',
+    'Establecer red de apoyo social.',
+    'Seguimiento en sesión regular.',
+    'Acordar con el paciente a quién acudir si los pensamientos aumentan.',
+  ],
+  'Moderado': [
+    'Evaluación clínica más detallada del riesgo.',
+    'Elaborar un Plan de Seguridad conjunto con el paciente.',
+    'Involucrar a la red de apoyo (con consentimiento del paciente).',
+    'Considerar incremento de frecuencia de sesiones.',
+    'Evaluar necesidad de derivación psiquiátrica.',
+    'Acordar restricción de acceso a medios letales.',
+  ],
+  'Alto': [
+    'Plan de Seguridad inmediato y detallado.',
+    'Contactar a familiar o persona de confianza del paciente.',
+    'Derivación urgente a psiquiatría.',
+    'Evaluar hospitalización voluntaria.',
+    'Restricción de acceso a medios letales con apoyo familiar.',
+    'Seguimiento telefónico entre sesiones.',
+    'Documentar todas las acciones tomadas.',
+  ],
+  'Muy alto / Inminente': [
+    '⚠️ RIESGO INMINENTE — Actúa de inmediato.',
+    'No dejar al paciente solo bajo ninguna circunstancia.',
+    'Contactar a familiares o red de apoyo de inmediato.',
+    'Activar servicios de emergencia si es necesario (ECU-911).',
+    'Trasladar a urgencias psiquiátricas.',
+    'Documentar todo el proceso y las decisiones tomadas.',
+    'Notificar al supervisor clínico.',
+  ]
+}
+
+function SuicideRiskPage({ user }) {
+  const [patients, setPatients]   = useState([])
+  const [scores, setScores]       = useState({})
+  const [selectedPatient, setSelectedPatient] = useState('')
+  const [notes, setNotes]         = useState('')
+  const [loading, setLoading]     = useState(true)
+  const [assessments, setAssessments] = useState([])
+  const [saving, setSaving]       = useState(false)
+  const [showResult, setShowResult] = useState(false)
+
+  useEffect(()=>{
+    Promise.all([
+      sb.from('patients').select('id,name').eq('user_id',user.id).order('name'),
+      sb.from('suicide_risk_assessments').select('*').eq('user_id',user.id).order('created_at',{ascending:false})
+    ]).then(([p,a])=>{
+      setPatients(p.data||[])
+      setAssessments(a.data||[])
+      setLoading(false)
+    })
+  },[user.id])
+
+  const patientName = pid => patients.find(p=>p.id===pid)?.name||'—'
+  const formatDate  = d => d ? new Date(d).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'
+
+  const totalScore   = Object.values(scores).reduce((s,v)=>s+(v||0),0)
+  const maxScore     = SUICIDE_RISK_QUESTIONS.length * 4
+  const allAnswered  = Object.keys(scores).length === SUICIDE_RISK_QUESTIONS.length
+
+  const getRiskLevel = (score) => {
+    if (score <= 4)  return SUICIDE_RISK_LEVELS[0]
+    if (score <= 9)  return SUICIDE_RISK_LEVELS[1]
+    if (score <= 14) return SUICIDE_RISK_LEVELS[2]
+    return SUICIDE_RISK_LEVELS[3]
+  }
+
+  const riskData = getRiskLevel(totalScore)
+
+  const saveAssessment = async () => {
+    if(!selectedPatient || !allAnswered) return
+    setSaving(true)
+    await sb.from('suicide_risk_assessments').insert({
+      user_id:user.id, patient_id:selectedPatient,
+      scores:scores, total_score:totalScore,
+      risk_level:riskData.level, notes:notes||null
+    })
+    const {data} = await sb.from('suicide_risk_assessments').select('*').eq('user_id',user.id).order('created_at',{ascending:false})
+    setAssessments(data||[])
+    setScores({}); setSelectedPatient(''); setNotes(''); setShowResult(false)
+    setSaving(false)
+  }
+
+  const printAssessment = () => {
+    const pat  = patients.find(p=>p.id===selectedPatient)
+    const now  = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    const interventions = INTERVENTIONS[riskData.level]||[]
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Evaluación Riesgo Suicida</title>
+    <style>body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
+    h1{color:#1a2460;font-size:18px} h2{color:#1a2460;font-size:15px;margin-top:20px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+    .badge{display:inline-block;padding:4px 14px;border-radius:50px;font-weight:700;font-size:14px}
+    .section{background:#f8fafc;border-radius:8px;padding:12px;margin:10px 0}
+    ul{margin:8px 0 0 20px} li{margin-bottom:6px;font-size:13px}
+    .footer{margin-top:30px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;color:#94a3b8;text-align:center}
+    @media print{body{padding:8px}}</style></head><body>
+    <h1>Evaluación de Riesgo Suicida</h1>
+    <p style="color:#64748b;font-size:12px">Paciente: <strong>${pat?.name||'—'}</strong> · Fecha: ${now} · Generado por Psicoval</p>
+    <div style="margin:16px 0">
+      <p style="font-size:12px;color:#64748b">Puntaje total: ${totalScore}/${maxScore}</p>
+      <div class="badge" style="background:${riskData.level==='Bajo'?'#dcfce7':riskData.level==='Moderado'?'#fef3c7':riskData.level==='Alto'?'#ffedd5':'#fee2e2'};color:${riskData.level==='Bajo'?'#166534':riskData.level==='Moderado'?'#92400e':riskData.level==='Alto'?'#9a3412':'#991b1b'}">
+        Riesgo ${riskData.level}
+      </div>
+    </div>
+    <h2>Evaluación por dimensiones</h2>
+    ${SUICIDE_RISK_QUESTIONS.map(q=>{
+      const s = scores[q.id]||0
+      const opt = q.options.find(o=>o.score===s)
+      return `<div class="section"><strong>${q.label}</strong> (${s}/4)<br/><span style="color:#475569">${opt?.text||'—'}</span></div>`
+    }).join('')}
+    <h2>Intervenciones recomendadas</h2>
+    <ul>${interventions.map(i=>`<li>${i}</li>`).join('')}</ul>
+    ${notes?`<h2>Notas clínicas</h2><div class="section">${notes}</div>`:''}
+    <div style="margin-top:40px;display:flex;justify-content:space-between">
+      <div style="border-top:1px solid #334155;padding-top:8px;min-width:200px;text-align:center;font-size:12px">Firma del profesional</div>
+      <div style="border-top:1px solid #334155;padding-top:8px;min-width:200px;text-align:center;font-size:12px">Fecha</div>
+    </div>
+    <div class="footer"><p>Documento generado por Psicoval · ${now} · Confidencial — uso clínico exclusivo</p><p>⚠️ Este instrumento es de apoyo clínico. El criterio profesional del evaluador prevalece sobre cualquier puntuación.</p></div>
+    </body></html>`
+    const w = window.open('','_blank')
+    if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500)}
+  }
+
+  return (
+    <div className="p-4 md:p-8 fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl md:text-2xl font-display font-semibold text-slate-800">Protocolo de Riesgo Suicida</h2>
+          <p className="text-slate-500 text-sm mt-0.5">Evaluación clínica estructurada del riesgo — 6 dimensiones</p>
+        </div>
+      </div>
+
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3 mb-6">
+        <span className="text-red-500 flex-shrink-0 text-lg">⚠️</span>
+        <p className="text-xs text-red-700 leading-relaxed"><strong>Aviso clínico:</strong> Este protocolo es una herramienta de apoyo estructurado. El criterio clínico del profesional evaluador siempre prevalece sobre la puntuación obtenida. En caso de riesgo inminente, actúa de inmediato — no esperes a completar el formulario.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Formulario de evaluación */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <p className="font-semibold text-slate-700 mb-4">Nueva evaluación</p>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Paciente</label>
+            <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              value={selectedPatient} onChange={e=>{setSelectedPatient(e.target.value);setScores({});setShowResult(false)}}>
+              <option value="">— Seleccionar paciente —</option>
+              {patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+
+          <div className="space-y-4 mb-4">
+            {SUICIDE_RISK_QUESTIONS.map(q=>(
+              <div key={q.id} className="border border-slate-200 rounded-xl p-3">
+                <p className="text-sm font-semibold text-slate-700 mb-2">{q.label}</p>
+                <div className="space-y-1.5">
+                  {q.options.map(opt=>(
+                    <label key={opt.score} className={`flex items-start gap-2 cursor-pointer p-2 rounded-lg transition-colors ${scores[q.id]===opt.score?'bg-brand-50 border border-brand-200':'hover:bg-slate-50'}`}>
+                      <input type="radio" name={q.id} value={opt.score} checked={scores[q.id]===opt.score}
+                        onChange={()=>{setScores(s=>({...s,[q.id]:opt.score}));setShowResult(false)}}
+                        className="mt-0.5 flex-shrink-0 accent-brand-500"/>
+                      <span className="text-xs text-slate-600 leading-relaxed">{opt.text}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Notas clínicas (opcional)</label>
+            <textarea rows={3} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+              placeholder="Observaciones adicionales del evaluador..." value={notes} onChange={e=>setNotes(e.target.value)} />
+          </div>
+
+          <button onClick={()=>setShowResult(true)} disabled={!allAnswered||!selectedPatient}
+            className="w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-40 transition-colors">
+            Ver resultado
+          </button>
+        </div>
+
+        {/* Resultado */}
+        <div className="space-y-4">
+          {showResult && allAnswered && (
+            <div className={`rounded-2xl border p-5 ${riskData.bg} ${riskData.border}`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className={`text-lg font-display font-bold ${riskData.color}`}>Riesgo {riskData.level}</p>
+                <span className="text-sm font-semibold text-slate-600">{totalScore}/{maxScore} pts</span>
+              </div>
+              <div className="h-3 bg-white rounded-full overflow-hidden mb-4">
+                <div className={`h-full rounded-full transition-all ${totalScore<=4?'bg-green-400':totalScore<=9?'bg-amber-400':totalScore<=14?'bg-orange-400':'bg-red-500'}`}
+                  style={{width:`${(totalScore/maxScore)*100}%`}} />
+              </div>
+              <p className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">Intervenciones recomendadas</p>
+              <ul className="space-y-1.5">
+                {(INTERVENTIONS[riskData.level]||[]).map((item,i)=>(
+                  <li key={i} className="flex items-start gap-2 text-xs text-slate-700">
+                    <span className="text-brand-500 flex-shrink-0 font-bold">→</span>{item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2 mt-4">
+                <button onClick={printAssessment} className="flex-1 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50 flex items-center justify-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Imprimir
+                </button>
+                <button onClick={saveAssessment} disabled={saving} className="flex-1 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium disabled:opacity-50">
+                  {saving?'Guardando...':'Guardar evaluación'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Historial */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <p className="font-semibold text-slate-700 text-sm mb-3">Evaluaciones anteriores</p>
+            {loading ? <p className="text-slate-400 text-sm">Cargando...</p>
+            : assessments.length===0 ? (
+              <p className="text-slate-400 text-sm text-center py-4">Sin evaluaciones registradas</p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {assessments.map(a=>{
+                  const rd = getRiskLevel(a.total_score)
+                  return (
+                    <div key={a.id} className={`rounded-xl p-3 border ${rd.bg} ${rd.border}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-800 text-sm">{patientName(a.patient_id)}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${rd.badge}`}>Riesgo {a.risk_level}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">{formatDate(a.created_at)} · {a.total_score}/24 pts</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recursos de emergencia */}
+          <div className="bg-slate-800 rounded-2xl p-5">
+            <p className="text-white font-semibold text-sm mb-3">📞 Recursos de emergencia</p>
+            <div className="space-y-2">
+              {[
+                { label:'ECU-911 (Ecuador)', num:'911' },
+                { label:'DINAPEN (niñez/adolescencia)', num:'145' },
+                { label:'Bomberos (emergencias)', num:'102' },
+              ].map(r=>(
+                <div key={r.label} className="flex items-center justify-between">
+                  <span className="text-slate-300 text-xs">{r.label}</span>
+                  <span className="text-white font-bold text-sm">{r.num}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-slate-400 text-xs mt-3">En riesgo inminente: llama al 911 o acompaña al paciente a urgencias psiquiátricas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── ADMIN PANEL ───────────────────────────────────────────
 function AdminPanel() {
   const [users, setUsers] = useState([])
@@ -3584,6 +4170,8 @@ function Sidebar({ page, onPage, user, role, onLogout, onTutorial }) {
         {navItem('sesiones','Sesiones',<Icon d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>)}
         {navItem('reportes','Reportes',<Icon d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>)}
         {navItem('finanzas','Finanzas',<Icon d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>)}
+        {navItem('consentimiento','Consentimiento',<Icon d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>)}
+        {navItem('riesgo','Riesgo suicida',<Icon d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>)}
         {role==='admin' && <div className="pt-3 pb-1"><p className="text-xs font-semibold text-brand-400 uppercase tracking-wider px-3">Administración</p></div>}
         {navItem('admin','Panel Admin',<Icon d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>,true)}
         <button onClick={onTutorial} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-100 hover:bg-brand-700 hover:text-white transition-colors text-left">
@@ -4126,6 +4714,8 @@ function Dashboard({ user, role, planExpiry, onLogout }) {
           {page==='agenda'       && <Appointments user={user} />}
           {page==='reportes'     && <ReportsPage user={user} role={role} planExpiry={planExpiry} />}
           {page==='finanzas'     && <FinancesPage user={user} />}
+          {page==='consentimiento' && <ConsentPage user={user} />}
+          {page==='riesgo'         && <SuicideRiskPage user={user} />}
           {page==='evaluaciones' && <Evaluations user={user} onPage={go} />}
           {page==='instrumentos' && <InstrumentsPage user={user} role={role} planExpiry={planExpiry} />}
           {page==='sesiones'     && <Sessions user={user} />}
@@ -4370,5 +4960,35 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(<AuthProvider><App /></AuthProvider>)
 </script>
+
+<script>
+// ── PWA Install Banner ────────────────────────────────────
+let deferredPrompt = null
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault()
+  deferredPrompt = e
+  const banner = document.getElementById('pwa-banner')
+  if (banner) banner.style.display = 'flex'
+})
+window.addEventListener('appinstalled', () => {
+  const banner = document.getElementById('pwa-banner')
+  if (banner) banner.style.display = 'none'
+})
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt()
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null })
+  }
+}
+</script>
+<div id="pwa-banner" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;background:#1a2460;color:white;border-radius:16px;padding:12px 16px;align-items:center;gap:12px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.3)">
+  <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#4361ee"/><path d="M6 16 Q9 9 12 16 Q15 23 18 16 Q21 9 24 14" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/><circle cx="6" cy="16" r="1.8" fill="white"/><circle cx="24" cy="14" r="1.8" fill="white"/></svg>
+  <div style="flex:1">
+    <p style="font-size:13px;font-weight:700;margin:0">Instalar Psicoval</p>
+    <p style="font-size:11px;color:rgba(255,255,255,.7);margin:0">Accede rápido desde tu pantalla de inicio</p>
+  </div>
+  <button onclick="installPWA()" style="background:#4361ee;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">Instalar</button>
+  <button onclick="document.getElementById('pwa-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:4px">✕</button>
+</div>
 </body>
 </html>
