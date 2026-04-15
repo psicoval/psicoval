@@ -4203,7 +4203,7 @@ function Sidebar({ page, onPage, user, role, onLogout, onTutorial }) {
 }
 
 // ── Pacientes ─────────────────────────────────────────────
-const EMPTY_PATIENT = { name:'',age:'',sex:'',occupation:'',consultation_reason:'',background_personal:'',background_family:'',background_medical:'',presumptive_diagnosis:'',diagnostic_axes:'',process_start_date:'',process_status:'activo',therapeutic_approach:'',session_frequency:'',referral_source:'',notes:'' }
+const EMPTY_PATIENT = { name:'',age:'',sex:'',phone:'',marital_status:'',education_level:'',occupation:'',emergency_contact_name:'',emergency_contact_phone:'',support_network:'',consultation_reason:'',background_personal:'',background_family:'',background_medical:'',presumptive_diagnosis:'',diagnostic_axes:'',process_start_date:'',process_status:'activo',therapeutic_approach:'',session_frequency:'',referral_source:'',notes:'' }
 const STATUS_LABELS = { activo:'Activo', en_pausa:'En pausa', alta:'Alta terapéutica', derivado:'Derivado', cerrado:'Cerrado' }
 const STATUS_COLORS = { activo:'bg-green-100 text-green-700', en_pausa:'bg-yellow-100 text-yellow-700', alta:'bg-blue-100 text-blue-700', derivado:'bg-orange-100 text-orange-700', cerrado:'bg-slate-100 text-slate-600' }
 
@@ -4222,16 +4222,32 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
         <Input label="Nombre completo *" tip="Nombre del paciente. Campo obligatorio." placeholder="Nombre del paciente" value={form.name} onChange={e=>f('name',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
           <Input label="Edad" tip="Edad actual en años cumplidos" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
-          <Select label="Sexo" tip="Sexo biológico del paciente." value={form.sex} onChange={e=>f('sex',e.target.value)}>
+          <Select label="Sexo" value={form.sex} onChange={e=>f('sex',e.target.value)}>
             <option value="">Seleccionar</option><option value="masculino">Masculino</option><option value="femenino">Femenino</option><option value="otro">Otro</option>
           </Select>
         </div>
-        <Input label="Ocupación" tip="Actividad laboral o académica actual." placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Fuente de derivación" tip="Cómo llegó el paciente a tu consulta." value={form.referral_source} onChange={e=>f('referral_source',e.target.value)}>
+          <Input label="Teléfono" tip="Número de contacto del paciente." placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
+          <Select label="Estado civil" value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
+            <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
+          </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Select label="Nivel educativo" value={form.education_level} onChange={e=>f('education_level',e.target.value)}>
+            <option value="">Seleccionar</option><option>Sin escolaridad</option><option>Primaria</option><option>Secundaria</option><option>Bachillerato</option><option>Técnico/Tecnológico</option><option>Universidad</option><option>Posgrado</option>
+          </Select>
+          <Input label="Ocupación" placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
+        </div>
+        <Textarea label="Red de apoyo" tip="Personas significativas que brindan apoyo al paciente (familia, amigos, pareja, comunidad)." rows={2} placeholder="Ej: Vive con su pareja e hijos, tiene contacto frecuente con sus padres..." value={form.support_network} onChange={e=>f('support_network',e.target.value)} />
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Contacto de emergencia" tip="Nombre de persona de contacto en caso de emergencia." placeholder="Nombre del contacto" value={form.emergency_contact_name} onChange={e=>f('emergency_contact_name',e.target.value)} />
+          <Input label="Teléfono de emergencia" placeholder="Teléfono del contacto" value={form.emergency_contact_phone} onChange={e=>f('emergency_contact_phone',e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Select label="Fuente de derivación" value={form.referral_source} onChange={e=>f('referral_source',e.target.value)}>
             <option value="">Seleccionar</option><option>Autorreferido</option><option>Médico</option><option>Familiar</option><option>Otro profesional</option><option>Online</option><option>Institución</option>
           </Select>
-          <Select label="Frecuencia de sesión" tip="Frecuencia acordada de sesiones." value={form.session_frequency} onChange={e=>f('session_frequency',e.target.value)}>
+          <Select label="Frecuencia de sesión" value={form.session_frequency} onChange={e=>f('session_frequency',e.target.value)}>
             <option value="">Seleccionar</option><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>A demanda</option>
           </Select>
         </div>
@@ -4385,41 +4401,572 @@ function exportPatientPDF(patient, profile, interviews, sessions, instrResults) 
   if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500) }
 }
 
-function PatientDetail({ patient: p, onEdit, onClose, onExport, patSessions=[], patInstr=[] }) {
+// ── Paquete primera cita imprimible ──────────────────────
+function generateFirstVisitPrintable(patient, profile) {
+  const p = patient || {}
+  const prof = profile || {}
+  const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+  const lineBlock = (n=1) => Array(n).fill('<div style="border-bottom:1px solid #cbd5e1;min-height:28px;margin-bottom:4px"></div>').join('')
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+  <title>Documentos Primera Cita — ${p.name||'Nuevo Paciente'}</title>
+  <style>
+    @page { margin: 18mm 20mm; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #1e293b; }
+    .page-break { page-break-before: always; }
+    .header { border-bottom: 2px solid #4361ee; padding-bottom: 10px; margin-bottom: 16px; display:flex; justify-content:space-between; align-items:flex-start; }
+    .logo { font-family:Georgia,serif; font-size:20px; color:#1a2460; font-weight:bold; }
+    .prof-info { text-align:right; font-size:10px; color:#64748b; }
+    h1 { color:#1a2460; font-size:15px; margin:0 0 4px; }
+    h2 { color:#1a2460; font-size:13px; margin:14px 0 6px; border-bottom:1px solid #e2e8f0; padding-bottom:3px; }
+    h3 { color:#334155; font-size:11px; margin:10px 0 4px; }
+    .block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:12px; }
+    .block-title { font-size:12px; font-weight:bold; color:#1a2460; margin-bottom:8px; }
+    .field-label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; margin-top:8px; }
+    .tip { font-size:10px; color:#94a3b8; font-style:italic; margin-bottom:4px; }
+    .lines-1 { border-bottom:1px solid #cbd5e1; min-height:28px; margin-bottom:4px; }
+    .lines-2 { } .lines-3 { } .lines-4 { }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .alert-box { background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px 12px; margin-bottom:12px; }
+    .alert-title { color:#b91c1c; font-weight:bold; font-size:12px; margin-bottom:6px; }
+    .safety-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px 12px; margin:8px 0; }
+    .safety-title { color:#166534; font-weight:bold; font-size:12px; margin-bottom:6px; }
+    .badge { display:inline-block; background:#1a2460; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; margin-right:4px; }
+    .patient-data { background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px 12px; margin-bottom:14px; font-size:11px; }
+    table { width:100%; border-collapse:collapse; margin:8px 0; font-size:11px; }
+    th { background:#f1f5f9; text-align:left; padding:5px 8px; color:#64748b; text-transform:uppercase; font-size:10px; }
+    td { padding:5px 8px; border-bottom:1px solid #f1f5f9; }
+    .footer { margin-top:20px; padding-top:10px; border-top:1px solid #e2e8f0; font-size:9px; color:#94a3b8; text-align:center; }
+    @media print { body { font-size:11px; } }
+  </style>
+  </head><body>
+
+  <!-- ===== DOCUMENTO 1: ENTREVISTA INICIAL ===== -->
+  <div class="header">
+    <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Guía de entrevista clínica inicial</div></div>
+    <div class="prof-info">
+      <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
+      <div>${prof.specialty||''}</div>
+      <div>Fecha: ${now}</div>
+    </div>
+  </div>
+
+  <h1>Entrevista Clínica Inicial</h1>
+  <p style="font-size:11px;color:#64748b;margin-bottom:12px">Documento de trabajo para uso en sesión. Llene con letra clara los espacios en blanco. Toda la información es confidencial.</p>
+
+  ${p.name ? `<div class="patient-data"><strong>Paciente:</strong> ${p.name} &nbsp;|&nbsp; <strong>Edad:</strong> ${p.age||'___'} &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>` : `<div class="patient-data"><strong>Paciente:</strong> __________________________________ &nbsp;|&nbsp; <strong>Edad:</strong> _______ &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>`}
+
+  <!-- BLOQUE 1 -->
+  <div class="block">
+    <div class="block-title">🔍 BLOQUE 1 — Análisis del problema</div>
+    <div class="field-label">Descripción del problema principal</div>
+    <div class="tip">Invite al paciente a describir el problema con sus propias palabras. ¿Qué le trae a consulta?</div>
+    ${lineBlock(4)}
+    <div class="field-label">Frecuencia, intensidad y duración</div>
+    <div class="tip">¿Con qué frecuencia ocurre? ¿Qué tan intenso del 0 al 10? ¿Cuánto tiempo dura?</div>
+    ${lineBlock(2)}
+    <div class="field-label">Situaciones desencadenantes</div>
+    <div class="tip">¿En qué momentos, lugares o contextos aparece o se intensifica el problema?</div>
+    ${lineBlock(3)}
+    <div class="field-label">Consecuencias e impacto en su vida</div>
+    <div class="tip">¿Cómo afecta al trabajo, relaciones, actividades cotidianas, bienestar?</div>
+    ${lineBlock(3)}
+    <div class="field-label">Intentos de solución previos</div>
+    <div class="tip">¿Qué ha intentado el paciente para resolver el problema? ¿Con qué resultado?</div>
+    ${lineBlock(2)}
+  </div>
+
+  <!-- BLOQUE 2 -->
+  <div class="block">
+    <div class="block-title">🌐 BLOQUE 2 — Contexto vital</div>
+    <div class="grid2">
+      <div>
+        <div class="field-label">Área laboral / académica</div>
+        <div class="tip">Situación actual, satisfacción, conflictos.</div>
+        ${lineBlock(3)}
+      </div>
+      <div>
+        <div class="field-label">Área familiar</div>
+        <div class="tip">Dinámica familiar, pareja, hijos, familia de origen.</div>
+        ${lineBlock(3)}
+      </div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="field-label">Área social y relaciones</div>
+        <div class="tip">Red de apoyo, amistades, aislamiento.</div>
+        ${lineBlock(3)}
+      </div>
+      <div>
+        <div class="field-label">Área de salud física</div>
+        <div class="tip">Sueño, alimentación, ejercicio, enfermedades.</div>
+        ${lineBlock(3)}
+      </div>
+    </div>
+    <div class="field-label">Área de ocio y tiempo libre</div>
+    <div class="tip">Actividades de disfrute, hobbies. ¿Ha dejado de hacer cosas que disfrutaba?</div>
+    ${lineBlock(2)}
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="header">
+    <div><div class="logo">Psicoval</div></div>
+    <div class="prof-info"><div>${prof.full_name||'Profesional'}</div><div>Entrevista inicial — continuación</div></div>
+  </div>
+
+  <!-- BLOQUE 3 -->
+  <div class="block">
+    <div class="block-title">📂 BLOQUE 3 — Historia clínica ampliada</div>
+    <div class="field-label">Tratamientos psicológicos o psiquiátricos previos</div>
+    <div class="tip">¿Ha recibido terapia o tratamiento psiquiátrico antes? ¿Cuándo, con quién, con qué resultados?</div>
+    ${lineBlock(3)}
+    <div class="field-label">Medicación actual</div>
+    <div class="tip">Fármacos actuales, dosis y prescriptor. Incluye psicofármacos y medicación general relevante.</div>
+    ${lineBlock(2)}
+    <div class="field-label">Eventos vitales significativos</div>
+    <div class="tip">Pérdidas, traumas, cambios importantes en la historia de vida que puedan ser relevantes.</div>
+    ${lineBlock(4)}
+    <div class="field-label">Historia del problema actual</div>
+    <div class="tip">¿Cuándo comenzó el problema? ¿Ha habido períodos de mejoría o recaída? ¿Cómo ha evolucionado?</div>
+    ${lineBlock(3)}
+  </div>
+
+  <!-- BLOQUE 4 -->
+  <div class="block">
+    <div class="block-title">🎯 BLOQUE 4 — Cierre y plan terapéutico</div>
+    <div class="field-label">Objetivos del paciente (en sus palabras)</div>
+    <div class="tip">¿Qué espera conseguir con la terapia? ¿Cómo sería su vida si el problema mejorara?</div>
+    ${lineBlock(3)}
+    <div class="field-label">Objetivos clínicos del profesional</div>
+    <div class="tip">Objetivos terapéuticos formulados por el clínico, basados en la evaluación.</div>
+    ${lineBlock(3)}
+    <div class="field-label">Instrumentos a aplicar en próxima sesión</div>
+    ${lineBlock(2)}
+    <div class="field-label">Observaciones del evaluador</div>
+    <div class="tip">Impresiones clínicas generales, actitud del paciente durante la entrevista, aspectos destacados.</div>
+    ${lineBlock(4)}
+    <div class="grid2" style="margin-top:10px">
+      <div>
+        <div class="field-label">Fecha próxima sesión</div>
+        ${lineBlock(1)}
+      </div>
+      <div>
+        <div class="field-label">Estado: □ Borrador &nbsp; □ Completada</div>
+        <div style="min-height:28px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Psicoval · Documento confidencial de uso clínico exclusivo · ${now}</div>
+
+  <!-- ===== DOCUMENTO 2: PROTOCOLO DE RIESGO SUICIDA ===== -->
+  <div class="page-break"></div>
+  <div class="header">
+    <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Protocolo de evaluación de riesgo suicida</div></div>
+    <div class="prof-info">
+      <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
+      <div>Uso exclusivo del profesional · Confidencial</div>
+      <div>Fecha: ${now}</div>
+    </div>
+  </div>
+
+  <h1>Evaluación de Riesgo Suicida — Guía del Profesional</h1>
+  <p style="font-size:11px;color:#64748b;margin-bottom:10px">Este documento es una guía de evaluación para el profesional. Aplique con criterio clínico. No es una escala diagnóstica definitiva.</p>
+
+  <div class="alert-box">
+    <div class="alert-title">⚠️ Indicadores de alerta — Evalúe ante cualquiera de los siguientes</div>
+    <table>
+      <tr><th>Indicador</th><th>Presente</th><th>Notas</th></tr>
+      <tr><td>Ideación suicida activa (pensamientos frecuentes de hacerse daño)</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Plan específico formulado</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Acceso a medios letales (medicamentos, armas, etc.)</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Intento previo de suicidio</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Aislamiento social severo o reciente</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Desesperanza marcada ("nada tiene sentido")</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Despedidas, regalar pertenencias, poner asuntos en orden</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Consumo reciente de alcohol o sustancias</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+      <tr><td>Pérdida reciente significativa (trabajo, relación, familiar)</td><td>□ Sí &nbsp; □ No</td><td style="border-bottom:1px solid #fecaca"></td></tr>
+    </table>
+  </div>
+
+  <h2>Preguntas clave para la evaluación directa</h2>
+  <p style="font-size:11px;color:#64748b;margin-bottom:8px">Haga estas preguntas de manera directa y empática. Preguntar sobre suicidio no aumenta el riesgo — lo reduce al abrir el espacio de conversación.</p>
+  <div class="block">
+    <div class="field-label">1. "¿Ha tenido pensamientos de hacerse daño o de quitarse la vida?"</div>
+    ${lineBlock(2)}
+    <div class="field-label">2. "¿Con qué frecuencia tiene esos pensamientos? ¿Cuándo ocurren?"</div>
+    ${lineBlock(2)}
+    <div class="field-label">3. "¿Ha pensado en cómo lo haría? ¿Tiene algún plan?"</div>
+    ${lineBlock(2)}
+    <div class="field-label">4. "¿Ha intentado hacerse daño antes? ¿Cuándo y cómo?"</div>
+    ${lineBlock(2)}
+    <div class="field-label">5. "¿Qué le ha impedido actuar hasta ahora? ¿Qué razones tiene para seguir viviendo?"</div>
+    ${lineBlock(2)}
+    <div class="field-label">6. "¿Hay algo que esté sucediendo ahora que haga que los pensamientos sean más intensos?"</div>
+    ${lineBlock(2)}
+  </div>
+
+  <h2>Nivel de riesgo estimado</h2>
+  <table>
+    <tr><th>Nivel</th><th>Criterios orientativos</th><th>Acción sugerida</th><th>Evaluación</th></tr>
+    <tr><td><strong>Bajo</strong></td><td>Ideación pasiva, sin plan, factores protectores fuertes</td><td>Psicoeducación, seguimiento, plan de seguridad</td><td>□</td></tr>
+    <tr><td><strong>Moderado</strong></td><td>Ideación frecuente, plan vago, factores protectores presentes</td><td>Plan de seguridad, aumento de frecuencia, valorar derivación</td><td>□</td></tr>
+    <tr><td><strong>Alto</strong></td><td>Plan específico, acceso a medios, intento previo, desesperanza severa</td><td>Derivación urgente, hospitalización, contacto red de apoyo</td><td>□</td></tr>
+  </table>
+
+  <div style="margin-top:10px">
+    <div class="field-label">Notas de evaluación y decisiones clínicas tomadas</div>
+    ${lineBlock(4)}
+  </div>
+
+  <div class="footer">Psicoval · Documento confidencial · Uso exclusivo del profesional · ${now}</div>
+
+  <!-- ===== DOCUMENTO 3: PLAN DE SEGURIDAD PARA EL PACIENTE ===== -->
+  <div class="page-break"></div>
+  <div class="header">
+    <div><div class="logo">Psicoval</div></div>
+    <div class="prof-info"><div>${prof.full_name||'Tu profesional'}</div><div>Plan personal de seguridad</div></div>
+  </div>
+
+  <h1 style="font-size:17px">Mi Plan Personal de Seguridad</h1>
+  <p style="font-size:11px;color:#475569;margin-bottom:14px">Este documento es tuyo. Complétalo junto a tu psicólogo/a y llévalo contigo. En los momentos difíciles, este plan te recordará los pasos que acordaste seguir.</p>
+
+  <div class="patient-data">
+    <strong>Nombre:</strong> ${p.name||'_______________________________'} &nbsp;|&nbsp;
+    <strong>Fecha de elaboración:</strong> ________________ &nbsp;|&nbsp;
+    <strong>Psicólogo/a:</strong> ${prof.full_name||'_______________________________'}
+  </div>
+
+  <div class="safety-box">
+    <div class="safety-title">✅ Paso 1 — Señales de alerta que debo reconocer en mí mismo/a</div>
+    <p style="font-size:11px;color:#166534;margin-bottom:6px">Anota los pensamientos, emociones o situaciones que indican que estás en un momento difícil:</p>
+    ${lineBlock(3)}
+  </div>
+
+  <div class="safety-box">
+    <div class="safety-title">✅ Paso 2 — Cosas que puedo hacer solo/a para sentirme mejor</div>
+    <p style="font-size:11px;color:#166534;margin-bottom:6px">Actividades que te ayudan a calmarte o distraerte (pasear, música, respiración, escribir...):</p>
+    ${lineBlock(3)}
+  </div>
+
+  <div class="safety-box">
+    <div class="safety-title">✅ Paso 3 — Personas de mi entorno a quienes puedo llamar</div>
+    <table>
+      <tr><th>Nombre</th><th>Relación</th><th>Teléfono</th></tr>
+      <tr><td style="min-width:150px">&nbsp;</td><td></td><td></td></tr>
+      <tr><td>&nbsp;</td><td></td><td></td></tr>
+      <tr><td>&nbsp;</td><td></td><td></td></tr>
+    </table>
+  </div>
+
+  <div class="safety-box">
+    <div class="safety-title">✅ Paso 4 — Recursos de ayuda profesional</div>
+    <table>
+      <tr><th>Recurso</th><th>Contacto</th><th>Disponibilidad</th></tr>
+      <tr><td>Mi psicólogo/a: ${prof.full_name||'_________________'}</td><td>${prof.phone||'_______________'}</td><td>Horario de consulta</td></tr>
+      <tr><td>Línea de crisis Ecuador</td><td>171 (opción 5)</td><td>24 horas</td></tr>
+      <tr><td>Emergencias</td><td>911</td><td>24 horas</td></tr>
+      <tr><td>____________________________</td><td>_______________</td><td>______________</td></tr>
+    </table>
+  </div>
+
+  <div class="safety-box">
+    <div class="safety-title">✅ Paso 5 — Medidas de seguridad acordadas</div>
+    <p style="font-size:11px;color:#166534;margin-bottom:6px">Cosas que acordamos hacer para reducir el acceso a medios que podrían hacerte daño:</p>
+    ${lineBlock(2)}
+  </div>
+
+  <div class="safety-box">
+    <div class="safety-title">💙 Mis razones para seguir</div>
+    <p style="font-size:11px;color:#166534;margin-bottom:6px">Las personas, proyectos o valores que son importantes para mí y por los que vale la pena seguir:</p>
+    ${lineBlock(3)}
+  </div>
+
+  <div style="margin-top:16px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;color:#64748b">
+    <strong>Recuerda:</strong> Este plan no reemplaza la atención profesional. Si sientes que estás en peligro inmediato, llama al 911 o acude a urgencias del hospital más cercano. Tu vida importa.
+  </div>
+
+  <div class="footer">Psicoval · Plan personal de seguridad · Elaborado el ${now} · Este documento es confidencial</div>
+
+  </body></html>`
+
+  const w = window.open('','_blank')
+  if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600) }
+}
+
+// ── Plan Terapéutico IA ───────────────────────────────────
+function TherapeuticPlan({ patient, profile, supabaseUrl }) {
+  const [plan, setPlan] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [editData, setEditData] = useState({})
+
+  const generatePlan = async () => {
+    const p = patient
+    if (!p.consultation_reason && !p.presumptive_diagnosis) {
+      setError('Completa al menos el motivo de consulta antes de generar el plan.'); return
+    }
+    setLoading(true); setError('')
+    const prompt = `Eres un asistente clínico de apoyo para psicólogos. Basándote en la información del paciente, genera un plan terapéutico sugerido de trabajo.
+
+DATOS DEL PACIENTE:
+- Nombre: ${p.name||'No especificado'}
+- Edad: ${p.age||'No especificado'}, Sexo: ${p.sex||'No especificado'}
+- Ocupación: ${p.occupation||'No especificado'}
+- Estado civil: ${p.marital_status||'No especificado'}
+- Motivo de consulta: ${p.consultation_reason||'No especificado'}
+- Antecedentes personales: ${p.background_personal||'No especificados'}
+- Antecedentes familiares: ${p.background_family||'No especificados'}
+- Antecedentes médicos: ${p.background_medical||'No especificados'}
+- Diagnóstico presuntivo: ${p.presumptive_diagnosis||'No especificado'}
+- Formulación del caso: ${p.diagnostic_axes||'No especificada'}
+- Enfoque terapéutico del profesional: ${p.therapeutic_approach||'No especificado (usa enfoque basado en evidencia general)'}
+
+INSTRUCCIONES:
+1. Si se especifica un enfoque terapéutico, adapta el plan a ese modelo. Si no, usa principios clínicos generales basados en evidencia.
+2. Propón objetivos terapéuticos claros, medibles y alcanzables.
+3. Sugiere un número estimado de sesiones y su estructura.
+4. Sugiere estrategias de intervención coherentes con el enfoque.
+5. Sé concreto y práctico. Estas son SUGERENCIAS que el profesional puede editar.
+
+Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown):
+{
+  "objetivos": ["objetivo 1", "objetivo 2", "objetivo 3"],
+  "sesiones_estimadas": "número o rango (ej: 12-16 sesiones)",
+  "estructura_sesiones": "descripción breve de la estructura sugerida",
+  "estrategias": ["estrategia 1", "estrategia 2", "estrategia 3", "estrategia 4"],
+  "instrumentos_sugeridos": ["instrumento 1", "instrumento 2"],
+  "observaciones": "consideraciones clínicas relevantes para este caso"
+}`
+
+    try {
+      const fnUrl = supabaseUrl.replace('https://','https://').replace('.supabase.co','.supabase.co/functions/v1/ai-analysis')
+      const res = await fetch(fnUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt}) })
+      const data = await res.json()
+      const raw = (data.result||'').replace(/```json|```/g,'').trim()
+      const parsed = JSON.parse(raw)
+      setPlan(parsed)
+      setEditData({
+        objetivos: parsed.objetivos.join('
+'),
+        sesiones_estimadas: parsed.sesiones_estimadas,
+        estructura_sesiones: parsed.estructura_sesiones,
+        estrategias: parsed.estrategias.join('
+'),
+        instrumentos_sugeridos: parsed.instrumentos_sugeridos.join('
+'),
+        observaciones: parsed.observaciones
+      })
+    } catch(e) {
+      setError('Error al generar el plan. Intenta de nuevo.')
+    }
+    setLoading(false)
+  }
+
+  const savePlan = () => {
+    setPlan({
+      objetivos: editData.objetivos.split('
+').filter(Boolean),
+      sesiones_estimadas: editData.sesiones_estimadas,
+      estructura_sesiones: editData.estructura_sesiones,
+      estrategias: editData.estrategias.split('
+').filter(Boolean),
+      instrumentos_sugeridos: editData.instrumentos_sugeridos.split('
+').filter(Boolean),
+      observaciones: editData.observaciones
+    })
+    setEditing(false)
+  }
+
+  const printPlan = () => {
+    const p = patient; const prof = profile||{}
+    const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    const listItems = arr => (arr||[]).map(i=>`<li>${i}</li>`).join('')
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+    <title>Plan Terapéutico — ${p.name}</title>
+    <style>
+      @page { margin:18mm 20mm; }
+      body { font-family:Arial,sans-serif; font-size:12px; color:#1e293b; }
+      .header { border-bottom:2px solid #4361ee; padding-bottom:10px; margin-bottom:16px; display:flex; justify-content:space-between; }
+      .logo { font-family:Georgia,serif; font-size:20px; color:#1a2460; font-weight:bold; }
+      h2 { color:#1a2460; font-size:13px; margin:14px 0 6px; border-bottom:1px solid #e2e8f0; padding-bottom:3px; }
+      .section { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:10px; }
+      ul { margin:6px 0 0 16px; } li { margin-bottom:4px; font-size:11px; }
+      p { font-size:11px; margin:4px 0; }
+      .footer { margin-top:20px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:9px; color:#94a3b8; text-align:center; }
+      .note { font-size:10px; color:#94a3b8; font-style:italic; margin-top:12px; }
+    </style></head><body>
+    <div class="header">
+      <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Plan terapéutico</div></div>
+      <div style="text-align:right;font-size:10px;color:#64748b"><div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div><div>${prof.specialty||''}</div><div>Fecha: ${now}</div></div>
+    </div>
+    <h1 style="font-size:15px;color:#1a2460;margin-bottom:4px">Plan Terapéutico — ${p.name}</h1>
+    <p style="font-size:11px;color:#94a3b8;margin-bottom:14px">Enfoque: ${p.therapeutic_approach||'Basado en evidencia'} · Sesiones estimadas: ${plan?.sesiones_estimadas||'—'}</p>
+    <h2>Objetivos terapéuticos</h2><div class="section"><ul>${listItems(plan?.objetivos)}</ul></div>
+    <h2>Estructura de las sesiones</h2><div class="section"><p>${plan?.estructura_sesiones||'—'}</p></div>
+    <h2>Estrategias de intervención</h2><div class="section"><ul>${listItems(plan?.estrategias)}</ul></div>
+    <h2>Instrumentos sugeridos</h2><div class="section"><ul>${listItems(plan?.instrumentos_sugeridos)}</ul></div>
+    <h2>Observaciones clínicas</h2><div class="section"><p>${plan?.observaciones||'—'}</p></div>
+    <p class="note">⚠️ Este plan fue generado con apoyo de IA y editado por el profesional. Es una guía orientativa. La responsabilidad clínica recae exclusivamente en el profesional tratante.</p>
+    <div class="footer">Psicoval · Plan terapéutico · ${now} · Confidencial — uso clínico exclusivo</div>
+    </body></html>`
+    const w = window.open('','_blank')
+    if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500) }
+  }
+
+  if (!plan && !loading) return (
+    <div className="mt-4">
+      {error && <div className="text-xs text-red-600 mb-3 bg-red-50 px-3 py-2 rounded-lg">{error}</div>}
+      <div className="bg-gradient-to-br from-purple-50 to-brand-50 border border-purple-200 rounded-xl p-4 text-center">
+        <div className="text-2xl mb-2">🎯</div>
+        <p className="text-sm font-medium text-slate-700 mb-1">Plan terapéutico con apoyo IA</p>
+        <p className="text-xs text-slate-500 mb-4">La IA analizará los datos del paciente y sugerirá objetivos, estructura de sesiones y estrategias según el enfoque del profesional. Todo es editable.</p>
+        <button onClick={generatePlan} className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+          Generar plan sugerido
+        </button>
+      </div>
+    </div>
+  )
+
+  if (loading) return (
+    <div className="mt-4 text-center py-8">
+      <div className="inline-block w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+      <p className="text-sm text-slate-500">Analizando datos y generando plan...</p>
+    </div>
+  )
+
+  if (editing) return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-sm font-semibold text-slate-700">Editando plan terapéutico</p>
+        <span className="text-xs text-slate-400">Un objetivo/estrategia por línea</span>
+      </div>
+      {[
+        {key:'objetivos', label:'Objetivos terapéuticos', rows:4},
+        {key:'sesiones_estimadas', label:'Sesiones estimadas', rows:1},
+        {key:'estructura_sesiones', label:'Estructura de sesiones', rows:3},
+        {key:'estrategias', label:'Estrategias de intervención', rows:4},
+        {key:'instrumentos_sugeridos', label:'Instrumentos sugeridos', rows:2},
+        {key:'observaciones', label:'Observaciones clínicas', rows:3},
+      ].map(f=>(
+        <div key={f.key}>
+          <label className="text-xs text-slate-400 uppercase tracking-wide">{f.label}</label>
+          <textarea rows={f.rows} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+            value={editData[f.key]} onChange={e=>setEditData(prev=>({...prev,[f.key]:e.target.value}))} />
+        </div>
+      ))}
+      <div className="flex gap-2 pt-1">
+        <button onClick={()=>setEditing(false)} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium">Cancelar</button>
+        <button onClick={savePlan} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium">Guardar cambios</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-slate-700">Plan terapéutico</p>
+        <div className="flex gap-2">
+          <button onClick={()=>setEditing(true)} className="text-xs text-brand-500 hover:text-brand-700 font-medium px-3 py-1.5 rounded-lg hover:bg-brand-50">Editar</button>
+          <button onClick={generatePlan} className="text-xs text-slate-500 hover:text-slate-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100">Regenerar</button>
+          <button onClick={printPlan} className="text-xs text-green-600 hover:text-green-800 font-medium px-3 py-1.5 rounded-lg hover:bg-green-50 flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Imprimir
+          </button>
+        </div>
+      </div>
+      <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
+        <p className="text-xs text-purple-700 font-medium mb-1">📋 Sesiones estimadas: {plan.sesiones_estimadas}</p>
+        <p className="text-xs text-purple-600">{plan.estructura_sesiones}</p>
+      </div>
+      <div>
+        <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Objetivos terapéuticos</p>
+        <ul className="space-y-1">{(plan.objetivos||[]).map((o,i)=><li key={i} className="flex gap-2 text-xs text-slate-700"><span className="text-brand-400 font-bold mt-0.5">{i+1}.</span>{o}</li>)}</ul>
+      </div>
+      <div>
+        <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Estrategias de intervención</p>
+        <ul className="space-y-1">{(plan.estrategias||[]).map((e,i)=><li key={i} className="flex gap-2 text-xs text-slate-700"><span className="text-green-500">•</span>{e}</li>)}</ul>
+      </div>
+      {plan.instrumentos_sugeridos?.length>0 && <div>
+        <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">Instrumentos sugeridos</p>
+        <div className="flex flex-wrap gap-1">{plan.instrumentos_sugeridos.map((ins,i)=><span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-100">{ins}</span>)}</div>
+      </div>}
+      {plan.observaciones && <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+        <p className="text-xs text-amber-700 font-medium mb-1">💡 Observaciones clínicas</p>
+        <p className="text-xs text-amber-600">{plan.observaciones}</p>
+      </div>}
+      <p className="text-xs text-slate-400 italic">Plan generado con apoyo IA. Edítalo según tu criterio clínico.</p>
+    </div>
+  )
+}
+
+function PatientDetail({ patient: p, onEdit, onClose, onExport, patSessions=[], patInstr=[], profile=null, supabaseUrl='' }) {
   const [detailTab, setDetailTab] = useState('ficha')
   const Field = ({ label, value }) => !value ? null : <div><p className="text-xs text-slate-400 mb-0.5">{label}</p><p className="text-sm text-slate-700 leading-relaxed">{value}</p></div>
   const Section = ({ title, children }) => <div className="mb-5"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{title}</p><div className="space-y-3">{children}</div></div>
+  const tabs = [
+    {id:'ficha', label:'Ficha'},
+    {id:'plan', label:'Plan terapéutico'},
+    {id:'sesiones', label:`Sesiones (${patSessions.length})`},
+    {id:'instrumentos', label:`Instrumentos (${patInstr.length})`},
+  ]
   return (
     <div>
-      <div className="flex items-start justify-between mb-5 pb-4 border-b border-slate-100">
+      {/* Cabecera del paciente */}
+      <div className="flex items-start justify-between mb-4 pb-4 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 text-lg font-bold">{p.name.charAt(0).toUpperCase()}</div>
-          <div><h4 className="font-semibold text-slate-800">{p.name}</h4><p className="text-slate-500 text-sm">{[p.age?`${p.age} años`:null,p.sex,p.occupation].filter(Boolean).join(' · ')}</p></div>
+          <div>
+            <h4 className="font-semibold text-slate-800">{p.name}</h4>
+            <p className="text-slate-500 text-sm">{[p.age?`${p.age} años`:null,p.sex,p.marital_status,p.occupation].filter(Boolean).join(' · ')}</p>
+            {(p.phone||p.emergency_contact_name) && <p className="text-slate-400 text-xs mt-0.5">{p.phone&&`📞 ${p.phone}`}{p.phone&&p.emergency_contact_name&&' · '}{p.emergency_contact_name&&`🆘 ${p.emergency_contact_name}${p.emergency_contact_phone?' ('+p.emergency_contact_phone+')':''}`}</p>}
+          </div>
         </div>
-        {p.process_status && <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[p.process_status]||STATUS_COLORS.activo}`}>{STATUS_LABELS[p.process_status]}</span>}
+        <div className="flex flex-col items-end gap-2">
+          {p.process_status && <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[p.process_status]||STATUS_COLORS.activo}`}>{STATUS_LABELS[p.process_status]}</span>}
+          <button onClick={()=>generateFirstVisitPrintable(p, profile)} className="text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Preparar primera cita
+          </button>
+        </div>
       </div>
-      {/* Tabs dentro de ficha */}
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4">
-        {['ficha','sesiones','instrumentos'].map(t=>(
-          <button key={t} type="button" onClick={()=>setDetailTab(t)}
-            className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${detailTab===t?'bg-white text-slate-800 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>
-            {t==='ficha'?'Ficha clínica':t==='sesiones'?`Sesiones (${patSessions.length})`:`Instrumentos (${patInstr.length})`}
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 overflow-x-auto">
+        {tabs.map(t=>(
+          <button key={t.id} type="button" onClick={()=>setDetailTab(t.id)}
+            className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors whitespace-nowrap px-2 ${detailTab===t.id?'bg-white text-slate-800 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>
+            {t.label}
           </button>
         ))}
       </div>
-      <div className="max-h-80 overflow-y-auto pr-1 space-y-1">
+
+      <div className="max-h-96 overflow-y-auto pr-1 space-y-1">
         {detailTab==='ficha' && <>
+          <Section title="Datos personales">
+            <Field label="Teléfono" value={p.phone}/>
+            <Field label="Estado civil" value={p.marital_status}/>
+            <Field label="Nivel educativo" value={p.education_level}/>
+            <Field label="Ocupación" value={p.occupation}/>
+            <Field label="Red de apoyo" value={p.support_network}/>
+            {p.emergency_contact_name && <Field label="Contacto de emergencia" value={`${p.emergency_contact_name}${p.emergency_contact_phone?' — '+p.emergency_contact_phone:''}`}/>}
+          </Section>
           <Section title="Consulta"><Field label="Motivo de consulta" value={p.consultation_reason}/><Field label="Fuente de derivación" value={p.referral_source}/><Field label="Frecuencia de sesión" value={p.session_frequency}/><Field label="Fecha de inicio" value={p.process_start_date}/><Field label="Enfoque terapéutico" value={p.therapeutic_approach}/></Section>
           <Section title="Antecedentes"><Field label="Personales" value={p.background_personal}/><Field label="Familiares" value={p.background_family}/><Field label="Médicos" value={p.background_medical}/></Section>
-          <Section title="Diagnóstico"><Field label="Diagnóstico presuntivo" value={p.presumptive_diagnosis}/><Field label="Formulación del caso" value={p.diagnostic_axes}/></Section>
+          <Section title="Diagnóstico y formulación"><Field label="Diagnóstico presuntivo" value={p.presumptive_diagnosis}/><Field label="Formulación del caso" value={p.diagnostic_axes}/></Section>
           {p.notes && <Section title="Notas"><Field label="" value={p.notes}/></Section>}
         </>}
+
+        {detailTab==='plan' && (
+          <TherapeuticPlan patient={p} profile={profile} supabaseUrl={supabaseUrl} />
+        )}
+
         {detailTab==='sesiones' && (
           patSessions.length===0 ? (
             <div className="text-center py-8 text-slate-400 text-sm">Sin sesiones registradas para este paciente</div>
           ) : (
             <div className="space-y-3">
-              {patSessions.map(s=>(
+              {patSessions.sort((a,b)=>new Date(b.session_date)-new Date(a.session_date)).map(s=>(
                 <div key={s.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-slate-700 text-sm">Sesión #{s.session_number||'—'} — {s.session_date||'—'}</span>
@@ -4433,6 +4980,7 @@ function PatientDetail({ patient: p, onEdit, onClose, onExport, patSessions=[], 
             </div>
           )
         )}
+
         {detailTab==='instrumentos' && (
           patInstr.length===0 ? (
             <div className="text-center py-8 text-slate-400 text-sm">Sin instrumentos aplicados a este paciente</div>
@@ -4451,6 +4999,7 @@ function PatientDetail({ patient: p, onEdit, onClose, onExport, patSessions=[], 
           )
         )}
       </div>
+
       <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-slate-100">
         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cerrar</button>
         <button onClick={onExport} className="px-4 py-2 rounded-lg border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 text-sm font-medium flex items-center gap-1.5">
@@ -4474,6 +5023,7 @@ function Patients({ user, role, planExpiry }) {
   const [sessions, setSessions] = useState([])
   const [instrResults, setInstrResults] = useState([])
   const [profile, setProfile] = useState(null)
+  const [interviews, setInterviews] = useState([])
   const load = useCallback(async () => {
     setLoading(true)
     const [pRes, sRes, iRes, prRes] = await Promise.all([
@@ -4486,6 +5036,9 @@ function Patients({ user, role, planExpiry }) {
     setSessions(sRes.data || [])
     setInstrResults(iRes.data || [])
     setProfile(prRes.data || null)
+    // Load interviews silently
+    const { data: ivData } = await sb.from('initial_interviews').select('*').eq('user_id', user.id)
+    setInterviews(ivData || [])
     setLoading(false)
   }, [user.id])
   useEffect(()=>{ load() },[load])
@@ -4511,7 +5064,7 @@ function Patients({ user, role, planExpiry }) {
   const save = async (form) => {
     if (!form.name.trim()) return setErr('El nombre es requerido')
     setBusy(true); setErr('')
-    const payload = { user_id:user.id, name:form.name.trim(), age:form.age?parseInt(form.age):null, sex:form.sex||null, occupation:form.occupation||null, consultation_reason:form.consultation_reason||null, background_personal:form.background_personal||null, background_family:form.background_family||null, background_medical:form.background_medical||null, presumptive_diagnosis:form.presumptive_diagnosis||null, diagnostic_axes:form.diagnostic_axes||null, process_start_date:form.process_start_date||null, process_status:form.process_status||'activo', therapeutic_approach:form.therapeutic_approach||null, session_frequency:form.session_frequency||null, referral_source:form.referral_source||null, notes:form.notes||null }
+    const payload = { user_id:user.id, name:form.name.trim(), age:form.age?parseInt(form.age):null, sex:form.sex||null, phone:form.phone||null, marital_status:form.marital_status||null, education_level:form.education_level||null, occupation:form.occupation||null, support_network:form.support_network||null, emergency_contact_name:form.emergency_contact_name||null, emergency_contact_phone:form.emergency_contact_phone||null, consultation_reason:form.consultation_reason||null, background_personal:form.background_personal||null, background_family:form.background_family||null, background_medical:form.background_medical||null, presumptive_diagnosis:form.presumptive_diagnosis||null, diagnostic_axes:form.diagnostic_axes||null, process_start_date:form.process_start_date||null, process_status:form.process_status||'activo', therapeutic_approach:form.therapeutic_approach||null, session_frequency:form.session_frequency||null, referral_source:form.referral_source||null, notes:form.notes||null }
     let error
     if (modal==='edit') { ;({ error } = await sb.from('patients').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selected.id)) }
     else { ;({ error } = await sb.from('patients').insert(payload)) }
@@ -4578,7 +5131,7 @@ function Patients({ user, role, planExpiry }) {
           </table>
         </div>
       )}
-      {modal==='view' && selected && <Modal title="Ficha clínica" onClose={close} wide><PatientDetail patient={selected} onEdit={()=>setModal('edit')} onClose={close} /></Modal>}
+      {modal==='view' && selected && <Modal title="Ficha clínica" onClose={close} wide><PatientDetail patient={selected} onEdit={()=>setModal('edit')} onClose={close} onExport={()=>exportPatientPDF(selected,profile,interviews||[],sessions,instrResults)} patSessions={sessions.filter(s=>s.patient_id===selected.id)} patInstr={instrResults.filter(r=>r.patient_id===selected.id)} profile={profile} supabaseUrl={sb.supabaseUrl||'https://lgbpuddqjzcbszmnuclb.supabase.co'} /></Modal>}
       {(modal==='create'||modal==='edit') && <Modal title={modal==='edit'?'Editar ficha':'Nueva ficha de paciente'} onClose={close} wide><PatientForm initial={modal==='edit'?selected:null} onSave={save} onClose={close} busy={busy} err={err} /></Modal>}
       {modal==='delete' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
