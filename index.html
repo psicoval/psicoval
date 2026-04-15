@@ -4000,8 +4000,9 @@ function AdminPanel() {
   const [search, setSearch] = useState('')
   const load = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await sb.from('admin_users_view').select('*').order('created_at', { ascending: false })
+    const { data, error } = await sb.rpc('get_admin_users')
     if (!error) setUsers(data || [])
+    else console.error('Admin load error:', error)
     setLoading(false)
   }, [])
   useEffect(()=>{ load() },[load])
