@@ -1,0 +1,23 @@
+{
+  "name": "Psicoval",
+  "short_name": "Psicoval",
+  "description": "Plataforma de evaluación psicológica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2460",
+  "theme_color": "#1a2460",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='48' fill='%234361ee'/><path d='M36 96 Q54 54 72 96 Q90 138 108 96 Q126 54 144 84' stroke='white' stroke-width='15' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='36' cy='96' r='11' fill='white'/><circle cx='144' cy='84' r='11' fill='white'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%234361ee'/><path d='M96 256 Q144 144 192 256 Q240 368 288 256 Q336 144 384 224' stroke='white' stroke-width='40' stroke-linecap='round' stroke-linejoin='round' fill='none'/><circle cx='96' cy='256' r='29' fill='white'/><circle cx='384' cy='224' r='29' fill='white'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
