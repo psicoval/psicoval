@@ -4747,14 +4747,11 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
       const parsed = JSON.parse(raw)
       setPlan(parsed)
       setEditData({
-        objetivos: parsed.objetivos.join('
-'),
+        objetivos: parsed.objetivos.join('\n'),
         sesiones_estimadas: parsed.sesiones_estimadas,
         estructura_sesiones: parsed.estructura_sesiones,
-        estrategias: parsed.estrategias.join('
-'),
-        instrumentos_sugeridos: parsed.instrumentos_sugeridos.join('
-'),
+        estrategias: parsed.estrategias.join('\n'),
+        instrumentos_sugeridos: parsed.instrumentos_sugeridos.join('\n'),
         observaciones: parsed.observaciones
       })
     } catch(e) {
@@ -4765,14 +4762,11 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
 
   const savePlan = () => {
     setPlan({
-      objetivos: editData.objetivos.split('
-').filter(Boolean),
+      objetivos: editData.objetivos.split('\n').filter(Boolean),
       sesiones_estimadas: editData.sesiones_estimadas,
       estructura_sesiones: editData.estructura_sesiones,
-      estrategias: editData.estrategias.split('
-').filter(Boolean),
-      instrumentos_sugeridos: editData.instrumentos_sugeridos.split('
-').filter(Boolean),
+      estrategias: editData.estrategias.split('\n').filter(Boolean),
+      instrumentos_sugeridos: editData.instrumentos_sugeridos.split('\n').filter(Boolean),
       observaciones: editData.observaciones
     })
     setEditing(false)
