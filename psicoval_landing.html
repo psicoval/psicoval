@@ -592,6 +592,19 @@
       <h2 class="section-title">Precios accesibles<br/></h2>
       <p class="section-sub">Sin contratos. Sin compromisos. Cancela cuando quieras. Todos los planes incluyen actualizaciones gratuitas.</p>
     </div>
+
+    <!-- Toggle mensual/anual -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px" class="fade-up">
+      <span id="lbl-monthly" style="font-size:14px;font-weight:700;color:var(--c-brand3)">Mensual</span>
+      <button id="billing-toggle" onclick="toggleBilling()" aria-label="Cambiar facturación" style="width:52px;height:28px;border-radius:50px;border:none;background:var(--c-brand);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+        <span id="toggle-knob" style="position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;display:block"></span>
+      </button>
+      <span id="lbl-annual" style="font-size:14px;font-weight:600;color:var(--c-muted)">
+        Anual
+        <span style="display:inline-block;background:#d1fae5;color:#065f46;font-size:11px;font-weight:800;padding:2px 8px;border-radius:50px;margin-left:6px;letter-spacing:.04em">2 MESES GRATIS</span>
+      </span>
+    </div>
+
     <div class="pricing-grid fade-up">
       <!-- GRATIS -->
       <div class="plan-card">
@@ -620,9 +633,9 @@
         <p class="plan-label">Plan Básico</p>
         <div class="plan-price">
           <span class="plan-currency">$</span>
-          <span class="plan-amount">10</span>
+          <span class="plan-amount" id="price-basic">10</span>
         </div>
-        <p class="plan-period">por mes · facturación mensual</p>
+        <p class="plan-period" id="period-basic">por mes · facturación mensual</p>
         <p class="plan-desc">Todo lo que un psicólogo independiente necesita para su práctica diaria.</p>
         <ul class="plan-features">
           <li>Hasta 30 pacientes</li>
@@ -634,7 +647,7 @@
           <li>Reportes en PDF</li>
           <li class="no">Todos los instrumentos (17)</li>
         </ul>
-        <a href="https://psicoval.vercel.app" class="plan-cta solid">Comenzar por $6/mes</a>
+        <a href="https://psicoval.vercel.app" class="plan-cta solid" id="cta-basic">Comenzar por $10/mes</a>
       </div>
 
       <!-- PREMIUM -->
@@ -642,9 +655,9 @@
         <p class="plan-label">Plan Premium</p>
         <div class="plan-price">
           <span class="plan-currency">$</span>
-          <span class="plan-amount">15</span>
+          <span class="plan-amount" id="price-premium">15</span>
         </div>
-        <p class="plan-period">por mes · facturación mensual</p>
+        <p class="plan-period" id="period-premium">por mes · facturación mensual</p>
         <p class="plan-desc">Para psicólogos que quieren aprovechar al máximo todas las herramientas clínicas.</p>
         <ul class="plan-features">
           <li>Pacientes ilimitados</li>
@@ -657,7 +670,7 @@
           <li>Comparativo pre-post</li>
           <li>Reporte de alta terapéutica</li>
         </ul>
-        <a href="https://psicoval.vercel.app" class="plan-cta outline">Comenzar por $9/mes</a>
+        <a href="https://psicoval.vercel.app" class="plan-cta outline" id="cta-premium">Comenzar por $15/mes</a>
       </div>
     </div>
 
@@ -666,6 +679,37 @@
     </p>
   </div>
 </section>
+
+<script>
+  var isAnnual = false;
+  function toggleBilling() {
+    isAnnual = !isAnnual;
+    var knob = document.getElementById('toggle-knob');
+    var lblM = document.getElementById('lbl-monthly');
+    var lblA = document.getElementById('lbl-annual');
+    knob.style.left = isAnnual ? '28px' : '4px';
+    lblM.style.color = isAnnual ? 'var(--c-muted)' : 'var(--c-brand3)';
+    lblM.style.fontWeight = isAnnual ? '600' : '700';
+
+    if (isAnnual) {
+      // Básico: $100/año → $8.33/mes
+      document.getElementById('price-basic').textContent = '100';
+      document.getElementById('period-basic').textContent = 'por año · equivale a $8.33/mes · ahorras $20';
+      document.getElementById('cta-basic').textContent = 'Comenzar por $100/año';
+      // Premium: $150/año → $12.50/mes
+      document.getElementById('price-premium').textContent = '150';
+      document.getElementById('period-premium').textContent = 'por año · equivale a $12.50/mes · ahorras $30';
+      document.getElementById('cta-premium').textContent = 'Comenzar por $150/año';
+    } else {
+      document.getElementById('price-basic').textContent = '10';
+      document.getElementById('period-basic').textContent = 'por mes · facturación mensual';
+      document.getElementById('cta-basic').textContent = 'Comenzar por $10/mes';
+      document.getElementById('price-premium').textContent = '15';
+      document.getElementById('period-premium').textContent = 'por mes · facturación mensual';
+      document.getElementById('cta-premium').textContent = 'Comenzar por $15/mes';
+    }
+  }
+</script>
 
 <!-- ── FAQ ── -->
 <section class="faq" id="faq">
