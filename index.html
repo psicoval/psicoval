@@ -6202,119 +6202,319 @@ function generateFirstVisitPrintable(patient, profile) {
   </style>
   </head><body>
 
-  <!-- ===== DOCUMENTO 1: ENTREVISTA INICIAL ===== -->
+  <!-- ===== DOCUMENTO 1: ENTREVISTA CLÍNICA INICIAL v4 ===== -->
   <div class="header">
-    <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Guía de entrevista clínica inicial</div></div>
+    <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Entrevista clínica inicial · Guía de uso en sesión</div></div>
     <div class="prof-info">
       <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
-      <div>${prof.specialty||''}</div>
+      <div>${prof.specialty||''} ${prof.license_number?'· Reg. '+prof.license_number:''}</div>
       <div>Fecha: ${now}</div>
     </div>
   </div>
 
   <h1>Entrevista Clínica Inicial</h1>
-  <p style="font-size:11px;color:#64748b;margin-bottom:12px">Documento de trabajo para uso en sesión. Llene con letra clara los espacios en blanco. Toda la información es confidencial.</p>
+  ${p.name
+    ? `<div class="patient-data"><strong>Paciente:</strong> ${p.name} &nbsp;|&nbsp; <strong>Edad:</strong> ${p.age||'___'} &nbsp;|&nbsp; <strong>Ocupación:</strong> ${p.occupation||'_______________'} &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>`
+    : `<div class="patient-data"><strong>Paciente:</strong> ________________________________ &nbsp;|&nbsp; <strong>Edad:</strong> _______ &nbsp;|&nbsp; <strong>Ocupación:</strong> _________________ &nbsp;|&nbsp; <strong>Fecha:</strong> ______________</div>`
+  }
 
-  ${p.name ? `<div class="patient-data"><strong>Paciente:</strong> ${p.name} &nbsp;|&nbsp; <strong>Edad:</strong> ${p.age||'___'} &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>` : `<div class="patient-data"><strong>Paciente:</strong> __________________________________ &nbsp;|&nbsp; <strong>Edad:</strong> _______ &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>`}
+  <!-- SEGURIDAD: RIESGO SUICIDA -->
+  <div class="alert-box">
+    <div class="alert-title">⚠ Verificación de seguridad — Completar primero</div>
+    <div class="field-label">Nivel de ideación suicida</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin:3px 0 6px">
+      ${['□ Sin ideación','□ Ideación pasiva','□ Activa sin plan','□ Con plan','□ Intento previo'].map(o=>`<span style="border:1px solid #fca5a5;border-radius:3px;padding:2px 8px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="grid2" style="margin-top:4px">
+      <div>
+        <div class="field-label" style="color:#b91c1c">Factores de riesgo inmediato</div>
+        <div style="display:flex;flex-direction:column;gap:3px;margin-top:3px">
+          ${['□ ¿Tiene plan específico?','□ ¿Tiene acceso a medios?','□ ¿Intención inmediata?'].map(o=>`<span style="font-size:9.5px">${o}</span>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="field-label" style="color:#166534">Factores protectores</div>
+        <div style="display:flex;flex-direction:column;gap:3px;margin-top:3px">
+          ${['□ ¿Red de apoyo disponible?','□ ¿Puede estar solo/a con seguridad?'].map(o=>`<span style="font-size:9.5px">${o}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div style="font-size:8.5px;color:#b91c1c;font-style:italic;margin-top:4px">Si hay ideación activa, plan o intento previo → aplicar protocolo completo de riesgo antes de continuar</div>
+  </div>
 
   <!-- BLOQUE 1 -->
   <div class="block">
-    <div class="block-title">🔍 BLOQUE 1 — Análisis del problema</div>
-    <div class="field-label">Descripción del problema principal</div>
-    <div class="tip">Invite al paciente a describir el problema con sus propias palabras. ¿Qué le trae a consulta?</div>
+    <div class="block-title" style="color:#0C447C">1 · Motivo de consulta y análisis del problema</div>
+
+    <div class="field-label">Motivo de consulta (en palabras del paciente)</div>
+    <div class="tip">Registrar textualmente lo que el paciente refiere como problema principal</div>
     ${lineBlock(4)}
-    <div class="field-label">Frecuencia, intensidad y duración</div>
-    <div class="tip">¿Con qué frecuencia ocurre? ¿Qué tan intenso del 0 al 10? ¿Cuánto tiempo dura?</div>
+
+    <div class="grid2" style="margin-top:6px">
+      <div>
+        <div class="field-label">Duración</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Menos de 1 mes','□ 1–3 meses','□ 3–6 meses','□ 6–12 meses','□ 1–2 años','□ Más de 2 años','□ Crónico'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Inicio</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Gradual','□ Brusco','□ Tras evento específico','□ No identifica'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+        <div class="field-label" style="margin-top:5px">Curso</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Estable','□ Progresivo','□ Episódico','□ Fluctuante'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:6px">
+      <div>
+        <div class="field-label">Intensidad del malestar (rodear número)</div>
+        <div style="display:flex;gap:0;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;margin-top:3px">
+          ${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;border-right:1px solid #e2e8f0">${n}</span>`).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:#94a3b8;margin-top:1px"><span>ninguno</span><span>extremo</span></div>
+      </div>
+      <div>
+        <div class="field-label">Frecuencia</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Varias veces al día','□ Diariamente','□ Varias veces/sem','□ 1–2 veces/sem','□ Ocasionalmente'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="field-label" style="margin-top:6px">Áreas de vida afectadas</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+      ${['□ Trabajo/estudios','□ Pareja','□ Familia','□ Vida social','□ Sueño','□ Alimentación','□ Actividad física','□ Ocio/hobbies','□ Autocuidado','□ Sexualidad'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+
+    <div class="field-label" style="margin-top:6px">Intentos de solución previos</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;margin-bottom:4px">
+      ${['□ Ninguno','□ Terapia psicológica','□ Medicación','□ Apoyo social','□ Autocuidado','□ Actividad física','□ Cambios de vida'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="field-label">Resultados:</div>
     ${lineBlock(2)}
-    <div class="field-label">Situaciones desencadenantes</div>
-    <div class="tip">¿En qué momentos, lugares o contextos aparece o se intensifica el problema?</div>
-    ${lineBlock(3)}
-    <div class="field-label">Consecuencias e impacto en su vida</div>
-    <div class="tip">¿Cómo afecta al trabajo, relaciones, actividades cotidianas, bienestar?</div>
-    ${lineBlock(3)}
-    <div class="field-label">Intentos de solución previos</div>
-    <div class="tip">¿Qué ha intentado el paciente para resolver el problema? ¿Con qué resultado?</div>
-    ${lineBlock(2)}
+
+    <div class="field-label" style="margin-top:6px;color:#3C3489">Eje funcional A-B-C</div>
+    <div class="grid2" style="margin-top:3px">
+      <div>
+        <div class="field-label">Disparadores / antecedentes</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Situaciones sociales','□ Pensamientos específicos','□ Emociones intensas','□ Contexto laboral/académico','□ Conflictos interpersonales','□ Estar solo/a','□ Cansancio/fatiga','□ Horario nocturno','□ Falta de estructura/rutina'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+        <div class="field-label" style="margin-top:4px">Otros:</div>
+        ${lineBlock(1)}
+      </div>
+      <div>
+        <div class="field-label">Consecuencias</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Alivio inmediato','□ Evitación/escape','□ Conflictos relacionales','□ Culpa/vergüenza','□ Aislamiento','□ Malestar prolongado','□ Conducta compensatoria','□ Búsqueda de apoyo'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- BLOQUE 2 -->
   <div class="block">
-    <div class="block-title">🌐 BLOQUE 2 — Contexto vital</div>
-    <div class="grid2">
+    <div class="block-title" style="color:#27500A">2 · Contexto vital</div>
+    <div class="field-label">Escalas de satisfacción (rodear número del 0 al 10)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+      ${[['Laboral/académica'],['Pareja/familia'],['Social/amistades'],['Calidad del sueño']].map(([lbl])=>`
+        <div>
+          <div style="font-size:9px;color:#64748b;margin-bottom:2px">${lbl}</div>
+          <div style="display:flex;gap:0;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden">
+            ${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:8.5px;border-right:1px solid #e2e8f0">${n}</span>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="grid2" style="margin-top:6px">
       <div>
-        <div class="field-label">Área laboral / académica</div>
-        <div class="tip">Situación actual, satisfacción, conflictos.</div>
-        ${lineBlock(3)}
+        <div class="field-label">Actividad física</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Sedentario','□ Ocasional (1×/sem)','□ Regular (2–3×/sem)','□ Frecuente (4+×/sem)'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
       </div>
       <div>
-        <div class="field-label">Área familiar</div>
-        <div class="tip">Dinámica familiar, pareja, hijos, familia de origen.</div>
-        ${lineBlock(3)}
+        <div class="field-label">Hábitos alimentarios</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Adecuados','□ Irregulares','□ Alterados — restricción','□ Alterados — exceso','□ Muy alterados'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
       </div>
     </div>
-    <div class="grid2">
-      <div>
-        <div class="field-label">Área social y relaciones</div>
-        <div class="tip">Red de apoyo, amistades, aislamiento.</div>
-        ${lineBlock(3)}
-      </div>
-      <div>
-        <div class="field-label">Área de salud física</div>
-        <div class="tip">Sueño, alimentación, ejercicio, enfermedades.</div>
-        ${lineBlock(3)}
-      </div>
+    <div class="field-label" style="margin-top:5px">Red de apoyo</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+      ${['□ Pareja','□ Familia cercana','□ Amigos cercanos','□ Compañeros trabajo','□ Comunidad/fe','□ Mascotas','□ Sin red significativa'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
     </div>
-    <div class="field-label">Área de ocio y tiempo libre</div>
-    <div class="tip">Actividades de disfrute, hobbies. ¿Ha dejado de hacer cosas que disfrutaba?</div>
+    <div class="field-label" style="margin-top:5px">Observaciones:</div>
     ${lineBlock(2)}
   </div>
 
-
   <!-- BLOQUE 3 -->
   <div class="block">
-    <div class="block-title">📂 BLOQUE 3 — Historia clínica ampliada</div>
-    <div class="field-label">Tratamientos psicológicos o psiquiátricos previos</div>
-    <div class="tip">¿Ha recibido terapia o tratamiento psiquiátrico antes? ¿Cuándo, con quién, con qué resultados?</div>
-    ${lineBlock(3)}
-    <div class="field-label">Medicación actual</div>
-    <div class="tip">Fármacos actuales, dosis y prescriptor. Incluye psicofármacos y medicación general relevante.</div>
+    <div class="block-title" style="color:#633806">3 · Historia clínica</div>
+    <div class="field-label">Tratamiento psicológico previo</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;margin-bottom:4px">
+      ${['□ Sin tratamiento previo','□ 1 proceso','□ 2–3 procesos','□ Más de 3','□ Tratamiento paralelo actual'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="field-label">Detalles (enfoques, resultados, motivo de finalización):</div>
     ${lineBlock(2)}
-    <div class="field-label">Eventos vitales significativos</div>
-    <div class="tip">Pérdidas, traumas, cambios importantes en la historia de vida que puedan ser relevantes.</div>
-    ${lineBlock(4)}
-    <div class="field-label">Historia del problema actual</div>
-    <div class="tip">¿Cuándo comenzó el problema? ¿Ha habido períodos de mejoría o recaída? ¿Cómo ha evolucionado?</div>
-    ${lineBlock(3)}
+    <div class="grid2" style="margin-top:5px">
+      <div>
+        <div class="field-label">Medicación actual</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Sin medicación','□ Psicofármaco','□ Médica general'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+        <div class="field-label" style="margin-top:3px">Nombre/dosis:</div>
+        ${lineBlock(1)}
+      </div>
+      <div>
+        <div class="field-label">Antecedentes médicos</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Ninguno','□ Enfermedad crónica','□ Neurológica','□ Dolor crónico','□ Trastorno del sueño','□ Endocrino/metabólico'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="field-label" style="margin-top:5px">Eventos vitales significativos</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;margin-bottom:4px">
+      ${['□ Pérdida familiar','□ Separación/divorcio','□ Pérdida de empleo','□ Enfermedad propia/familiar','□ Trauma/abuso','□ Accidente','□ Migración','□ Cambio laboral','□ Embarazo/maternidad','□ Ninguno'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    ${lineBlock(2)}
+    <div class="field-label" style="margin-top:5px">Consumo de sustancias</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-top:3px">
+      ${[['Alcohol'],['Tabaco'],['Cannabis'],['Otras']].map(([lbl])=>`
+        <div>
+          <div style="font-size:9px;font-weight:bold;color:#475569;margin-bottom:2px">${lbl}</div>
+          ${['□ No consume','□ Ocasional','□ Frecuente','□ Diario','□ Problemático'].map(o=>`<div style="font-size:8.5px">${o}</div>`).join('')}
+        </div>`).join('')}
+    </div>
   </div>
 
   <!-- BLOQUE 4 -->
   <div class="block">
-    <div class="block-title">🎯 BLOQUE 4 — Cierre y plan terapéutico</div>
-    <div class="field-label">Objetivos del paciente (en sus palabras)</div>
-    <div class="tip">¿Qué espera conseguir con la terapia? ¿Cómo sería su vida si el problema mejorara?</div>
-    ${lineBlock(3)}
-    <div class="field-label">Objetivos clínicos del profesional</div>
-    <div class="tip">Objetivos terapéuticos formulados por el clínico, basados en la evaluación.</div>
-    ${lineBlock(3)}
-    <div class="field-label">Instrumentos a aplicar en próxima sesión</div>
-    ${lineBlock(2)}
-    <div class="field-label">Observaciones del evaluador</div>
-    <div class="tip">Impresiones clínicas generales, actitud del paciente durante la entrevista, aspectos destacados.</div>
-    ${lineBlock(4)}
-    <div class="grid2" style="margin-top:10px">
+    <div class="block-title" style="color:#3C3489">4 · Evaluación clínica</div>
+    <div class="field-label">Examen del estado mental</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:3px">
+      ${[
+        ['Apariencia',['Adecuada','Descuidada','Llamativa','Deteriorada']],
+        ['Lenguaje',['Normal','Enlentecido','Acelerado','Incoherente']],
+        ['Psicomotricidad',['Normal','Inhibida','Agitada']],
+        ['Pensamiento',['Lógico','Rumiativo','Desorganizado','Ideas sobrevaloradas']],
+        ['Afecto',['Congruente','Incongruente','Embotado','Lábil']],
+        ['Contacto con realidad',['Conservado','Parcialmente alterado','Alterado']],
+      ].map(([lbl,opts])=>`
+        <div>
+          <div style="font-size:8.5px;font-weight:bold;color:#475569;margin-bottom:2px">${lbl}</div>
+          ${opts.map(o=>`<div style="font-size:8.5px">□ ${o}</div>`).join('')}
+        </div>`).join('')}
+    </div>
+    <div class="field-label" style="margin-top:5px">Estado de ánimo (palabras del paciente):</div>
+    ${lineBlock(1)}
+
+    <div class="grid2" style="margin-top:5px">
       <div>
-        <div class="field-label">Fecha próxima sesión</div>
-        ${lineBlock(1)}
+        <div class="field-label">Estado de ánimo</div>
+        ${['□ Tristeza persistente','□ Anhedonia','□ Irritabilidad','□ Labilidad emocional','□ Desesperanza'].map(o=>`<div style="font-size:9px">${o}</div>`).join('')}
+        <div class="field-label" style="margin-top:4px">Cognitivos</div>
+        ${['□ Rumiación','□ Dificultad concentración','□ Fusión cognitiva','□ Evitación experiencial','□ Desconexión de valores'].map(o=>`<div style="font-size:9px">${o}</div>`).join('')}
       </div>
       <div>
-        <div class="field-label">Estado: □ Borrador &nbsp; □ Completada</div>
-        <div style="min-height:28px"></div>
+        <div class="field-label">Ansiedad</div>
+        ${['□ Preocupación excesiva','□ Tensión muscular','□ Evitación social','□ Ataques de pánico','□ Hipervigilancia'].map(o=>`<div style="font-size:9px">${o}</div>`).join('')}
+        <div class="field-label" style="margin-top:4px">Conductuales / funcionales</div>
+        ${['□ Aislamiento social','□ Procrastinación severa','□ Desregulación emocional','□ Flashbacks/reexperimentación','□ Alteración del sueño','□ Baja autoestima'].map(o=>`<div style="font-size:9px">${o}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="field-label" style="margin-top:5px">Impresión diagnóstica — Categoría clínica</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+      ${['□ T. depresivo','□ TAG','□ T. de pánico','□ Fobia específica/social','□ TEPT','□ TOC','□ T. adaptativo','□ T. de personalidad','□ Por definir'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="field-label" style="margin-top:4px">Problema contextual principal</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+      ${['□ Duelo','□ Dif. relacionales','□ Estrés laboral/académico','□ Crisis vital','□ Conflicto familiar','□ Problema de pareja','□ Ninguno'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="field-label" style="margin-top:4px">Notas diagnósticas:</div>
+    ${lineBlock(1)}
+    <div class="field-label" style="margin-top:5px">Severidad global (marcar después de la evaluación)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:3px">
+      <div style="border:1px solid #86efac;background:#f0fdf4;border-radius:4px;padding:5px;text-align:center"><div style="font-size:9.5px;font-weight:bold;color:#166534">□ Leve</div><div style="font-size:8px;color:#64748b;font-style:italic">Funcionalidad conservada</div></div>
+      <div style="border:1px solid #fcd34d;background:#fffbeb;border-radius:4px;padding:5px;text-align:center"><div style="font-size:9.5px;font-weight:bold;color:#92400e">□ Moderado</div><div style="font-size:8px;color:#64748b;font-style:italic">Interferencia clara</div></div>
+      <div style="border:1px solid #fca5a5;background:#fef2f2;border-radius:4px;padding:5px;text-align:center"><div style="font-size:9.5px;font-weight:bold;color:#991b1b">□ Grave</div><div style="font-size:8px;color:#64748b;font-style:italic">Deterioro significativo</div></div>
+    </div>
+  </div>
+
+  <!-- BLOQUE 5 -->
+  <div class="block">
+    <div class="block-title" style="color:#085041">5 · Formulación clínica preliminar</div>
+    <div class="field-label">Problema central operacionalizado</div>
+    ${lineBlock(3)}
+    <div class="field-label" style="margin-top:4px">Variables que mantienen el problema</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+      ${['□ Evitación conductual','□ Evitación experiencial','□ Refuerzo negativo (escape)','□ Rumiación/preocupación','□ Conductas de seguridad','□ Refuerzo social inadvertido','□ Déficit de habilidades','□ Creencias disfuncionales','□ Fusión cognitiva','□ Falta contacto con valores','□ Aislamiento/falta apoyo'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="grid2" style="margin-top:5px">
+      <div>
+        <div class="field-label">Factores predisponentes:</div>
+        ${lineBlock(2)}
+      </div>
+      <div>
+        <div class="field-label">Factores protectores</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
+          ${['□ Red de apoyo activa','□ Motivación al cambio','□ Buena introspección','□ Exp. previa en terapia','□ Estabilidad económica','□ Claridad de valores','□ Habilidades afrontamiento'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
+        </div>
       </div>
     </div>
   </div>
-  <div class="footer">Psicoval · Documento confidencial de uso clínico exclusivo · ${now}</div>
 
-  <!-- ===== DOCUMENTO 2: PROTOCOLO DE RIESGO SUICIDA ===== -->
+  <!-- BLOQUE 6 -->
+  <div class="block">
+    <div class="block-title" style="color:#712B13">6 · Objetivos y plan</div>
+    <div class="field-label">Expectativas del paciente:</div>
+    ${lineBlock(2)}
+    <div class="field-label" style="margin-top:4px;color:#92400e">Objetivo conductual observable <span style="font-weight:normal;font-style:italic;color:#94a3b8">¿Qué estaría haciendo diferente si mejora?</span></div>
+    ${lineBlock(2)}
+    <div class="grid2" style="margin-top:5px">
+      <div>
+        <div class="field-label">Motivación al cambio (rodear)</div>
+        <div style="display:flex;gap:0;border:1px solid #cbd5e1;border-radius:3px;overflow:hidden;margin-top:3px">
+          ${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;border-right:1px solid #e2e8f0">${n}</span>`).join('')}
+        </div>
+        <div class="field-label" style="margin-top:5px">Insight</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">
+          ${['□ Nulo','□ Parcial','□ Adecuado','□ Elevado'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Frecuencia de sesiones</div>
+        ${['□ Semanal','□ Quincenal','□ Mensual','□ Intensiva (2×/sem)'].map(o=>`<div style="font-size:9px">${o}</div>`).join('')}
+        <div class="field-label" style="margin-top:4px">Derivación</div>
+        ${['□ No requiere','□ Psiquiatría','□ Médico general','□ Neurología','□ Urgencias'].map(o=>`<div style="font-size:9px">${o}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field-label" style="margin-top:5px">Instrumentos confirmados para sesión 2:</div>
+    ${lineBlock(1)}
+  </div>
+
+  <!-- CIERRE -->
+  <div class="block">
+    <div class="block-title" style="color:#334155">Cierre y observaciones</div>
+    <div class="field-label">¿La sesión siguió el curso esperado?</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;margin-bottom:4px">
+      ${['□ Sí — todos los bloques completados','□ Parcialmente','□ No — tomó un rumbo diferente'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 8px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="field-label">Si no/parcialmente — razones</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;margin-bottom:4px">
+      ${['□ Crisis emocional','□ Resistencia/evitación','□ Desregulación emocional','□ Falta de tiempo','□ Revelación de trauma','□ Intervención de crisis','□ Surgió tema urgente','□ Fatiga del paciente'].map(o=>`<span style="border:1px solid #cbd5e1;border-radius:3px;padding:2px 6px;font-size:9px">${o}</span>`).join('')}
+    </div>
+    <div class="field-label">Observaciones del evaluador:</div>
+    ${lineBlock(4)}
+  </div>
+
+  <div class="footer">Psicoval · Entrevista clínica inicial v4 · ${now} · Documento de trabajo confidencial</div>
+
+    <!-- ===== DOCUMENTO 2: PROTOCOLO DE RIESGO SUICIDA ===== -->
   <div class="page-break"></div>
   <div class="header">
     <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Protocolo de evaluación de riesgo suicida</div></div>
