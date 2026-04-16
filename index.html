@@ -151,17 +151,17 @@ function Modal({ title, onClose, children, wide }) {
 
 // ── Tutorial ──────────────────────────────────────────────
 const TUTORIAL_STEPS = [
-  { icon:'👋', title:'¡Bienvenido a Psicoval!', body:'Psicoval es tu plataforma de evaluación psicológica para psicólogos independientes de cualquier enfoque. Gestiona pacientes, aplica 17 instrumentos validados, registra sesiones, genera reportes y usa análisis con IA.' },
-  { icon:'👤', title:'Tu perfil profesional', body:'Empieza completando tu perfil: nombre, especialidad, número de colegiado, ciudad y descripción profesional. Esta información aparece automáticamente en todos los reportes que generes.' },
-  { icon:'🧑‍⚕️', title:'Gestión de pacientes', body:'En "Pacientes" registras a tus consultantes con ficha clínica completa en 3 pestañas: datos básicos, ficha clínica (motivo de consulta, antecedentes) y proceso terapéutico (diagnóstico, formulación y estado).' },
-  { icon:'📋', title:'Evaluaciones — Entrevista inicial', body:'En "Evaluaciones" realizas la entrevista inicial estructurada en 4 bloques: análisis del problema, contexto vital, historia clínica ampliada y cierre con plan terapéutico.' },
-  { icon:'🤖', title:'Análisis clínico con IA', body:'En el Bloque 4 de la entrevista, el botón de IA genera un diagnóstico presuntivo sugerido y un plan de intervención usando Groq (IA gratuita). Es apoyo clínico, no reemplaza tu criterio profesional.' },
-  { icon:'📊', title:'Instrumentos psicométricos (17)', body:'En "Instrumentos" aplicas pruebas validadas clasificadas por área: screening general (PHQ-9, GAD-7, DASS-21), depresión (CES-D), autoestima (Rosenberg), regulación emocional (DERS-16), ACT (AAQ-II, CFQ, VLQ), ansiedad específica (LSAS, STAI), sueño (PSQI), trauma (PCL-5), funcionamiento (WHODAS), procrastinación (GPS) y personalidad (NEO-FFI).' },
-  { icon:'🗓️', title:'Agenda de citas', body:'En "Agenda" programas y visualizas citas en lista o calendario mensual. Haz clic en cualquier día del calendario para crear una cita con la fecha prellenada automáticamente.' },
-  { icon:'📈', title:'Seguimiento de sesiones', body:'En "Sesiones" registras el trabajo de cada encuentro: contenido, intervenciones, respuesta del paciente, tareas y estado emocional de inicio a cierre con barra visual de progreso.' },
-  { icon:'📄', title:'Reportes clínicos', body:'En "Reportes" generas 6 tipos de informe: entrevista inicial, resultados de instrumentos, evolución del paciente, comparativo pre-post, alta terapéutica y agenda del profesional. Se abren listos para imprimir o guardar como PDF.' },
+  { icon:'👋', title:'Bienvenido a Psicoval', body:'Psicoval es la plataforma clínica digital para psicólogos de cualquier enfoque. Centraliza todo el proceso terapéutico: expediente del paciente, plan terapéutico, sesiones, instrumentos y documentos clínicos.' },
+  { icon:'👤', title:'Paso 1 — Tu perfil profesional', body:'Comienza por completar tu perfil: nombre completo, especialidad, número de registro y ciudad. Esta información aparece automáticamente en todos los documentos y reportes que generes. Es el primer paso antes de registrar pacientes.' },
+  { icon:'🧑‍⚕️', title:'Paso 2 — Registra al paciente', body:'En "Pacientes" crea la ficha con datos personales (teléfono, estado civil, nivel educativo, red de apoyo, contacto de emergencia) y datos clínicos (motivo de consulta, antecedentes, diagnóstico, enfoque terapéutico).' },
+  { icon:'🖨️', title:'Paso 3 — Prepara la primera cita', body:'Desde la ficha del paciente, usa el botón "Primera cita" para generar e imprimir: la entrevista inicial en blanco con espacios para escribir, el protocolo de riesgo suicida para el profesional y el plan de seguridad para entregar al paciente.' },
+  { icon:'🎯', title:'Paso 4 — Plan terapéutico', body:'Después de la primera cita, ingresa los datos de la entrevista en la ficha del paciente. Desde la pestaña "Plan" la IA sugiere objetivos terapéuticos, estructura de sesiones y estrategias según el enfoque del profesional. Todo es editable e imprimible.' },
+  { icon:'💬', title:'Paso 5 — Registro de sesiones', body:'En la pestaña "Sesiones" del expediente registra cada encuentro: contenido trabajado, intervenciones aplicadas, respuesta del paciente, tareas asignadas y estado emocional al inicio y cierre. El historial queda organizado cronológicamente.' },
+  { icon:'📊', title:'Paso 6 — Instrumentos psicométricos', body:'En la pestaña "Instrumentos" aplica cualquiera de los 17 disponibles directamente desde el expediente del paciente. Los resultados muestran puntaje total, puntuaciones por dimensiones cuando el instrumento las tiene, puntos de corte y gráfico comparativo entre aplicaciones.' },
+  { icon:'⚠️', title:'Protocolo de riesgo suicida', body:'En la pestaña "Riesgo" del expediente evalúa el riesgo suicida en 6 dimensiones. Puedes aplicarlo cuantas veces sea necesario — el historial queda guardado para comparar. Cada evaluación es imprimible.' },
+  { icon:'🗓️', title:'Agenda de citas', body:'En "Agenda" programa y visualiza citas en lista o calendario mensual. Haz clic en cualquier día del calendario para crear una cita con la fecha prellenada automáticamente.' },
   { icon:'❓', title:'Íconos de ayuda', body:'Los íconos ? junto a los campos explican qué información ingresar. Puedes volver a este tutorial en cualquier momento desde el menú lateral.' },
-  { icon:'🚀', title:'¡Listo para comenzar!', body:'Ruta sugerida: perfil → paciente → entrevista inicial → instrumentos → agenda → sesiones → reportes. ¡Bienvenido a Psicoval!' },
+  { icon:'🚀', title:'El flujo completo', body:'Perfil → Nuevo paciente → Primera cita (imprimir documentos) → Ingresar entrevista → Plan terapéutico → Sesiones → Instrumentos → Riesgo. Todo desde el expediente del paciente.' },
 ]
 function TutorialModal({ onClose }) {
   const [step, setStep] = useState(0)
@@ -1828,6 +1828,12 @@ const INSTRUMENTS = {
     options:['Casi nunca (1)','A veces (2)','La mitad del tiempo (3)','Con frecuencia (4)','Casi siempre (5)'],
     optionValues:[1,2,3,4,5],
     questions:['Cuando estoy molesto/a, me avergüenza sentirme de esa manera','Cuando estoy molesto/a, tengo dificultad para concentrarme','Cuando estoy molesto/a, pierdo el control de mis comportamientos','Cuando estoy molesto/a, creo que voy a quedarme sintiéndome así por mucho tiempo','Cuando estoy molesto/a, creo que acabaré sintiéndome muy deprimido/a','Cuando estoy molesto/a, tengo dificultad para concentrarme en otras cosas','Cuando estoy molesto/a, actúo fuera de control','Cuando estoy molesto/a, me siento avergonzado/a de mí mismo/a por sentirme de esa manera','Cuando estoy molesto/a, encuentro difícil pensar en cualquier otra cosa','Cuando estoy molesto/a, me irritan conmigo mismo/a por sentirme de esa manera','Cuando estoy molesto/a, empiezo a sentirme muy mal conmigo mismo/a','Cuando estoy molesto/a, pierdo el control sobre mis comportamientos','Cuando estoy molesto/a, tengo dificultad para pensar en otra cosa','Cuando estoy molesto/a, nada de lo que hago me ayuda a sentirme mejor','Cuando estoy molesto/a, me siento fuera de control','Cuando estoy molesto/a, creo que quedarme así es todo lo que puedo hacer'],
+    subscales:[
+      {name:'No aceptación de emociones',items:[0,7,9,10],max:20,cutoff:null},
+      {name:'Dificultad para actuar hacia metas',items:[1,5,8,12],max:20,cutoff:null},
+      {name:'Dificultad de control de impulsos',items:[2,6,11,14],max:20,cutoff:null},
+      {name:'Acceso limitado a estrategias',items:[3,4,13,15],max:20,cutoff:null},
+    ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
       if(score<=32) return {level:'Regulación emocional adecuada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Las dificultades en regulación emocional son mínimas.'}
@@ -1887,7 +1893,7 @@ const INSTRUMENTS = {
       const composite = imp.reduce((s,v,i)=>s+(v*act[i]),0)/(imp.reduce((a,b)=>a+b,0)||1)
       return {avgImp:avgImp.toFixed(1), avgAct:avgAct.toFixed(1), composite:composite.toFixed(1)}
     },
-    interpret:(sc)=>({level:'Valores evaluados', desc:`Importancia media: ${sc.avgImp}/10. Consistencia de acción: ${sc.avgAct}/10. Índice ponderado de vida valiosa: ${sc.composite}/10.`}),
+    interpret:(sc)=>({level:'Valores evaluados', desc:`Importancia media: ${sc.avgImp}/10 · Consistencia de acción: ${sc.avgAct}/10 · Índice vida valiosa ponderado: ${sc.composite}/10`}),
     maxScore:10
   },
 
@@ -1962,6 +1968,13 @@ const INSTRUMENTS = {
     options:['Muy buena / Ninguna vez (0)','Bastante buena / Menos de 1 vez por semana (1)','Bastante mala / 1 o 2 veces por semana (2)','Muy mala / 3 o más veces por semana (3)'],
     optionValues:[0,1,2,3],
     questions:['¿Cómo valoraría la calidad de su sueño en general?','¿Con qué frecuencia ha tenido problemas para conciliar el sueño en los primeros 30 minutos?','¿Con qué frecuencia ha tomado medicamentos para dormir (recetados o no)?','¿Con qué frecuencia ha tenido dificultades para mantenerse despierto mientras conducía, comía o realizaba alguna actividad social?','¿Ha tenido problemas para dormir porque no puede dormir en menos de 30 minutos?','¿Ha tenido problemas porque se despertó en la mitad de la noche o temprano por la mañana?','¿Ha tenido problemas de sueño porque ha tenido que levantarse para ir al servicio?'],
+    subscales:[
+      {name:'Calidad subjetiva del sueño',items:[0],max:3,cutoff:2},
+      {name:'Latencia del sueño',items:[1],max:3,cutoff:2},
+      {name:'Uso de medicación para dormir',items:[2],max:3,cutoff:2},
+      {name:'Disfunción diurna',items:[3],max:3,cutoff:2},
+      {name:'Perturbaciones del sueño',items:[4,5,6],max:9,cutoff:5},
+    ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
       if(score<=4)  return {level:'Buena calidad del sueño',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Calidad del sueño adecuada. No se evidencian alteraciones significativas.'}
@@ -1981,6 +1994,12 @@ const INSTRUMENTS = {
     options:['Nada en absoluto (0)','Un poco (1)','Moderadamente (2)','Bastante (3)','Extremadamente (4)'],
     optionValues:[0,1,2,3,4],
     questions:['Recuerdos repetitivos, involuntarios y angustiosos de la experiencia estresante','Sueños angustiosos recurrentes sobre la experiencia estresante','Sentirse o actuar como si la experiencia estresante estuviera ocurriendo de nuevo (como si estuviera reviviendo la experiencia)','Sentirse muy molesto/a cuando algo le recuerda la experiencia estresante','Tener reacciones físicas fuertes (corazón acelerado, dificultad para respirar, sudoración) cuando algo le recuerda la experiencia estresante','Evitar memorias, pensamientos o sentimientos relacionados con la experiencia estresante','Evitar cosas externas que le recuerden la experiencia estresante (personas, lugares, conversaciones, actividades, objetos o situaciones)','Problemas para recordar partes importantes de la experiencia estresante','Tener creencias muy negativas sobre usted mismo/a, otras personas o el mundo','Culparse a usted mismo/a u otras personas por la experiencia estresante o por lo que ocurrió después','Tener sentimientos muy negativos (miedo, horror, ira, culpa o vergüenza)','Pérdida de interés en actividades que antes le gustaban','Sentirse alejado o distante de otras personas','Ser incapaz de experimentar sentimientos positivos (incapacidad para sentir felicidad o amor)','Comportamiento irritable, explosiones de ira o actuar agresivamente','Correr riesgos o hacer cosas que podrían hacerle daño','Estar en "alerta máxima" o en guardia, en estado de hipervigilancia','Sobresaltarse con facilidad','Dificultad para concentrarse','Problemas para dormir'],
+    subscales:[
+      {name:'Reexperimentación',items:[0,1,2,3,4],max:20,cutoff:null},
+      {name:'Evitación',items:[5,6],max:8,cutoff:null},
+      {name:'Cognición y estado anímico negativo',items:[7,8,9,10,11,12,13],max:28,cutoff:null},
+      {name:'Activación y reactividad',items:[14,15,16,17,18,19],max:24,cutoff:null},
+    ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
       if(score<=32) return {level:'Sin TEPT probable',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Puntaje por debajo del umbral clínico. No se sugiere diagnóstico probable de TEPT.'}
@@ -1999,6 +2018,11 @@ const INSTRUMENTS = {
     options:['Ninguna (1)','Leve (2)','Moderada (3)','Grave (4)','Extrema o no puede hacerlo (5)'],
     optionValues:[1,2,3,4,5],
     questions:['Concentrarse en hacer algo durante diez minutos','Recordar cosas importantes que tiene que hacer','Analizar y encontrar soluciones a los problemas de la vida diaria','Aprender una nueva tarea (por ejemplo, cómo llegar a un nuevo lugar)','En general ¿cuánta dificultad ha tenido para entender lo que dicen las personas?','Iniciar y mantener una conversación','Ocuparse de sus responsabilidades del hogar','Hacer sus actividades domésticas más importantes terminadas','Terminar sus actividades domésticas tan rápido como era necesario','Unirse a actividades comunitarias (por ejemplo, fiestas, actividades religiosas u otras) de la misma manera que cualquier otra persona','¿Cuánta dificultad ha tenido para vivir con dignidad a causa de las actitudes y acciones de otras personas?','¿Cuánta dificultad ha tenido haciendo sus actividades cotidianas por su problema de salud?'],
+    subscales:[
+      {name:'Cognición',items:[0,1,2,3,4,5],max:30,cutoff:null},
+      {name:'Actividades cotidianas',items:[6,7,8],max:15,cutoff:null},
+      {name:'Participación social',items:[9,10,11],max:15,cutoff:null},
+    ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
       if(score<=18) return {level:'Sin discapacidad o mínima',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'El nivel de funcionamiento es adecuado. Discapacidad mínima o inexistente.'}
@@ -2217,73 +2241,142 @@ function InstrumentApply({ instrument, patient, onSave, onClose, busy }) {
 
         {/* Resultado */}
         {showResult && scores !== null && (
-          <div className={`rounded-xl border p-4 ${interpData?.bg||'bg-slate-50'} ${interpData?.border||'border-slate-200'}`}>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resultado</p>
-            {instrument.neoType && scores ? (
-              <div className="space-y-2">
-                {Object.entries(scores).map(([k,v])=>(
-                  <div key={k} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-slate-600 w-4">{k}</span>
-                    <div className="flex-1 h-2 bg-white rounded-full border border-slate-200 overflow-hidden">
-                      <div className="h-full bg-brand-400 rounded-full" style={{width:`${((v-12)/48)*100}%`}}/>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Resultado</p>
+
+            {/* NEO-FFI Big Five */}
+            {instrument.neoType && scores && (
+              <div className="space-y-3">
+                {[['N','Neuroticismo',scores.N,60,'#ef4444'],['E','Extraversión',scores.E,60,'#3b82f6'],['O','Apertura',scores.O,60,'#8b5cf6'],['A','Amabilidad',scores.A,60,'#10b981'],['C','Responsabilidad',scores.C,60,'#f59e0b']].map(([k,name,val,max,color])=>(
+                  <div key={k}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-semibold text-slate-700">{name}</span>
+                      <span className="font-bold text-slate-800">{val}/{max}</span>
                     </div>
-                    <span className="text-xs text-slate-600 w-8 text-right">{v}</span>
+                    <div className="h-3 bg-white rounded-full border border-slate-200 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{width:`${(val/max)*100}%`, background:color}}/>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">{instrument.interpret(scores)[k]}</p>
                   </div>
                 ))}
-                <p className="text-xs text-slate-500 mt-2">{Object.entries(instrument.interpret(scores)).map(([k,v])=>k+': '+v).join(' · ')}</p>
-                <div className="mt-3">
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Interpretación (editable):</label>
-                  <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    rows={3} value={interpretation} onChange={e=>setInterpretation(e.target.value)} />
+              </div>
+            )}
+
+            {/* DASS-21 multiscore */}
+            {!instrument.neoType && instrument.multiScore && scores && (
+              <div className="space-y-3">
+                {[
+                  {name:'Depresión', val:scores.d, max:42, cuts:[{v:9,l:'Normal'},{v:13,l:'Leve'},{v:20,l:'Moderado'},{v:27,l:'Grave'},{v:42,l:'Ext. grave'}]},
+                  {name:'Ansiedad',  val:scores.a, max:42, cuts:[{v:7,l:'Normal'},{v:9,l:'Leve'},{v:14,l:'Moderado'},{v:19,l:'Grave'},{v:42,l:'Ext. grave'}]},
+                  {name:'Estrés',   val:scores.s, max:42, cuts:[{v:14,l:'Normal'},{v:18,l:'Leve'},{v:25,l:'Moderado'},{v:33,l:'Grave'},{v:42,l:'Ext. grave'}]},
+                ].map(({name,val,max,cuts})=>{
+                  const level = cuts.find(c=>val<=c.v)?.l||'Ext. grave'
+                  const pct = (val/max)*100
+                  const barColor = pct<33?'#22c55e':pct<60?'#f59e0b':'#ef4444'
+                  return (
+                    <div key={name}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-semibold text-slate-700">{name}</span>
+                        <span className="font-bold text-slate-800">{val} — <span style={{color:barColor}}>{level}</span></span>
+                      </div>
+                      <div className="relative h-3 bg-white rounded-full border border-slate-200 overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{width:`${pct}%`, background:barColor}}/>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-400 mt-0.5">
+                        {cuts.map(cut=><span key={cut.l}>{cut.v}</span>)}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* LSAS dual (miedo + evitación) */}
+            {!instrument.neoType && !instrument.multiScore && instrument.type==='dual' && scores && (
+              <div className="space-y-2">
+                {[{name:'Miedo',val:scores.fear,max:72},{name:'Evitación',val:scores.avoid,max:72}].map(({name,val,max})=>(
+                  <div key={name}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-semibold text-slate-700">{name}</span>
+                      <span className="font-bold text-slate-800">{val}/{max}</span>
+                    </div>
+                    <div className="h-3 bg-white rounded-full border border-slate-200 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{width:`${(val/max)*100}%`, background: val/max<0.35?'#22c55e':val/max<0.65?'#f59e0b':'#ef4444'}}/>
+                    </div>
+                  </div>
+                ))}
+                <div className={`flex items-center gap-2 mt-1 p-2 rounded-lg ${interpData?.bg||'bg-slate-100'} border ${interpData?.border||'border-slate-200'}`}>
+                  <span className={`text-lg font-bold ${interpData?.color}`}>{scores.total}</span>
+                  <span className="text-slate-400 text-sm">/ {instrument.maxScore}</span>
+                  <span className={`text-sm font-semibold ${interpData?.color}`}>{interpData?.level}</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Puntos de corte: ≤29 Sin/mínima · 30–49 Leve · 50–64 Moderada · 65–79 Marcada · ≥80 Severa</p>
+              </div>
+            )}
+
+            {/* VLQ */}
+            {instrument.type==='vlq' && scores && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  {[{name:'Importancia',val:scores.avgImp,max:10},{name:'Consistencia',val:scores.avgAct,max:10},{name:'Vida valiosa',val:scores.composite,max:10}].map(({name,val,max})=>(
+                    <div key={name} className="bg-white rounded-lg border border-slate-200 p-2">
+                      <p className="text-lg font-bold text-brand-600">{val}</p>
+                      <p className="text-xs text-slate-500">{name}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ) : instrument.multiScore ? (
-              <div className="space-y-2">
-                {[['Depresión', scores.d, 42],['Ansiedad', scores.a, 42],['Estrés', scores.s, 42]].map(([label, val, max])=>(
-                  <div key={label}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium text-slate-700">{label}</span>
-                      <span className="font-bold text-slate-800">{val}</span>
-                    </div>
-                    <div className="h-2 bg-white rounded-full border border-slate-200 overflow-hidden">
-                      <div className="h-full bg-teal-400 rounded-full" style={{width:`${(val/max)*100}%`}}/>
+            )}
+
+            {/* Standard single score with optional subscales */}
+            {!instrument.neoType && !instrument.multiScore && instrument.type!=='dual' && instrument.type!=='vlq' && scores !== null && (
+              <div className="space-y-3">
+                {/* Puntaje total con barra */}
+                <div className={`p-3 rounded-lg border ${interpData?.bg||'bg-white'} ${interpData?.border||'border-slate-200'}`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`text-2xl font-bold ${interpData?.color||'text-slate-800'}`}>{scores}</span>
+                    <span className="text-slate-400">/ {instrument.maxScore}</span>
+                    <span className={`text-sm font-semibold ${interpData?.color||'text-slate-700'}`}>{interpData?.level}</span>
+                  </div>
+                  <div className="h-3 bg-white rounded-full border border-slate-200 overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{width:`${(scores/instrument.maxScore)*100}%`, background: scores/instrument.maxScore<0.33?'#22c55e':scores/instrument.maxScore<0.66?'#f59e0b':'#ef4444'}}/>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">{interpData?.desc}</p>
+                </div>
+                {/* Dimensiones/subscales si las tiene */}
+                {instrument.subscales && instrument.subscales.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resultados por dimensión</p>
+                    <div className="space-y-2">
+                      {instrument.subscales.map(sub => {
+                        const subScore = sub.items.reduce((s,i)=>{
+                          const ans = typeof answers[i] === 'number' ? answers[i] : 0
+                          return s + ans
+                        }, 0)
+                        const pct = (subScore/sub.max)*100
+                        const barColor = pct<33?'#22c55e':pct<66?'#f59e0b':'#ef4444'
+                        return (
+                          <div key={sub.name}>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="font-medium text-slate-700">{sub.name}</span>
+                              <span className="font-bold text-slate-800">{subScore}/{sub.max}</span>
+                            </div>
+                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{width:`${pct}%`, background:barColor}}/>
+                            </div>
+                            {sub.cutoff && <p className="text-xs text-slate-400 mt-0.5">Punto de corte clínico: ≥{sub.cutoff}</p>}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div>
-                {instrument.type==='vlq' ? (
-                  <div className="space-y-1 text-sm">
-                    <p className="text-slate-700">Importancia promedio: <strong>{scores?.avgImp}/10</strong></p>
-                    <p className="text-slate-700">Consistencia de acción promedio: <strong>{scores?.avgAct}/10</strong></p>
-                    <p className="text-slate-700">Índice vida valiosa ponderado: <strong>{scores?.composite}/10</strong></p>
-                  </div>
-                ) : instrument.type==='dual' ? (
-                  <div className="space-y-1 text-sm">
-                    <p className="text-slate-700">Miedo total: <strong>{scores?.fear}</strong></p>
-                    <p className="text-slate-700">Evitación total: <strong>{scores?.avoid}</strong></p>
-                    <p className={`font-semibold ${interpData?.color}`}>Total: {scores?.total}/{instrument.maxScore} — {interpData?.level}</p>
-                    <div className="h-2 bg-white rounded-full border border-slate-200 overflow-hidden mb-2">
-                      <div className={`h-full rounded-full ${(scores?.total||0)/instrument.maxScore<0.35?'bg-green-400':(scores?.total||0)/instrument.maxScore<0.65?'bg-yellow-400':'bg-red-400'}`} style={{width:`${((scores?.total||0)/instrument.maxScore)*100}%`}}/>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`text-2xl font-display font-bold ${interpData?.color}`}>{scores}</span>
-                      <span className="text-slate-400 text-sm">/ {instrument.maxScore}</span>
-                      <span className={`text-sm font-semibold ${interpData?.color}`}>{interpData?.level}</span>
-                    </div>
-                    <div className="h-2 bg-white rounded-full border border-slate-200 overflow-hidden mb-2">
-                      <div className={`h-full rounded-full ${scores/instrument.maxScore<0.35?'bg-green-400':scores/instrument.maxScore<0.65?'bg-yellow-400':'bg-red-400'}`} style={{width:`${(scores/instrument.maxScore)*100}%`}}/>
-                    </div>
-                  </>
                 )}
               </div>
             )}
-            <div className="mt-3">
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Interpretación (editable):</label>
+
+            {/* Interpretación editable */}
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">Interpretación clínica (editable):</label>
               <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
                 rows={3} value={interpretation} onChange={e=>setInterpretation(e.target.value)} />
             </div>
@@ -4581,27 +4674,53 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
                 <p className="font-semibold text-slate-800 text-sm">{apps[0].instrument_name}</p>
                 <span className="text-xs text-slate-400">{apps.length} aplicación{apps.length !== 1 ? 'es' : ''}</span>
               </div>
-              {apps.length > 1 && (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3">
-                  <p className="text-xs font-semibold text-blue-700 mb-2">Evolución (primera → última)</p>
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
-                      <p className="text-xs text-slate-500">{new Date(apps[apps.length-1].applied_at+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short'})}</p>
-                      <p className="text-lg font-bold text-slate-800">{apps[apps.length-1].total_score}</p>
+              {apps.length > 1 && (() => {
+                const sorted = [...apps].reverse() // oldest first
+                const ins = INSTRUMENTS[key]
+                const maxS = ins?.maxScore || Math.max(...sorted.map(a=>a.total_score)) || 100
+                const W=280, H=80, PAD=20
+                const xs = sorted.map((_,i)=>PAD + i*(W-PAD*2)/(sorted.length-1))
+                const ys = sorted.map(a=>H-PAD-(a.total_score/maxS)*(H-PAD*2))
+                const pathD = xs.map((x,i)=>(i===0?'M':'L')+x+','+ys[i]).join(' ')
+                const first = sorted[0].total_score, last = sorted[sorted.length-1].total_score
+                const diff = last - first
+                const trendColor = diff<0?'#22c55e':diff>0?'#ef4444':'#64748b'
+                return (
+                  <div className="bg-white border border-slate-200 rounded-xl p-3 mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-slate-600">Evolución ({sorted.length} aplicaciones)</p>
+                      <span className="text-xs font-bold" style={{color:trendColor}}>
+                        {diff<0?'↓ Bajó ':diff>0?'↑ Subió ':'→ Sin cambio'}{diff!==0?Math.abs(diff)+' pts':''}
+                      </span>
                     </div>
-                    <div className="flex-1 text-center">
-                      <p className={`text-sm font-bold ${apps[0].total_score < apps[apps.length-1].total_score ? 'text-green-600' : apps[0].total_score > apps[apps.length-1].total_score ? 'text-red-500' : 'text-slate-500'}`}>
-                        {apps[0].total_score < apps[apps.length-1].total_score ? '↓ Bajó ' : apps[0].total_score > apps[apps.length-1].total_score ? '↑ Subió ' : '→ Sin cambio '}
-                        {apps[0].total_score !== apps[apps.length-1].total_score ? Math.abs(apps[0].total_score - apps[apps.length-1].total_score) + ' pts' : ''}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-slate-500">{new Date(apps[0].applied_at+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short'})}</p>
-                      <p className="text-lg font-bold text-slate-800">{apps[0].total_score}</p>
+                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}}>
+                      {/* Grid lines */}
+                      {[0,0.25,0.5,0.75,1].map(f=>{
+                        const y=H-PAD-(f*(H-PAD*2))
+                        return <line key={f} x1={PAD} y1={y} x2={W-PAD} y2={y} stroke="#e2e8f0" strokeWidth="1"/>
+                      })}
+                      {/* Area fill */}
+                      <path d={pathD+` L${xs[xs.length-1]},${H-PAD} L${xs[0]},${H-PAD} Z`} fill={trendColor} fillOpacity="0.08"/>
+                      {/* Line */}
+                      <path d={pathD} fill="none" stroke={trendColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      {/* Points */}
+                      {sorted.map((a,i)=>(
+                        <g key={i}>
+                          <circle cx={xs[i]} cy={ys[i]} r="4" fill={trendColor} stroke="white" strokeWidth="2"/>
+                        </g>
+                      ))}
+                    </svg>
+                    <div className="flex justify-between text-xs text-slate-400 mt-1">
+                      {sorted.map((a,i)=>(
+                        <span key={i} className="text-center">
+                          <span className="block font-bold text-slate-700">{a.total_score}</span>
+                          {new Date(a.applied_at+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short'})}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
               <div className="space-y-2">
                 {apps.map(r => (
                   <div key={r.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
