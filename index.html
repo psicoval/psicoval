@@ -571,11 +571,17 @@ function Evaluations({ user, onPage }) {
     } else {
       ;({ error } = await sb.from('initial_interviews').insert(payload))
     }
-    if (error) setErr('Error al guardar. Intenta de nuevo.')
-    else {
+    if (error) { setErr('Error al guardar. Intenta de nuevo.'); setBusy(false); return }
+    
+    if (modal === 'create') {
+      // New patient: show post-create options
+      const { data: refreshed } = await sb.from('patients').select('*').eq('user_id', user.id).order('created_at', {ascending: false}).limit(1)
+      await load()
+      setModal('post_create')
+      setNewPatientCreated(refreshed?.[0] || {name: form.name.trim()})
+    } else {
       close()
       await load()
-      // If editing from expedient, refresh the expedient patient data
       if (selectedExpedient) {
         const { data: refreshed } = await sb.from('patients').select('*').eq('id', selectedExpedient.id).single()
         if (refreshed) setSelectedExpedient(refreshed)
@@ -4960,6 +4966,37 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
   const [form, setForm] = useState(initial || EMPTY_PATIENT)
   const [tab, setTab] = useState('basic')
   const f = (k,v) => setForm(p=>({...p,[k]:v}))
+  const isNew = !initial
+
+  // For new patients: only show minimal fields (phone call info)
+  if (isNew) {
+    return (
+      <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="space-y-4">
+        <Alert msg={err} />
+        <div className="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3">
+          <p className="text-xs text-brand-700 font-medium">📞 Registro desde llamada</p>
+          <p className="text-xs text-brand-500 mt-0.5">Ingresa los datos que puedes tomar en la llamada inicial. El resto se completa en la primera cita.</p>
+        </div>
+        <Input label="Nombre completo *" placeholder="Nombre del paciente" value={form.name} onChange={e=>f('name',e.target.value)} />
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Edad" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
+          <Input label="Teléfono" placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Select label="Estado civil" value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
+            <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
+          </Select>
+          <Input label="Ocupación" placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
+          <button type="submit" disabled={busy} className="flex-1 px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">{busy?'Guardando...':'Registrar paciente'}</button>
+        </div>
+      </form>
+    )
+  }
+
+  // For editing: show full form with tabs
   const tabs = [{id:'basic',label:'Datos básicos'},{id:'clinical',label:'Ficha clínica'},{id:'context',label:'Proceso'}]
   return (
     <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="space-y-4">
@@ -4968,15 +5005,15 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
         {tabs.map(t=><button key={t.id} type="button" onClick={()=>setTab(t.id)} className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${tab===t.id?'bg-white text-slate-800 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>{t.label}</button>)}
       </div>
       {tab==='basic' && <div className="space-y-4">
-        <Input label="Nombre completo *" tip="Nombre del paciente. Campo obligatorio." placeholder="Nombre del paciente" value={form.name} onChange={e=>f('name',e.target.value)} />
+        <Input label="Nombre completo *" placeholder="Nombre del paciente" value={form.name} onChange={e=>f('name',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Edad" tip="Edad actual en años cumplidos" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
+          <Input label="Edad" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
           <Select label="Sexo" value={form.sex} onChange={e=>f('sex',e.target.value)}>
             <option value="">Seleccionar</option><option value="masculino">Masculino</option><option value="femenino">Femenino</option><option value="otro">Otro</option>
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Teléfono" tip="Número de contacto del paciente." placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
+          <Input label="Teléfono" placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
           <Select label="Estado civil" value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
             <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
           </Select>
@@ -4987,9 +5024,9 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
           </Select>
           <Input label="Ocupación" placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
         </div>
-        <Textarea label="Red de apoyo" tip="Personas significativas que brindan apoyo al paciente (familia, amigos, pareja, comunidad)." rows={2} placeholder="Ej: Vive con su pareja e hijos, tiene contacto frecuente con sus padres..." value={form.support_network} onChange={e=>f('support_network',e.target.value)} />
+        <Textarea label="Red de apoyo" rows={2} placeholder="Ej: Vive con su pareja e hijos..." value={form.support_network} onChange={e=>f('support_network',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Contacto de emergencia" tip="Nombre de persona de contacto en caso de emergencia." placeholder="Nombre del contacto" value={form.emergency_contact_name} onChange={e=>f('emergency_contact_name',e.target.value)} />
+          <Input label="Contacto de emergencia" placeholder="Nombre del contacto" value={form.emergency_contact_name} onChange={e=>f('emergency_contact_name',e.target.value)} />
           <Input label="Teléfono de emergencia" placeholder="Teléfono del contacto" value={form.emergency_contact_phone} onChange={e=>f('emergency_contact_phone',e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -5002,28 +5039,28 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
         </div>
       </div>}
       {tab==='clinical' && <div className="space-y-4">
-        <Textarea label="Motivo de consulta" tip="Problema principal que trae al paciente." rows={3} placeholder="¿Qué trae al paciente a consulta?" value={form.consultation_reason} onChange={e=>f('consultation_reason',e.target.value)} />
-        <Textarea label="Antecedentes personales" tip="Historia psicológica relevante." rows={3} placeholder="Tratamientos anteriores, eventos relevantes..." value={form.background_personal} onChange={e=>f('background_personal',e.target.value)} />
-        <Textarea label="Antecedentes familiares" tip="Historia familiar significativa." rows={3} placeholder="Dinámica y estructura familiar..." value={form.background_family} onChange={e=>f('background_family',e.target.value)} />
-        <Textarea label="Antecedentes médicos" tip="Condiciones médicas relevantes." rows={2} placeholder="Enfermedades, medicación, cirugías..." value={form.background_medical} onChange={e=>f('background_medical',e.target.value)} />
+        <Textarea label="Motivo de consulta" rows={3} placeholder="¿Qué trae al paciente a consulta?" value={form.consultation_reason} onChange={e=>f('consultation_reason',e.target.value)} />
+        <Textarea label="Antecedentes personales" rows={3} placeholder="Tratamientos anteriores, eventos relevantes..." value={form.background_personal} onChange={e=>f('background_personal',e.target.value)} />
+        <Textarea label="Antecedentes familiares" rows={3} placeholder="Dinámica y estructura familiar..." value={form.background_family} onChange={e=>f('background_family',e.target.value)} />
+        <Textarea label="Antecedentes médicos" rows={2} placeholder="Enfermedades, medicación, cirugías..." value={form.background_medical} onChange={e=>f('background_medical',e.target.value)} />
       </div>}
       {tab==='context' && <div className="space-y-4">
-        <Textarea label="Diagnóstico presuntivo" tip="Impresión diagnóstica inicial." rows={2} placeholder="Ej: Trastorno de ansiedad generalizada..." value={form.presumptive_diagnosis} onChange={e=>f('presumptive_diagnosis',e.target.value)} />
-        <Textarea label="Formulación del caso" tip="Análisis funcional del caso." rows={3} placeholder="Factores predisponentes, precipitantes y mantenedores..." value={form.diagnostic_axes} onChange={e=>f('diagnostic_axes',e.target.value)} />
-        <Input label="Enfoque terapéutico" tip="Modelo que guía la intervención." placeholder="Ej: TCC, ACT, Humanista, Sistémico..." value={form.therapeutic_approach} onChange={e=>f('therapeutic_approach',e.target.value)} />
+        <Textarea label="Diagnóstico presuntivo" rows={2} placeholder="Ej: Trastorno de ansiedad generalizada..." value={form.presumptive_diagnosis} onChange={e=>f('presumptive_diagnosis',e.target.value)} />
+        <Textarea label="Formulación del caso" rows={3} placeholder="Factores predisponentes, precipitantes y mantenedores..." value={form.diagnostic_axes} onChange={e=>f('diagnostic_axes',e.target.value)} />
+        <Input label="Enfoque terapéutico" placeholder="Ej: TCC, ACT, Humanista, Sistémico..." value={form.therapeutic_approach} onChange={e=>f('therapeutic_approach',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Fecha de inicio" tip="Fecha de la primera sesión." type="date" value={form.process_start_date} onChange={e=>f('process_start_date',e.target.value)} />
-          <Select label="Estado del proceso" tip="Estado actual del proceso terapéutico." value={form.process_status} onChange={e=>f('process_status',e.target.value)}>
+          <Input label="Fecha de inicio" type="date" value={form.process_start_date} onChange={e=>f('process_start_date',e.target.value)} />
+          <Select label="Estado del proceso" value={form.process_status} onChange={e=>f('process_status',e.target.value)}>
             <option value="activo">Activo</option><option value="en_pausa">En pausa</option><option value="alta">Alta terapéutica</option><option value="derivado">Derivado</option><option value="cerrado">Cerrado</option>
           </Select>
         </div>
-        <Textarea label="Notas clínicas" tip="Observaciones adicionales." rows={3} placeholder="Observaciones libres..." value={form.notes} onChange={e=>f('notes',e.target.value)} />
+        <Textarea label="Notas clínicas" rows={3} placeholder="Observaciones libres..." value={form.notes} onChange={e=>f('notes',e.target.value)} />
       </div>}
       <div className="flex justify-between items-center pt-2">
         <div className="flex gap-1">{tabs.map(t=><div key={t.id} className={`w-2 h-2 rounded-full ${tab===t.id?'bg-brand-500':'bg-slate-200'}`}/>)}</div>
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
-          <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">{busy?'Guardando...':initial?'Guardar cambios':'Crear paciente'}</button>
+          <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">{busy?'Guardando...':'Guardar cambios'}</button>
         </div>
       </div>
     </form>
@@ -5761,6 +5798,7 @@ function Patients({ user, role, planExpiry }) {
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
   const [selectedExpedient, setSelectedExpedient] = useState(null)
+  const [newPatientCreated, setNewPatientCreated] = useState(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [search, setSearch] = useState('')
@@ -5889,7 +5927,35 @@ function Patients({ user, role, planExpiry }) {
         </div>
       )}
       {/* PatientDetail replaced by PatientExpedient full-page navigation */}
-      {(modal==='create'||modal==='edit') && <Modal title={modal==='edit'?'Editar ficha':'Nueva ficha de paciente'} onClose={close} wide><PatientForm initial={modal==='edit'?selected:null} onSave={save} onClose={close} busy={busy} err={err} /></Modal>}
+      {(modal==='create'||modal==='edit') && <Modal title={modal==='edit'?'Editar ficha':'Nuevo paciente'} onClose={close} wide><PatientForm initial={modal==='edit'?selected:null} onSave={save} onClose={close} busy={busy} err={err} /></Modal>}
+
+      {modal==='post_create' && newPatientCreated && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl fade-in">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 text-center mb-1">Paciente registrado</h3>
+            <p className="text-slate-500 text-sm text-center mb-6"><strong>{newPatientCreated.name}</strong> fue agregado. ¿Qué deseas hacer ahora?</p>
+            <div className="space-y-3">
+              <button onClick={()=>{ setModal(null); generateFirstVisitPrintable(newPatientCreated, profile) }}
+                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Generar documentos primera cita
+              </button>
+              <button onClick={()=>{ setModal(null); setSelectedExpedient(newPatientCreated) }}
+                className="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Agendar primera cita
+              </button>
+              <button onClick={()=>setModal(null)}
+                className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                Hacer esto después
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {modal==='delete' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl fade-in">
