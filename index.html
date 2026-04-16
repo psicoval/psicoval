@@ -4878,18 +4878,18 @@ function PatientConsentPanel({ user, patient, profile }) {
     const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
     <title>Consentimiento Informado — ${patient.name}</title>
     <style>
-      @page{margin:12mm 14mm}
-      body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b;line-height:1.5}
-      .header{border-bottom:2px solid #4361ee;padding-bottom:7px;margin-bottom:10px;display:flex;justify-content:space-between}
-      .logo{font-family:Georgia,serif;font-size:17px;color:#1a2460;font-weight:bold}
-      h1{color:#1a2460;font-size:13px;margin-bottom:4px}
-      h2{color:#1a2460;font-size:11px;margin:8px 0 3px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
-      p{font-size:10px;margin-bottom:4px;line-height:1.5}
-      .patient-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:5px 10px;margin-bottom:8px;font-size:10px}
-      .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
-      .sign-line{border-bottom:1px solid #334155;min-height:26px;margin-bottom:3px}
-      .sign-label{font-size:9px;color:#64748b}
-      .footer{margin-top:12px;border-top:1px solid #e2e8f0;padding-top:6px;font-size:8px;color:#94a3b8;text-align:center}
+      @page{margin:20mm 22mm}
+      body{font-family:Arial,sans-serif;font-size:12px;color:#1e293b;line-height:1.7}
+      .header{border-bottom:2px solid #4361ee;padding-bottom:12px;margin-bottom:18px;display:flex;justify-content:space-between}
+      .logo{font-family:Georgia,serif;font-size:22px;color:#1a2460;font-weight:bold}
+      h1{color:#1a2460;font-size:16px;margin-bottom:6px}
+      h2{color:#1a2460;font-size:13px;margin:16px 0 6px;border-bottom:1px solid #e2e8f0;padding-bottom:3px}
+      p{font-size:12px;margin-bottom:8px;line-height:1.7}
+      .patient-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px}
+      .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:28px}
+      .sign-line{border-bottom:1px solid #334155;min-height:40px;margin-bottom:5px}
+      .sign-label{font-size:10px;color:#64748b}
+      .footer{margin-top:24px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:9px;color:#94a3b8;text-align:center}
     </style></head><body>
     <div class="header">
       <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Consentimiento informado</div></div>
@@ -5473,7 +5473,7 @@ function generateFirstVisitPrintable(patient, profile) {
     th { background:#f1f5f9; text-align:left; padding:4px 6px; color:#64748b; text-transform:uppercase; font-size:9px; }
     td { padding:4px 6px; border-bottom:1px solid #f1f5f9; }
     .footer { margin-top:12px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:8px; color:#94a3b8; text-align:center; }
-    @media print { body { font-size:10px; } .footer { position:fixed; bottom:0; width:100%; } }
+    @media print { body { font-size:10px; } }
   </style>
   </head><body>
 
@@ -5544,12 +5544,6 @@ function generateFirstVisitPrintable(patient, profile) {
     ${lineBlock(2)}
   </div>
 
-  <div class="page-break"></div>
-
-  <div class="header">
-    <div><div class="logo">Psicoval</div></div>
-    <div class="prof-info"><div>${prof.full_name||'Profesional'}</div><div>Entrevista inicial — continuación</div></div>
-  </div>
 
   <!-- BLOQUE 3 -->
   <div class="block">
@@ -5736,57 +5730,57 @@ function generateFirstVisitPrintable(patient, profile) {
     </div>
   </div>
 
-  <h1 style="font-size:16px">Consentimiento Informado para Proceso Psicológico</h1>
+  <h1>Consentimiento Informado para Proceso Psicológico</h1>
   ${p.name ? `<div class="patient-data"><strong>Paciente:</strong> ${p.name} &nbsp;|&nbsp; <strong>Fecha:</strong> ${now}</div>` : `<div class="patient-data"><strong>Paciente:</strong> __________________________________ &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>`}
 
   <h2>1. Naturaleza del proceso</h2>
-  <p style="font-size:11px">El proceso psicológico consiste en sesiones de evaluación, orientación y acompañamiento profesional. El/la psicólogo/a utilizará técnicas y procedimientos validados, adaptados a la situación particular del paciente. Las sesiones tienen una duración aproximada de 50 minutos.</p>
+  <p>El proceso psicológico consiste en sesiones de evaluación, orientación y acompañamiento profesional. El/la psicólogo/a utilizará técnicas y procedimientos validados, adaptados a la situación particular del paciente. Las sesiones tienen una duración aproximada de 50 minutos.</p>
 
   <h2>2. Objetivos</h2>
-  <p style="font-size:11px">Los objetivos del proceso terapéutico serán definidos de manera conjunta entre el/la profesional y el/la paciente, y podrán ser revisados y ajustados a lo largo del proceso.</p>
+  <p>Los objetivos del proceso terapéutico serán definidos de manera conjunta entre el/la profesional y el/la paciente, y podrán ser revisados y ajustados a lo largo del proceso.</p>
 
   <h2>3. Participación voluntaria</h2>
-  <p style="font-size:11px">La participación en este proceso es completamente voluntaria. El/la paciente puede retirar su consentimiento y dar por terminado el proceso en cualquier momento, sin que ello suponga consecuencia negativa alguna.</p>
+  <p>La participación en este proceso es completamente voluntaria. El/la paciente puede retirar su consentimiento y dar por terminado el proceso en cualquier momento, sin que ello suponga consecuencia negativa alguna.</p>
 
   <h2>4. Confidencialidad</h2>
-  <p style="font-size:11px">Toda la información compartida durante el proceso terapéutico es estrictamente confidencial. La confidencialidad únicamente puede romperse en los siguientes casos excepcionales: riesgo inminente para la vida del paciente u otras personas; mandato legal o requerimiento judicial; supervisión clínica profesional (manteniendo la anonimización de datos).</p>
+  <p>Toda la información compartida durante el proceso terapéutico es estrictamente confidencial. La confidencialidad únicamente puede romperse ante: riesgo inminente para la vida del paciente u otras personas; mandato legal o requerimiento judicial; supervisión clínica profesional (con datos anonimizados).</p>
 
   <h2>5. Uso de herramientas digitales</h2>
-  <p style="font-size:11px">Se autoriza el uso de la plataforma Psicoval para el registro y gestión de la información clínica. Los datos son tratados con estricta confidencialidad y almacenados de manera segura.</p>
+  <p>Se autoriza el uso de la plataforma Psicoval para el registro y gestión de la información clínica. Los datos son tratados con estricta confidencialidad y almacenados de manera segura conforme a la política de privacidad de Psicoval.</p>
 
   <h2>6. Instrumentos de evaluación</h2>
-  <p style="font-size:11px">Se da consentimiento para la aplicación de instrumentos psicométricos validados que el/la profesional considere pertinentes para la evaluación de la situación.</p>
+  <p>Se da consentimiento para la aplicación de instrumentos psicométricos validados que el/la profesional considere pertinentes para la evaluación de la situación clínica.</p>
 
   <h2>7. Derechos del paciente</h2>
-  <p style="font-size:11px">El/la paciente tiene derecho a: recibir información clara sobre el proceso y los objetivos; hacer preguntas en cualquier momento; acceder a la información registrada sobre su caso; solicitar derivación a otro profesional; dar por terminado el proceso cuando lo considere.</p>
+  <p>El/la paciente tiene derecho a: recibir información clara sobre el proceso y los objetivos; hacer preguntas en cualquier momento del proceso; acceder a la información registrada sobre su caso; solicitar derivación a otro profesional; dar por terminado el proceso cuando lo considere necesario.</p>
 
   <h2>8. Honorarios y modalidad</h2>
-  <p style="font-size:11px">Los honorarios, frecuencia de sesiones y modalidad (presencial/online) han sido acordados previamente con el/la profesional.</p>
+  <p>Los honorarios, frecuencia de sesiones y modalidad (presencial/online) han sido acordados previamente con el/la profesional tratante.</p>
 
-  <div style="margin-top:24px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
-    <p style="font-size:11px;font-weight:bold;color:#1a2460;margin-bottom:10px">Declaración de consentimiento</p>
-    <p style="font-size:11px;margin-bottom:16px">He leído y comprendido la información anterior. He tenido la oportunidad de hacer preguntas y han sido respondidas satisfactoriamente. Otorgo mi consentimiento libre e informado para participar en el proceso psicológico.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px">
+  <div style="margin-top:32px;padding:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;page-break-inside:avoid">
+    <p style="font-weight:bold;color:#1a2460;margin-bottom:10px;font-size:13px">Declaración de consentimiento</p>
+    <p style="margin-bottom:20px">He leído y comprendido la información anterior. He tenido la oportunidad de hacer preguntas y han sido respondidas satisfactoriamente. Otorgo mi consentimiento libre e informado para participar en el proceso psicológico con el/la profesional indicado/a.</p>
+    <div class="sign-grid">
       <div>
-        <div style="border-bottom:1px solid #334155;min-height:36px;margin-bottom:6px"></div>
-        <p style="font-size:10px;color:#64748b">Nombre del paciente</p>
-        <div style="border-bottom:1px solid #334155;min-height:36px;margin:12px 0 6px"></div>
-        <p style="font-size:10px;color:#64748b">Firma del paciente</p>
+        <div class="sign-line"></div>
+        <p class="sign-label">Nombre completo del paciente</p>
+        <div class="sign-line" style="margin-top:20px"></div>
+        <p class="sign-label">Firma del paciente</p>
       </div>
       <div>
-        <div style="min-height:36px;margin-bottom:6px;padding-top:8px"><p style="font-size:11px;color:#1e293b">${prof.full_name||'___________________________'}</p></div>
-        <p style="font-size:10px;color:#64748b">Nombre del/la profesional</p>
-        <div style="border-bottom:1px solid #334155;min-height:36px;margin:12px 0 6px"></div>
-        <p style="font-size:10px;color:#64748b">Firma del/la profesional</p>
+        <div style="min-height:40px;margin-bottom:5px;padding-top:4px"><p style="color:#1e293b">${prof.full_name||'___________________________'}</p></div>
+        <p class="sign-label">Nombre del/la profesional</p>
+        <div class="sign-line" style="margin-top:20px"></div>
+        <p class="sign-label">Firma del/la profesional</p>
       </div>
     </div>
-    <div style="margin-top:12px">
-      <div style="border-bottom:1px solid #334155;min-height:28px;margin-bottom:6px"></div>
-      <p style="font-size:10px;color:#64748b">Fecha</p>
+    <div style="margin-top:20px;max-width:200px">
+      <div class="sign-line"></div>
+      <p class="sign-label">Fecha de firma</p>
     </div>
   </div>
 
-  <div class="footer">Psicoval · Consentimiento informado · ${now} · Documento confidencial de uso clínico</div>
+  <div class="footer">Psicoval · Consentimiento informado · ${now} · Documento confidencial de uso clínico exclusivo</div>
 
   </body></html>`
 
