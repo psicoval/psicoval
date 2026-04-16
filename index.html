@@ -186,72 +186,47 @@ function TutorialModal({ onClose }) {
 }
 
 // ── EVALUACIONES ──────────────────────────────────────────
-const INTERVIEW_BLOCKS = [
-  {
-    id: 'problem',
-    label: 'Bloque 1',
-    title: 'Análisis del problema',
-    icon: '🔍',
-    color: 'bg-blue-50 border-blue-200 text-blue-700',
-    dot: 'bg-blue-500',
-    fields: [
-      { key:'problem_description', label:'Descripción del problema principal', tip:'Describe el problema en términos observables y concretos, tal como lo refiere el paciente.', rows:4, placeholder:'¿Cuál es el problema principal por el que consulta? Descríbalo con sus propias palabras...' },
-      { key:'problem_frequency',   label:'Frecuencia, intensidad y duración', tip:'¿Con qué frecuencia ocurre? ¿Qué tan intenso es en escala 0-10? ¿Cuánto tiempo dura cada episodio?', rows:2, placeholder:'Ej: Ocurre 3-4 veces por semana, intensidad 7/10, duración de 30-60 minutos...' },
-      { key:'problem_triggers',    label:'Situaciones desencadenantes', tip:'¿En qué momentos, lugares o contextos aparece o se intensifica el problema?', rows:3, placeholder:'¿Qué situaciones, pensamientos o personas desencadenan el problema?...' },
-      { key:'problem_consequences',label:'Consecuencias e impacto en su vida', tip:'¿Cómo afecta el problema a las distintas áreas de la vida del paciente?', rows:3, placeholder:'¿Cómo afecta al trabajo, relaciones, actividades cotidianas?...' },
-      { key:'previous_solutions',  label:'Intentos de solución previos', tip:'¿Qué ha intentado el paciente para resolver el problema? ¿Con qué resultado?', rows:3, placeholder:'¿Qué estrategias ha intentado? ¿Qué le ha funcionado o no ha funcionado?...' },
-    ]
-  },
-  {
-    id: 'context',
-    label: 'Bloque 2',
-    title: 'Contexto vital',
-    icon: '🌐',
-    color: 'bg-green-50 border-green-200 text-green-700',
-    dot: 'bg-green-500',
-    fields: [
-      { key:'area_work',    label:'Área laboral / académica', tip:'Situación actual en el trabajo o estudios. Satisfacción, conflictos, rendimiento.', rows:3, placeholder:'¿Cómo está su situación laboral o académica? ¿Está satisfecho? ¿Hay conflictos?...' },
-      { key:'area_family',  label:'Área familiar', tip:'Dinámica familiar actual: pareja, hijos, familia de origen. Fuentes de apoyo o conflicto.', rows:3, placeholder:'¿Cómo están sus relaciones familiares? ¿Vive en pareja? ¿Tiene hijos?...' },
-      { key:'area_social',  label:'Área social y relaciones', tip:'Red de apoyo social. Amistades, relaciones sociales, aislamiento o conexión.', rows:3, placeholder:'¿Cómo son sus relaciones sociales? ¿Tiene amigos cercanos? ¿Se aísla?...' },
-      { key:'area_health',  label:'Área de salud física', tip:'Estado de salud general, enfermedades crónicas, hábitos de sueño, alimentación y ejercicio.', rows:3, placeholder:'¿Cómo es su salud física en general? ¿Duerme bien? ¿Hace ejercicio?...' },
-      { key:'area_leisure', label:'Área de ocio y tiempo libre', tip:'Actividades de disfrute, hobbies, descanso. Si ha dejado de hacer cosas que antes disfrutaba.', rows:2, placeholder:'¿Qué actividades realiza en su tiempo libre? ¿Ha dejado de hacer cosas que disfrutaba?...' },
-    ]
-  },
-  {
-    id: 'history',
-    label: 'Bloque 3',
-    title: 'Historia clínica ampliada',
-    icon: '📂',
-    color: 'bg-orange-50 border-orange-200 text-orange-700',
-    dot: 'bg-orange-500',
-    fields: [
-      { key:'previous_treatments', label:'Tratamientos psicológicos o psiquiátricos previos', tip:'¿Ha tenido terapia o tratamiento psiquiátrico anteriormente? ¿Cuándo, con quién, con qué resultados?', rows:3, placeholder:'¿Ha recibido tratamiento psicológico o psiquiátrico antes? ¿Cuándo y con qué resultado?...' },
-      { key:'current_medication',  label:'Medicación actual', tip:'Fármacos que toma actualmente, dosis y prescriptor. Incluye psicofármacos y medicación general relevante.', rows:2, placeholder:'¿Toma algún medicamento actualmente? ¿Psicofármacos u otros?...' },
-      { key:'significant_events',  label:'Eventos vitales significativos', tip:'Pérdidas, traumas, cambios importantes en la historia de vida que puedan ser relevantes.', rows:4, placeholder:'¿Ha vivido pérdidas, traumas, cambios importantes en su vida que considera relevantes?...' },
-      { key:'problem_history',     label:'Historia del problema actual', tip:'¿Cuándo comenzó el problema? ¿Ha habido períodos de mejoría o recaída? ¿Cómo ha evolucionado?', rows:3, placeholder:'¿Cuándo empezó el problema? ¿Cómo ha evolucionado con el tiempo?...' },
-    ]
-  },
-  {
-    id: 'plan',
-    label: 'Bloque 4',
-    title: 'Cierre y plan terapéutico',
-    icon: '🎯',
-    color: 'bg-purple-50 border-purple-200 text-purple-700',
-    dot: 'bg-purple-500',
-    fields: [
-      { key:'patient_goals',       label:'Objetivos del paciente (en sus palabras)', tip:'¿Qué espera conseguir con la terapia? ¿Cómo sería su vida si el problema mejorara?', rows:3, placeholder:'¿Qué espera el paciente lograr con el proceso terapéutico?...' },
-      { key:'clinical_goals',      label:'Objetivos clínicos del profesional', tip:'Objetivos terapéuticos formulados por el clínico, basados en la evaluación.', rows:3, placeholder:'Objetivos terapéuticos identificados por el profesional...' },
-      { key:'instruments_planned', label:'Instrumentos a aplicar', tip:'Pruebas o cuestionarios que se administrarán en las próximas sesiones.', rows:2, placeholder:'Ej: PHQ-9, GAD-7, BDI-II, cuestionario de valores...' },
-      { key:'evaluator_notes',     label:'Observaciones del evaluador', tip:'Impresiones clínicas generales, aspectos relevantes de la entrevista, actitud del paciente.', rows:4, placeholder:'Impresiones generales, actitud durante la entrevista, aspectos destacados...' },
-    ]
-  }
-]
-
+// ── NUEVA ENTREVISTA CLÍNICA INICIAL v4 ──────────────────
 const EMPTY_INTERVIEW = {
-  patient_id:'', problem_description:'', problem_frequency:'', problem_triggers:'', problem_consequences:'', previous_solutions:'',
-  area_work:'', area_family:'', area_social:'', area_health:'', area_leisure:'',
-  previous_treatments:'', current_medication:'', significant_events:'', problem_history:'',
-  patient_goals:'', clinical_goals:'', instruments_planned:'', evaluator_notes:'', next_session_date:'', status:'borrador'
+  patient_id:'',
+  // Riesgo — micro-protocolo
+  risk_level:'',
+  risk_has_plan:false, risk_has_means:false, risk_immediate_intention:false,
+  risk_support_available:false, risk_can_stay_alone:true,
+  // B1: Motivo y análisis del problema
+  consultation_reason:'', problem_duration:'', problem_onset:'', problem_course:'',
+  problem_intensity:5, problem_frequency:'',
+  areas_affected:[], previous_solutions:[], previous_solutions_notes:'',
+  // Eje funcional — antecedentes y consecuencias
+  triggers:[], triggers_other:'',
+  consequences:[],
+  // B2: Contexto vital
+  sat_work:5, sat_family:5, sat_social:5, sat_sleep:5,
+  physical_activity:'', eating_habits:'', support_network:[], context_notes:'',
+  // B3: Historia clínica
+  previous_treatments:'', previous_treatments_notes:'',
+  medication_type:[], medication_detail:'',
+  significant_events:[], significant_events_notes:'',
+  medical_history:[],
+  substance_alcohol:'no_consume', substance_tobacco:'no_consume',
+  substance_cannabis:'no_consume', substance_other:'no_consume',
+  // B4: Evaluación clínica
+  mse_appearance:'adecuada', mse_language:'normal', mse_psychomotor:'normal',
+  mse_thought:'logico', mse_affect:'congruente', mse_reality:'conservado',
+  mood_subjective:'',
+  symptoms_mood:[], symptoms_anxiety:[], symptoms_cognitive:[], symptoms_behavioral:[],
+  diag_clinical:[], diag_contextual:[], diag_notes:'',
+  global_severity:'',
+  // B5: Formulación
+  problem_operationalized:'', maintaining_variables:[], predisposing_factors:'', protective_factors:[],
+  // B6: Objetivos y plan
+  patient_expectations:'', behavioral_objective:'', motivation:7, insight:'',
+  session_frequency:'semanal', derivation:'no',
+  // B7: Cierre
+  instruments_confirmed:[],
+  evaluator_notes:'',
+  session_course:'si', session_course_reasons:[], session_course_notes:'',
+  ai_summary:'', status:'borrador'
 }
 
 const STATUS_INT_COLORS = { borrador:'bg-slate-100 text-slate-600', completada:'bg-green-100 text-green-700' }
@@ -370,94 +345,764 @@ Responde de forma estructurada, clara y concisa. Usa viñetas donde sea apropiad
   )
 }
 
-function InterviewForm({ initial, patients, onSave, onClose, busy, err }) {
-  const [form, setForm] = useState(initial || EMPTY_INTERVIEW)
+function CheckGroup({ label, name, options, value=[], onChange, cols=1 }) {
+  const toggle = (v) => {
+    const arr = Array.isArray(value) ? [...value] : []
+    onChange(arr.includes(v) ? arr.filter(x=>x!==v) : [...arr, v])
+  }
+  return (
+    <div>
+      {label && <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">{label}</p>}
+      <div className={`flex flex-wrap gap-1.5`}>
+        {options.map(([val,lbl])=>(
+          <button key={val} type="button" onClick={()=>toggle(val)}
+            className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all ${(value||[]).includes(val)?'bg-brand-500 text-white border-brand-500':'bg-white text-slate-600 border-slate-200 hover:border-brand-300'}`}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RadioGroup({ label, name, options, value, onChange }) {
+  return (
+    <div>
+      {label && <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">{label}</p>}
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(([val,lbl])=>(
+          <button key={val} type="button" onClick={()=>onChange(val)}
+            className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all ${value===val?'bg-brand-500 text-white border-brand-500':'bg-white text-slate-600 border-slate-200 hover:border-brand-300'}`}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ScaleInput({ label, value, onChange, min=0, max=10, leftLabel='0', rightLabel='10' }) {
+  return (
+    <div>
+      {label && <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">{label}</p>}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-slate-400 whitespace-nowrap">{leftLabel}</span>
+        <input type="range" min={min} max={max} value={value} onChange={e=>onChange(parseInt(e.target.value))} className="flex-1"/>
+        <span className="text-sm font-semibold text-slate-700 w-6 text-center">{value}</span>
+        <span className="text-xs text-slate-400 whitespace-nowrap">{rightLabel}</span>
+      </div>
+    </div>
+  )
+}
+
+function SubstanceRow({ label, value, onChange }) {
+  const opts = [['no_consume','No consume'],['ocasional','Ocasional'],['frecuente','Frecuente'],['diario','Diario'],['problematico','Problemático']]
+  return (
+    <div>
+      <p className="text-xs text-slate-500 mb-1">{label}</p>
+      <div className="flex flex-wrap gap-1">
+        {opts.map(([v,l])=>(
+          <button key={v} type="button" onClick={()=>onChange(v)}
+            className={`text-xs px-2 py-1 rounded border transition-all ${value===v?'bg-brand-500 text-white border-brand-500':'bg-white text-slate-600 border-slate-200 hover:border-brand-300'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SeveritySelector({ value, onChange }) {
+  const opts = [
+    ['leve','Leve','Funcionalidad conservada, impacto limitado','bg-green-50 border-green-400 text-green-800'],
+    ['moderado','Moderado','Interferencia clara en varias áreas','bg-yellow-50 border-yellow-400 text-yellow-800'],
+    ['grave','Grave','Deterioro significativo o riesgo presente','bg-red-50 border-red-400 text-red-800'],
+  ]
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {opts.map(([v,l,desc,active])=>(
+        <button key={v} type="button" onClick={()=>onChange(v)}
+          className={`text-center p-2.5 rounded-xl border-2 transition-all ${value===v?active:'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
+          <p className="text-xs font-semibold">{l}</p>
+          <p className="text-xs opacity-70 mt-0.5 leading-tight">{desc}</p>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, err }) {
+  const [form, setForm] = useState(initial || {...EMPTY_INTERVIEW, patient_id: patientId||''})
   const [block, setBlock] = useState(0)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiDone, setAiDone] = useState(!!initial?.ai_summary)
   const f = (k,v) => setForm(p=>({...p,[k]:v}))
-  const cur = INTERVIEW_BLOCKS[block]
-  const totalBlocks = INTERVIEW_BLOCKS.length
+
+  const BLOCKS = [
+    {id:'risk',   label:'Seguridad', icon:'⚠️', color:'text-red-700 bg-red-50'},
+    {id:'b1',     label:'Problema',  icon:'🔍', color:'text-blue-700 bg-blue-50'},
+    {id:'b2',     label:'Contexto',  icon:'🌐', color:'text-green-700 bg-green-50'},
+    {id:'b3',     label:'Historia',  icon:'📂', color:'text-orange-700 bg-orange-50'},
+    {id:'b4',     label:'Evaluación',icon:'🧠', color:'text-purple-700 bg-purple-50'},
+    {id:'b5',     label:'Formulación',icon:'💡',color:'text-teal-700 bg-teal-50'},
+    {id:'b6',     label:'Plan',      icon:'🎯', color:'text-pink-700 bg-pink-50'},
+    {id:'cierre', label:'Cierre',    icon:'✓',  color:'text-slate-700 bg-slate-50'},
+  ]
+  const cur = BLOCKS[block]
+
+  const generateAI = async () => {
+    setAiLoading(true)
+    const pName = patients?.find(p=>p.id===form.patient_id)?.name || 'el paciente'
+    const riskDetails = form.risk_level && form.risk_level!=='sin_ideacion'
+      ? `${form.risk_level} | Plan: ${form.risk_has_plan?'SÍ':'no'} | Medios: ${form.risk_has_means?'SÍ':'no'} | Intención inmediata: ${form.risk_immediate_intention?'SÍ':'no'} | Apoyo disponible: ${form.risk_support_available?'sí':'no'} | Puede estar solo: ${form.risk_can_stay_alone?'sí':'NO'}`
+      : 'Sin ideación'
+    const sessionContext = form.session_course!=='si'
+      ? `ATENCIÓN: La sesión no siguió el curso esperado. Razones: ${(form.session_course_reasons||[]).join(', ')||'no especificadas'}. Notas: ${form.session_course_notes||'ninguna'}. Algunos datos pueden estar incompletos por esta razón.`
+      : 'La sesión siguió el curso esperado.'
+
+    const prompt = `Eres un asistente clínico de apoyo para psicólogos. Analiza los datos de esta entrevista inicial y genera un resumen clínico estructurado.
+
+PACIENTE: ${pName}
+MOTIVO DE CONSULTA: ${form.consultation_reason||'No especificado'}
+INTENSIDAD: ${form.problem_intensity}/10 | DURACIÓN: ${form.problem_duration||'NS'} | INICIO: ${form.problem_onset||'NS'} | CURSO: ${form.problem_course||'NS'}
+FRECUENCIA: ${form.problem_frequency||'NS'}
+ÁREAS AFECTADAS: ${(form.areas_affected||[]).join(', ')||'NS'}
+
+EJE FUNCIONAL:
+- Disparadores/antecedentes: ${(form.triggers||[]).join(', ')||'NS'}${form.triggers_other?' | Otros: '+form.triggers_other:''}
+- Consecuencias: ${(form.consequences||[]).join(', ')||'NS'}
+
+INTENTOS DE SOLUCIÓN: ${(form.previous_solutions||[]).join(', ')||'NS'} | Resultados: ${form.previous_solutions_notes||'NS'}
+
+CONTEXTO VITAL:
+- Satisfacción laboral: ${form.sat_work}/10 | Pareja/familia: ${form.sat_family}/10 | Social: ${form.sat_social}/10 | Sueño: ${form.sat_sleep}/10
+- Actividad física: ${form.physical_activity||'NS'} | Alimentación: ${form.eating_habits||'NS'}
+- Red de apoyo: ${(form.support_network||[]).join(', ')||'NS'}
+
+HISTORIA CLÍNICA:
+- Tratamientos previos: ${form.previous_treatments||'NS'} — ${form.previous_treatments_notes||''}
+- Medicación: ${(form.medication_type||[]).join(', ')||'NS'} ${form.medication_detail||''}
+- Eventos vitales: ${(form.significant_events||[]).join(', ')||'NS'}
+- Sustancias: Alcohol ${form.substance_alcohol} | Tabaco ${form.substance_tobacco} | Cannabis ${form.substance_cannabis}
+
+EXAMEN MENTAL: Apariencia ${form.mse_appearance} | Lenguaje ${form.mse_language} | Pensamiento ${form.mse_thought} | Afecto ${form.mse_affect} | Realidad ${form.mse_reality}
+ESTADO ÁNIMO SUBJETIVO: ${form.mood_subjective||'NS'}
+
+SÍNTOMAS:
+- Estado ánimo: ${(form.symptoms_mood||[]).join(', ')||'NS'}
+- Ansiedad: ${(form.symptoms_anxiety||[]).join(', ')||'NS'}
+- Cognitivos: ${(form.symptoms_cognitive||[]).join(', ')||'NS'}
+- Conductuales: ${(form.symptoms_behavioral||[]).join(', ')||'NS'}
+
+RIESGO SUICIDA: ${riskDetails}
+SEVERIDAD GLOBAL: ${form.global_severity||'NS'}
+DIAGNÓSTICO PRESUNTIVO: ${(form.diag_clinical||[]).concat(form.diag_contextual||[]).join(', ')||'NS'}
+NOTAS DIAGNÓSTICAS: ${form.diag_notes||'NS'}
+
+FORMULACIÓN:
+- Problema operacionalizado: ${form.problem_operationalized||'NS'}
+- Variables mantenedoras: ${(form.maintaining_variables||[]).join(', ')||'NS'}
+- Factores predisponentes: ${form.predisposing_factors||'NS'}
+- Factores protectores: ${(form.protective_factors||[]).join(', ')||'NS'}
+
+PLAN:
+- Expectativas del paciente: ${form.patient_expectations||'NS'}
+- Objetivo conductual observable: ${form.behavioral_objective||'NS'}
+- Motivación: ${form.motivation}/10 | Insight: ${form.insight||'NS'}
+- Frecuencia sesiones: ${form.session_frequency||'NS'} | Derivación: ${form.derivation||'no'}
+- Instrumentos confirmados: ${(form.instruments_confirmed||[]).join(', ')||'NS'}
+
+CONTEXTO DE LA SESIÓN: ${sessionContext}
+OBSERVACIONES: ${form.evaluator_notes||'NS'}
+
+Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
+{
+  "sintesis": "Párrafo de 3-4 líneas integrando: motivo de consulta, síntomas clave, eje funcional (disparadores y consecuencias) y contexto vital relevante",
+  "hipotesis": "Hipótesis funcional clara: describe qué mantiene el problema señalando los mecanismos específicos (refuerzo negativo, evitación, fusión cognitiva, etc.) con base en los datos del eje funcional y variables mantenedoras. 3-4 líneas.",
+  "riesgo_integrado": "Evaluación del nivel de riesgo integrando: ideación, factores de riesgo inmediatos, factores protectores y severidad global. Incluye recomendación de acción si aplica. 2-3 líneas.",
+  "sesion2": "Sugerencias concretas y accionables para la sesión 2: qué trabajar primero, qué técnica o estrategia usar, qué instrumentos priorizar y en qué orden aplicarlos, considerando el enfoque terapéutico y el objetivo conductual observable. 3-5 líneas."
+}`
+
+    try {
+      const res = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM'},
+        body: JSON.stringify({prompt})
+      })
+      const data = await res.json()
+      const raw = (data.result||'').replace(/```json|```/g,'').trim()
+      const parsed = JSON.parse(raw)
+      f('ai_summary', JSON.stringify(parsed))
+      setAiDone(true)
+    } catch(e) {
+      f('ai_summary','error')
+    }
+    setAiLoading(false)
+  }
+
+  const aiData = (() => { try { return form.ai_summary && form.ai_summary!=='error' ? JSON.parse(form.ai_summary) : null } catch(e){return null} })()
+
+  const AREAS = [['trabajo','Trabajo/estudios'],['pareja','Pareja'],['familia','Familia'],['social','Vida social'],['sueno','Sueño'],['alimentacion','Alimentación'],['actividad_fisica','Actividad física'],['ocio','Ocio/hobbies'],['autocuidado','Autocuidado'],['sexualidad','Sexualidad']]
+  const SOLUTIONS = [['ninguno','Ninguno'],['terapia','Terapia psicológica'],['medicacion','Medicación'],['apoyo_social','Apoyo social'],['autocuidado','Autocuidado'],['ejercicio','Actividad física'],['cambios_vida','Cambios de vida']]
+  const SUPPORT = [['pareja','Pareja'],['familia','Familia cercana'],['amigos','Amigos cercanos'],['trabajo','Compañeros trabajo'],['comunidad','Comunidad/fe'],['mascotas','Mascotas'],['sin_red','Sin red significativa']]
+  const EVENTS = [['perdida','Pérdida familiar'],['separacion','Separación/divorcio'],['desempleo','Pérdida de empleo'],['enfermedad','Enfermedad propia/familiar'],['trauma','Trauma/abuso'],['accidente','Accidente'],['migracion','Migración'],['cambio_laboral','Cambio laboral/económico'],['embarazo','Embarazo/maternidad'],['ninguno','Ninguno significativo']]
+  const MEDICAL = [['ninguno','Ninguno'],['cronica','Enfermedad crónica'],['neurologica','Neurológica'],['cirugia','Cirugías recientes'],['dolor','Dolor crónico'],['sueno','Trastorno del sueño'],['endocrino','Endocrino/metabólico']]
+  const SYM_MOOD = [['tristeza','Tristeza persistente'],['anhedonia','Anhedonia'],['irritabilidad','Irritabilidad'],['labilidad','Labilidad emocional'],['desesperanza','Desesperanza']]
+  const SYM_ANX = [['preocupacion','Preocupación excesiva'],['tension','Tensión muscular'],['evitacion_social','Evitación social'],['panico','Ataques de pánico'],['hipervigilancia','Hipervigilancia']]
+  const SYM_COG = [['ruminacion','Rumiación'],['concentracion','Dif. concentración'],['fusion','Fusión cognitiva'],['evitacion_exp','Evitación experiencial'],['valores','Desconexión de valores']]
+  const SYM_BEH = [['aislamiento','Aislamiento social'],['procrastinacion','Procrastinación severa'],['desregulacion','Desregulación emocional'],['flashbacks','Flashbacks/reexperimentación'],['sueno_alt','Alteración del sueño'],['autoestima','Baja autoestima']]
+  const DIAG_CLIN = [['depresion','T. depresivo'],['tag','TAG'],['panico','T. de pánico'],['fobia','Fobia específica/social'],['tept','TEPT'],['toc','TOC'],['adaptativo','T. adaptativo'],['personalidad','T. de personalidad'],['por_definir','Por definir']]
+  const DIAG_CTX = [['duelo','Duelo'],['relacional','Dif. relacionales'],['laboral','Estrés laboral/académico'],['crisis','Crisis vital'],['familiar','Conflicto familiar'],['pareja','Problema de pareja'],['ninguno','Ninguno']]
+  const MAINTAINING = [['evitacion_cond','Evitación conductual'],['evitacion_exp','Evitación experiencial'],['refuerzo_neg','Refuerzo negativo (escape)'],['ruminacion','Rumiación/preocupación'],['cond_seguridad','Conductas de seguridad'],['refuerzo_soc','Refuerzo social inadvertido'],['deficit','Déficit de habilidades'],['creencias','Creencias disfuncionales'],['fusion','Fusión cognitiva'],['valores','Falta contacto con valores'],['aislamiento','Aislamiento/falta apoyo']]
+  const PROTECTIVE = [['red_apoyo','Red de apoyo activa'],['motivacion','Motivación al cambio'],['introspect','Buena introspección'],['terapia_prev','Experiencia en terapia'],['economico','Estabilidad económica'],['valores','Claridad de valores'],['afrontamiento','Habilidades afrontamiento'],['vinculo','Vínculo terapéutico']]
+  const INSTRUMENTS_ALL = [['PHQ-9','PHQ-9'],['GAD-7','GAD-7'],['DASS-21','DASS-21'],['CES-D','CES-D'],['AAQ-II','AAQ-II'],['CFQ-7','CFQ-7'],['VLQ','VLQ'],['PCL-5','PCL-5'],['DERS-16','DERS-16'],['Rosenberg','Rosenberg'],['PSQI','PSQI'],['STAI-E','STAI-E'],['STAI-R','STAI-R'],['WHODAS','WHODAS'],['GPS','GPS'],['LSAS','LSAS'],['NEO-FFI','NEO-FFI']]
+
+  const suggestedInstruments = (() => {
+    const map = {}
+    const hit = (instr) => instr.forEach(i => { map[i] = (map[i]||0) + 1 })
+    const mood = form.symptoms_mood||[]
+    const anx  = form.symptoms_anxiety||[]
+    const cog  = form.symptoms_cognitive||[]
+    const beh  = form.symptoms_behavioral||[]
+    const diag = [...(form.diag_clinical||[]), ...(form.diag_contextual||[])]
+
+    // Depresión
+    if (mood.some(s=>['tristeza','anhedonia','desesperanza'].includes(s))) hit(['PHQ-9','DASS-21'])
+    if (mood.includes('labilidad') || mood.includes('irritabilidad')) hit(['CES-D'])
+    if (diag.includes('depresion')) hit(['PHQ-9','DASS-21','CES-D'])
+
+    // Ansiedad
+    if (anx.some(s=>['preocupacion','tension','hipervigilancia'].includes(s))) hit(['GAD-7','DASS-21'])
+    if (anx.includes('panico')) hit(['GAD-7','STAI-E'])
+    if (anx.includes('evitacion_social')) hit(['LSAS'])
+    if (anx.includes('hipervigilancia')) hit(['STAI-R'])
+    if (diag.includes('tag')) hit(['GAD-7','STAI-R'])
+
+    // Trauma
+    if (beh.includes('flashbacks') || diag.includes('tept')) hit(['PCL-5'])
+
+    // Procesos ACT / contextuales
+    if (cog.includes('fusion')) hit(['CFQ-7'])
+    if (cog.includes('evitacion_exp') || (form.maintaining_variables||[]).includes('evitacion_exp')) hit(['AAQ-II'])
+    if (cog.includes('valores') || (form.maintaining_variables||[]).includes('valores')) hit(['VLQ'])
+
+    // Regulación emocional
+    if (beh.includes('desregulacion') || diag.includes('personalidad')) hit(['DERS-16'])
+
+    // Sueño
+    if (beh.includes('sueno_alt') || form.sat_sleep <= 4) hit(['PSQI'])
+
+    // Autoestima / funcionamiento
+    if (beh.includes('autoestima')) hit(['Rosenberg'])
+    if (beh.includes('aislamiento') || (form.sat_social||5) <= 3) hit(['WHODAS'])
+    if (beh.includes('procrastinacion')) hit(['GPS'])
+
+    // Funcionamiento global bajo
+    if (form.global_severity === 'grave') hit(['WHODAS'])
+
+    // Evitación conductual desde eje funcional
+    if ((form.consequences||[]).includes('evitacion')) hit(['AAQ-II'])
+    if ((form.triggers||[]).includes('situaciones_sociales')) hit(['LSAS'])
+
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(e=>e[0]).slice(0,6)
+  })()
+
+  const Sec = ({title,children}) => <div className="mb-4 last:mb-0"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{title}</p>{children}</div>
+  const Divider = () => <div className="border-t border-slate-100 my-3"/>
 
   return (
-    <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="flex flex-col" style={{maxHeight:'80vh'}}>
-      <Alert msg={err} />
+    <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="flex flex-col" style={{maxHeight:'82vh'}}>
+      <Alert msg={err}/>
 
-      {/* Selector de paciente (solo en creación) */}
-      {!initial && (
-        <div className="mb-4">
-          <label className="flex items-center text-sm font-medium text-slate-700 mb-1">
-            Paciente <Tooltip text="Selecciona el paciente al que corresponde esta entrevista inicial" />
-          </label>
+      {/* Selector paciente si no viene del expediente */}
+      {!patientId && !initial && (
+        <div className="mb-3">
+          <label className="text-sm font-medium text-slate-700 mb-1 block">Paciente</label>
           <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
             value={form.patient_id} onChange={e=>f('patient_id',e.target.value)} required>
             <option value="">— Seleccionar paciente —</option>
-            {patients.map(p=><option key={p.id} value={p.id}>{p.name}{p.age?` (${p.age} años)`:''}</option>)}
+            {(patients||[]).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
       )}
 
-      {/* Bloques de navegación */}
-      <div className="flex gap-2 mb-5">
-        {INTERVIEW_BLOCKS.map((b,i)=>(
+      {/* Nav bloques */}
+      <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+        {BLOCKS.map((b,i)=>(
           <button key={b.id} type="button" onClick={()=>setBlock(i)}
-            className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-xl border-2 transition-all ${block===i?b.color:'border-slate-100 bg-slate-50 hover:bg-slate-100'}`}>
-            <span className="text-lg">{b.icon}</span>
-            <span className="text-xs font-semibold hidden sm:block">{b.label}</span>
+            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-all border ${block===i?b.color+' border-current':'border-transparent text-slate-500 hover:bg-slate-100'}`}>
+            <span>{b.icon}</span><span className="hidden sm:block">{b.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Título del bloque actual */}
-      <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border mb-4 ${cur.color}`}>
-        <span className="text-xl">{cur.icon}</span>
-        <div>
-          <p className="text-xs font-semibold opacity-70">{cur.label}</p>
-          <p className="font-semibold text-sm">{cur.title}</p>
-        </div>
-        <div className="ml-auto text-xs opacity-60">{block+1} de {totalBlocks}</div>
-      </div>
+      <div className="overflow-y-auto flex-1 pr-1 space-y-3">
 
-      {/* Campos del bloque */}
-      <div className="overflow-y-auto flex-1 space-y-4 pr-1">
-        {cur.fields.map(field=>(
-          <Textarea key={field.key} label={field.label} tip={field.tip} rows={field.rows}
-            placeholder={field.placeholder} value={form[field.key]||''}
-            onChange={e=>f(field.key,e.target.value)} />
-        ))}
+        {/* SEGURIDAD */}
+        {block===0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-red-500 text-lg">⚠️</span>
+              <p className="font-semibold text-red-800 text-sm">Verificación de seguridad — Completar primero</p>
+            </div>
 
-        {/* Campos extra en bloque 4 */}
-        {block === 3 && (
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Fecha próxima sesión" tip="Fecha tentativa para la siguiente sesión o devolución." type="date"
-              value={form.next_session_date||''} onChange={e=>f('next_session_date',e.target.value)} />
+            <RadioGroup label="Nivel de ideación suicida en esta sesión" name="risk" value={form.risk_level}
+              onChange={v=>f('risk_level',v)}
+              options={[['sin_ideacion','Sin ideación'],['pasiva','Ideación pasiva'],['activa_sin_plan','Activa sin plan'],['con_plan','Con plan'],['intento_previo','Intento previo']]} />
+
+            {form.risk_level && form.risk_level !== 'sin_ideacion' && (
+              <div className="bg-white border border-red-200 rounded-xl p-4 space-y-4">
+                <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">Micro-protocolo de evaluación</p>
+
+                <div>
+                  <p className="text-xs text-red-600 font-medium mb-2">Factores de riesgo inmediato</p>
+                  <div className="space-y-2">
+                    {[
+                      ['risk_has_plan','¿Tiene un plan específico de cómo hacerlo?'],
+                      ['risk_has_means','¿Tiene acceso a los medios para llevarlo a cabo?'],
+                      ['risk_immediate_intention','¿Expresa intención de actuar de forma inmediata?'],
+                    ].map(([key,lbl])=>(
+                      <label key={key} className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${form[key]?'bg-red-50 border-red-300':'bg-slate-50 border-slate-200 hover:border-red-200'}`}>
+                        <input type="checkbox" checked={form[key]||false} onChange={e=>f(key,e.target.checked)}
+                          className="w-4 h-4 accent-red-500 flex-shrink-0"/>
+                        <span className="text-xs text-slate-700">{lbl}</span>
+                        {form[key] && <span className="ml-auto text-xs font-bold text-red-600">⚠ SÍ</span>}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-600 font-medium mb-2">Factores protectores inmediatos</p>
+                  <div className="space-y-2">
+                    {[
+                      ['risk_support_available','¿Cuenta con red de apoyo disponible ahora?'],
+                      ['risk_can_stay_alone','¿Puede estar solo/a con seguridad?'],
+                    ].map(([key,lbl])=>(
+                      <label key={key} className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${form[key]?'bg-green-50 border-green-300':'bg-slate-50 border-slate-200 hover:border-green-200'}`}>
+                        <input type="checkbox" checked={form[key]||false} onChange={e=>f(key,e.target.checked)}
+                          className="w-4 h-4 accent-green-500 flex-shrink-0"/>
+                        <span className="text-xs text-slate-700">{lbl}</span>
+                        {form[key] && <span className="ml-auto text-xs font-bold text-green-600">✓ SÍ</span>}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {(form.risk_has_plan || form.risk_has_means || form.risk_immediate_intention) && (
+                  <div className="bg-red-100 border border-red-400 rounded-xl p-3">
+                    <p className="text-xs font-bold text-red-800 mb-1">🚨 Riesgo alto — Acción inmediata requerida</p>
+                    <p className="text-xs text-red-700 mb-2">Hay factores de riesgo activos. No dejar al paciente solo.</p>
+                    <p className="text-xs text-red-600 font-medium">→ Acceder al protocolo completo desde la pestaña "Riesgo" del expediente.</p>
+                  </div>
+                )}
+                {!form.risk_has_plan && !form.risk_has_means && !form.risk_immediate_intention && form.risk_level !== 'sin_ideacion' && (
+                  <div className="bg-amber-50 border border-amber-300 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-amber-800 mb-1">⚠ Riesgo presente — Seguimiento activo</p>
+                    <p className="text-xs text-amber-700">No hay factores de riesgo inmediato identificados, pero se recomienda monitoreo continuo y completar el protocolo en la misma sesión.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* B1: MOTIVO Y ANÁLISIS */}
+        {block===1 && (
+          <div className="space-y-3">
+            <Sec title="Motivo de consulta">
+              <Textarea label="En palabras del paciente" rows={3} placeholder="Descripción textual de lo que el paciente refiere como problema principal..."
+                value={form.consultation_reason||''} onChange={e=>f('consultation_reason',e.target.value)} />
+            </Sec>
+            <Divider/>
+            <Sec title="Caracterización del problema">
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block uppercase tracking-wide">Duración</label>
+                  <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={form.problem_duration||''} onChange={e=>f('problem_duration',e.target.value)}>
+                    <option value="">Seleccionar</option>
+                    {[['<1m','Menos de 1 mes'],['1-3m','1–3 meses'],['3-6m','3–6 meses'],['6-12m','6–12 meses'],['1-2a','1–2 años'],['>2a','Más de 2 años'],['cronico','Crónico']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block uppercase tracking-wide">Inicio</label>
+                  <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={form.problem_onset||''} onChange={e=>f('problem_onset',e.target.value)}>
+                    <option value="">Seleccionar</option>
+                    {[['gradual','Gradual'],['brusco','Brusco'],['evento','Tras evento específico'],['no_identifica','No identifica']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block uppercase tracking-wide">Curso</label>
+                  <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                    value={form.problem_course||''} onChange={e=>f('problem_course',e.target.value)}>
+                    <option value="">Seleccionar</option>
+                    {[['estable','Estable'],['progresivo','Progresivo'],['episodico','Episódico'],['fluctuante','Fluctuante']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+              </div>
+              <ScaleInput label="Intensidad del malestar" value={form.problem_intensity} onChange={v=>f('problem_intensity',v)} leftLabel="0 — ninguno" rightLabel="10 — extremo"/>
+              <div className="mt-3">
+                <RadioGroup label="Frecuencia de síntomas" name="freq" value={form.problem_frequency} onChange={v=>f('problem_frequency',v)}
+                  options={[['varias_dia','Varias veces al día'],['diario','Diariamente'],['varias_sem','Varias veces/sem'],['1-2_sem','1–2 veces/sem'],['ocasional','Ocasionalmente']]} />
+              </div>
+            </Sec>
+            <Divider/>
+            <CheckGroup label="Áreas de vida afectadas" name="areas" options={AREAS} value={form.areas_affected} onChange={v=>f('areas_affected',v)} />
+            <Divider/>
             <div>
-              <label className="flex items-center text-sm font-medium text-slate-700 mb-1">
-                Estado de la entrevista <Tooltip text="Borrador: en proceso. Completada: entrevista finalizada y revisada." />
-              </label>
-              <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
-                value={form.status||'borrador'} onChange={e=>f('status',e.target.value)}>
-                <option value="borrador">Borrador</option>
-                <option value="completada">Completada</option>
-              </select>
+              <CheckGroup label="Intentos de solución previos" name="solutions" options={SOLUTIONS} value={form.previous_solutions} onChange={v=>f('previous_solutions',v)} />
+              <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                rows={2} placeholder="Resultados: ¿qué funcionó, qué no?" value={form.previous_solutions_notes||''} onChange={e=>f('previous_solutions_notes',e.target.value)}/>
+            </div>
+            <Divider/>
+            {/* EJE FUNCIONAL */}
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Eje funcional — análisis A-B-C</p>
+                <p className="text-xs text-slate-400 mb-3">Antecedentes y consecuencias del problema. Esencial para la formulación clínica.</p>
+              </div>
+              <div>
+                <CheckGroup label="Disparadores / antecedentes (¿cuándo ocurre el problema?)" options={[
+                  ['situaciones_sociales','Situaciones sociales'],
+                  ['pensamientos','Pensamientos específicos'],
+                  ['emociones_intensas','Emociones intensas'],
+                  ['contexto_laboral','Contexto laboral/académico'],
+                  ['conflictos','Conflictos interpersonales'],
+                  ['soledad','Estar solo/a'],
+                  ['fatiga','Cansancio o fatiga'],
+                  ['noche','Horario nocturno'],
+                  ['sin_estructura','Falta de estructura/rutina'],
+                ]} value={form.triggers} onChange={v=>f('triggers',v)} />
+                <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  placeholder="Otros disparadores..." value={form.triggers_other||''} onChange={e=>f('triggers_other',e.target.value)}/>
+              </div>
+              <CheckGroup label="Consecuencias (¿qué ocurre después del episodio?)" options={[
+                ['alivio_inmediato','Alivio inmediato'],
+                ['evitacion','Evitación/escape'],
+                ['conflictos','Conflictos relacionales'],
+                ['culpa','Culpa/vergüenza'],
+                ['aislamiento','Aislamiento'],
+                ['malestar_prolongado','Malestar prolongado'],
+                ['conducta_compensatoria','Conducta compensatoria'],
+                ['busqueda_apoyo','Búsqueda de apoyo'],
+              ]} value={form.consequences} onChange={v=>f('consequences',v)} />
             </div>
           </div>
         )}
-        {/* Botón IA — solo en bloque 4 */}
-        {block === 3 && (
-          <AIAnalysis form={form} patientName={patients.find(p=>p.id===form.patient_id)?.name || (initial?.name) || 'el paciente'} />
+
+        {/* B2: CONTEXTO VITAL */}
+        {block===2 && (
+          <div className="space-y-3">
+            <Sec title="Escalas de satisfacción (0–10)">
+              <div className="grid grid-cols-1 gap-3">
+                <ScaleInput label="Laboral / académica" value={form.sat_work} onChange={v=>f('sat_work',v)} leftLabel="0" rightLabel="10"/>
+                <ScaleInput label="Pareja / familia" value={form.sat_family} onChange={v=>f('sat_family',v)} leftLabel="0" rightLabel="10"/>
+                <ScaleInput label="Social / amistades" value={form.sat_social} onChange={v=>f('sat_social',v)} leftLabel="0" rightLabel="10"/>
+                <ScaleInput label="Calidad del sueño" value={form.sat_sleep} onChange={v=>f('sat_sleep',v)} leftLabel="0" rightLabel="10"/>
+              </div>
+            </Sec>
+            <Divider/>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-slate-400 uppercase tracking-wide mb-1 block">Actividad física</label>
+                <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.physical_activity||''} onChange={e=>f('physical_activity',e.target.value)}>
+                  <option value="">Seleccionar</option>
+                  {[['sedentario','Sedentario'],['ocasional','Ocasional (1×/sem)'],['regular','Regular (2–3×/sem)'],['frecuente','Frecuente (4+×/sem)']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 uppercase tracking-wide mb-1 block">Hábitos alimentarios</label>
+                <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.eating_habits||''} onChange={e=>f('eating_habits',e.target.value)}>
+                  <option value="">Seleccionar</option>
+                  {[['adecuados','Adecuados'],['irregulares','Irregulares'],['restriccion','Alterados — restricción'],['exceso','Alterados — exceso'],['muy_alt','Muy alterados']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+            <Divider/>
+            <CheckGroup label="Red de apoyo" name="support" options={SUPPORT} value={form.support_network} onChange={v=>f('support_network',v)} />
+            <Divider/>
+            <Textarea label="Observaciones (opcional)" rows={2} placeholder="Aspectos relevantes no recogidos arriba..."
+              value={form.context_notes||''} onChange={e=>f('context_notes',e.target.value)} />
+          </div>
         )}
+
+        {/* B3: HISTORIA CLÍNICA */}
+        {block===3 && (
+          <div className="space-y-3">
+            <div>
+              <RadioGroup label="Tratamiento psicológico previo" name="tto" value={form.previous_treatments} onChange={v=>f('previous_treatments',v)}
+                options={[['ninguno','Sin tratamiento previo'],['uno','1 proceso'],['dos_tres','2–3 procesos'],['mas_tres','Más de 3'],['paralelo','Tratamiento paralelo actual']]} />
+              <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                rows={2} placeholder="Enfoques, resultados, motivo de finalización..." value={form.previous_treatments_notes||''} onChange={e=>f('previous_treatments_notes',e.target.value)}/>
+            </div>
+            <Divider/>
+            <Sec title="Medicación actual">
+              <div className="grid grid-cols-2 gap-3">
+                <CheckGroup options={[['ninguna','Sin medicación'],['psicofarmaco','Psicofármaco'],['medica','Médica general']]} value={form.medication_type} onChange={v=>f('medication_type',v)} />
+                <Input label="Nombre / dosis" placeholder="Fármaco, dosis, prescriptor..." value={form.medication_detail||''} onChange={e=>f('medication_detail',e.target.value)} />
+              </div>
+            </Sec>
+            <Divider/>
+            <div>
+              <CheckGroup label="Eventos vitales significativos" name="events" options={EVENTS} value={form.significant_events} onChange={v=>f('significant_events',v)} />
+              <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                rows={2} placeholder="Descripción de los más relevantes..." value={form.significant_events_notes||''} onChange={e=>f('significant_events_notes',e.target.value)}/>
+            </div>
+            <Divider/>
+            <CheckGroup label="Antecedentes médicos relevantes" name="medical" options={MEDICAL} value={form.medical_history} onChange={v=>f('medical_history',v)} />
+            <Divider/>
+            <Sec title="Consumo de sustancias">
+              <div className="space-y-2">
+                <SubstanceRow label="Alcohol" value={form.substance_alcohol} onChange={v=>f('substance_alcohol',v)} />
+                <SubstanceRow label="Tabaco" value={form.substance_tobacco} onChange={v=>f('substance_tobacco',v)} />
+                <SubstanceRow label="Cannabis" value={form.substance_cannabis} onChange={v=>f('substance_cannabis',v)} />
+                <SubstanceRow label="Otras sustancias" value={form.substance_other} onChange={v=>f('substance_other',v)} />
+              </div>
+            </Sec>
+          </div>
+        )}
+
+        {/* B4: EVALUACIÓN CLÍNICA */}
+        {block===4 && (
+          <div className="space-y-3">
+            <Sec title="Examen del estado mental">
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ['mse_appearance','Apariencia',[['adecuada','Adecuada'],['descuidada','Descuidada'],['llamativa','Llamativa'],['deteriorada','Deteriorada']]],
+                  ['mse_language','Lenguaje',[['normal','Normal'],['lento','Enlentecido'],['acelerado','Acelerado'],['incoherente','Incoherente']]],
+                  ['mse_psychomotor','Psicomotricidad',[['normal','Normal'],['inhibida','Inhibida'],['agitada','Agitada']]],
+                  ['mse_thought','Pensamiento',[['logico','Lógico'],['rumiativo','Rumiativo'],['desorganizado','Desorganizado'],['sobrevalorado','Ideas sobrevaloradas']]],
+                  ['mse_affect','Afecto',[['congruente','Congruente'],['incongruente','Incongruente'],['embotado','Embotado'],['labil','Lábil']]],
+                  ['mse_reality','Contacto realidad',[['conservado','Conservado'],['parcial','Parcialmente alterado'],['alterado','Alterado']]],
+                ].map(([key,lbl,opts])=>(
+                  <div key={key}>
+                    <label className="text-xs text-slate-400 uppercase tracking-wide mb-1 block">{lbl}</label>
+                    <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                      value={form[key]||''} onChange={e=>f(key,e.target.value)}>
+                      {opts.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <Input label="Estado de ánimo en palabras del paciente" placeholder="Ej: ansioso, triste, vacío, agotado..."
+                value={form.mood_subjective||''} onChange={e=>f('mood_subjective',e.target.value)} />
+            </Sec>
+            <Divider/>
+            <Sec title="Síntomas presentes">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">Estado de ánimo</p>
+                  <CheckGroup options={SYM_MOOD} value={form.symptoms_mood} onChange={v=>f('symptoms_mood',v)} />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">Ansiedad</p>
+                  <CheckGroup options={SYM_ANX} value={form.symptoms_anxiety} onChange={v=>f('symptoms_anxiety',v)} />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">Cognitivos</p>
+                  <CheckGroup options={SYM_COG} value={form.symptoms_cognitive} onChange={v=>f('symptoms_cognitive',v)} />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">Conductuales / funcionales</p>
+                  <CheckGroup options={SYM_BEH} value={form.symptoms_behavioral} onChange={v=>f('symptoms_behavioral',v)} />
+                </div>
+              </div>
+              {suggestedInstruments.length > 0 && (
+                <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">Instrumentos sugeridos según síntomas:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {suggestedInstruments.map(i=><span key={i} className="text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded">{i}</span>)}
+                  </div>
+                  <p className="text-xs text-blue-500 mt-1">Confirmar en bloque 8</p>
+                </div>
+              )}
+            </Sec>
+            <Divider/>
+            <Sec title="Impresión diagnóstica presuntiva">
+              <p className="text-xs text-slate-400 mb-2">Categoría clínica</p>
+              <CheckGroup options={DIAG_CLIN} value={form.diag_clinical} onChange={v=>f('diag_clinical',v)} />
+              <p className="text-xs text-slate-400 mb-2 mt-3">Problema contextual principal</p>
+              <CheckGroup options={DIAG_CTX} value={form.diag_contextual} onChange={v=>f('diag_contextual',v)} />
+              <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                rows={2} placeholder="Notas diagnósticas adicionales..." value={form.diag_notes||''} onChange={e=>f('diag_notes',e.target.value)}/>
+            </Sec>
+            <Divider/>
+            <Sec title="Severidad global (síntesis clínica)">
+              <SeveritySelector value={form.global_severity} onChange={v=>f('global_severity',v)} />
+            </Sec>
+          </div>
+        )}
+
+        {/* B5: FORMULACIÓN */}
+        {block===5 && (
+          <div className="space-y-3">
+            <Textarea label="Problema central operacionalizado" rows={3} placeholder="¿Cuál es el problema en términos funcionales/conductuales concretos?"
+              value={form.problem_operationalized||''} onChange={e=>f('problem_operationalized',e.target.value)} />
+            <Divider/>
+            <CheckGroup label="Variables que mantienen el problema" options={MAINTAINING} value={form.maintaining_variables} onChange={v=>f('maintaining_variables',v)} />
+            <Divider/>
+            <Textarea label="Factores predisponentes" rows={2} placeholder="Historia de aprendizaje, eventos tempranos, vulnerabilidad biológica..."
+              value={form.predisposing_factors||''} onChange={e=>f('predisposing_factors',e.target.value)} />
+            <Divider/>
+            <CheckGroup label="Factores protectores" options={PROTECTIVE} value={form.protective_factors} onChange={v=>f('protective_factors',v)} />
+          </div>
+        )}
+
+        {/* B6: PLAN */}
+        {block===6 && (
+          <div className="space-y-3">
+            <Textarea label="Expectativas del paciente" rows={3} placeholder="¿Qué espera lograr? ¿Cómo sería su vida si mejorara el problema?"
+              value={form.patient_expectations||''} onChange={e=>f('patient_expectations',e.target.value)} />
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <p className="text-xs font-semibold text-amber-800 mb-1">Objetivo conductual observable</p>
+              <p className="text-xs text-amber-600 mb-2">¿Qué estaría haciendo diferente el paciente si mejora? (Esencial para ACT, TCC y medición de progreso)</p>
+              <textarea className="w-full border border-amber-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                rows={2} placeholder="Ej: Retomar actividades sociales semanalmente, completar tareas laborales sin evitación, dormir sin interrupciones..."
+                value={form.behavioral_objective||''} onChange={e=>f('behavioral_objective',e.target.value)}/>
+            </div>
+            <Divider/>
+            <div className="grid grid-cols-2 gap-4">
+              <ScaleInput label="Motivación al cambio" value={form.motivation} onChange={v=>f('motivation',v)} leftLabel="0 — nula" rightLabel="10 — alta"/>
+              <RadioGroup label="Insight sobre el problema" name="insight" value={form.insight} onChange={v=>f('insight',v)}
+                options={[['nulo','Nulo'],['parcial','Parcial'],['adecuado','Adecuado'],['elevado','Elevado']]} />
+            </div>
+            <Divider/>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-slate-400 uppercase tracking-wide mb-1 block">Frecuencia de sesiones</label>
+                <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.session_frequency||'semanal'} onChange={e=>f('session_frequency',e.target.value)}>
+                  {[['semanal','Semanal'],['quincenal','Quincenal'],['mensual','Mensual'],['demanda','A demanda'],['intensiva','Intensiva (2×/sem)']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 uppercase tracking-wide mb-1 block">Necesidad de derivación</label>
+                <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.derivation||'no'} onChange={e=>f('derivation',e.target.value)}>
+                  {[['no','No requiere'],['psiquiatria','Psiquiatría'],['medico','Médico general'],['neurologia','Neurología'],['urgencias','Urgencias']].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CIERRE: INSTRUMENTOS + OBSERVACIONES + CURSO + IA */}
+        {block===7 && (
+          <div className="space-y-3">
+            <Sec title="Instrumentos confirmados para sesión 2">
+              {suggestedInstruments.length > 0 && (
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
+                  <p className="text-xs text-blue-600 mb-1.5">Sugeridos automáticamente:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {suggestedInstruments.map(i=>(
+                      <button key={i} type="button"
+                        onClick={()=>{const arr=form.instruments_confirmed||[];f('instruments_confirmed',arr.includes(i)?arr.filter(x=>x!==i):[...arr,i])}}
+                        className={`text-xs px-2 py-1 rounded border transition-all ${(form.instruments_confirmed||[]).includes(i)?'bg-brand-500 text-white border-brand-500':'bg-white text-blue-700 border-blue-300'}`}>
+                        {i}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <CheckGroup label="Todos los disponibles" options={INSTRUMENTS_ALL} value={form.instruments_confirmed} onChange={v=>f('instruments_confirmed',v)} />
+            </Sec>
+            <Divider/>
+            <Textarea label="Observaciones del evaluador" rows={3} placeholder="Impresión clínica general, actitud del paciente, aspectos destacados..."
+              value={form.evaluator_notes||''} onChange={e=>f('evaluator_notes',e.target.value)} />
+            <Divider/>
+            <Sec title="¿La sesión siguió el curso esperado?">
+              <RadioGroup name="course" value={form.session_course} onChange={v=>f('session_course',v)}
+                options={[['si','Sí — todos los bloques completados'],['parcial','Parcialmente — algunos incompletos'],['no','No — tomó un rumbo diferente']]} />
+              {(form.session_course==='parcial'||form.session_course==='no') && (
+                <div className="mt-2 space-y-2">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wide mb-1.5">¿Qué ocurrió en la sesión?</p>
+                    <CheckGroup options={[
+                      ['crisis_emocional','Crisis emocional'],
+                      ['resistencia','Resistencia / evitación'],
+                      ['desregulacion','Desregulación emocional'],
+                      ['falta_tiempo','Falta de tiempo'],
+                      ['revelacion_trauma','Revelación de trauma'],
+                      ['intervencion_crisis','Intervención de crisis'],
+                      ['tema_urgente','Surgió tema urgente'],
+                      ['fatiga_paciente','Fatiga del paciente'],
+                    ]} value={form.session_course_reasons} onChange={v=>f('session_course_reasons',v)} />
+                  </div>
+                  <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                    rows={2} placeholder="Contexto adicional para la IA..." value={form.session_course_notes||''} onChange={e=>f('session_course_notes',e.target.value)}/>
+                  <p className="text-xs text-slate-400 italic">Esta información ayuda a la IA a interpretar correctamente los datos faltantes</p>
+                </div>
+              )}
+            </Sec>
+            <Divider/>
+            {/* Resumen IA */}
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-purple-600 text-lg">🤖</span>
+                <div>
+                  <p className="font-semibold text-purple-800 text-sm">Resumen clínico con IA</p>
+                  <p className="text-xs text-purple-600">Genera síntesis, hipótesis funcional y sugerencias para sesión 2</p>
+                </div>
+              </div>
+              {!aiDone && !aiLoading && (
+                <button type="button" onClick={generateAI}
+                  className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors">
+                  Generar resumen clínico con IA
+                </button>
+              )}
+              {aiLoading && (
+                <div className="text-center py-4">
+                  <div className="inline-block w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-xs text-purple-600">Analizando datos clínicos...</p>
+                </div>
+              )}
+              {aiDone && aiData && (
+                <div className="space-y-3">
+                  {[['sintesis','Síntesis del problema'],['hipotesis','Hipótesis funcional'],['riesgo_integrado','Nivel de riesgo integrado'],['sesion2','Sugerencias para sesión 2']].map(([k,l])=>(
+                    <div key={k}>
+                      <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1">{l}</p>
+                      <p className="text-xs text-slate-700 bg-white border border-purple-100 rounded-lg p-2.5 leading-relaxed">{aiData[k]}</p>
+                    </div>
+                  ))}
+                  <button type="button" onClick={()=>{setAiDone(false);f('ai_summary','')}}
+                    className="text-xs text-purple-500 hover:text-purple-700">↺ Regenerar</button>
+                </div>
+              )}
+              {aiDone && form.ai_summary==='error' && (
+                <div>
+                  <p className="text-xs text-red-500 mb-2">Error al generar. Intenta de nuevo.</p>
+                  <button type="button" onClick={()=>{setAiDone(false);f('ai_summary','')}} className="text-xs text-purple-500">Reintentar</button>
+                </div>
+              )}
+              <p className="text-xs text-purple-400 mt-2 italic">Apoyo clínico — el criterio profesional prevalece siempre</p>
+            </div>
+            <Divider/>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-slate-400 uppercase tracking-wide mb-1 block">Estado de la entrevista</label>
+                <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.status||'borrador'} onChange={e=>f('status',e.target.value)}>
+                  <option value="borrador">Borrador</option>
+                  <option value="completada">Completada</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Navegación entre bloques + guardar */}
-      <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-100">
+      {/* Footer navegación */}
+      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100">
         <div className="flex gap-2">
           <button type="button" onClick={()=>setBlock(Math.max(0,block-1))} disabled={block===0}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-slate-500 text-sm disabled:opacity-30 hover:bg-slate-50">
-            ← Anterior
-          </button>
-          <button type="button" onClick={()=>setBlock(Math.min(totalBlocks-1,block+1))} disabled={block===totalBlocks-1}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-slate-500 text-sm disabled:opacity-30 hover:bg-slate-50">
-            Siguiente →
-          </button>
+            className="px-3 py-2 rounded-lg border border-slate-200 text-slate-500 text-sm disabled:opacity-30 hover:bg-slate-50">← Anterior</button>
+          <button type="button" onClick={()=>setBlock(Math.min(7,block+1))} disabled={block===7}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-slate-500 text-sm disabled:opacity-30 hover:bg-slate-50">Siguiente →</button>
         </div>
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
@@ -472,50 +1117,51 @@ function InterviewForm({ initial, patients, onSave, onClose, busy, err }) {
 
 // Vista de lectura de la entrevista
 function InterviewDetail({ interview: iv, patientName, onEdit, onClose }) {
-  const [block, setBlock] = useState(0)
-  const cur = INTERVIEW_BLOCKS[block]
+  const aiData = (() => { try { return iv.ai_summary && iv.ai_summary!=='error' ? JSON.parse(iv.ai_summary) : null } catch(e){return null} })()
   const Field = ({ label, value }) => !value ? null : (
-    <div className="mb-4">
+    <div className="mb-3">
       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{value}</p>
+      <p className="text-sm text-slate-700 leading-relaxed">{Array.isArray(value) ? value.join(', ') : value}</p>
     </div>
   )
+  const formatVal = v => typeof v === 'object' ? JSON.stringify(v) : String(v||'')
   return (
     <div className="flex flex-col" style={{maxHeight:'80vh'}}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
         <div>
           <p className="font-semibold text-slate-800">{patientName}</p>
-          <p className="text-xs text-slate-400">Entrevista inicial · {new Date(iv.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
+          <p className="text-xs text-slate-400 mt-0.5">Entrevista inicial · {new Date(iv.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_INT_COLORS[iv.status]||STATUS_INT_COLORS.borrador}`}>
-          {STATUS_INT_LABELS[iv.status]||'Borrador'}
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${iv.status==='completada'?'bg-green-100 text-green-700':'bg-slate-100 text-slate-600'}`}>
+          {iv.status==='completada'?'Completada':'Borrador'}
         </span>
       </div>
-
-      {/* Tabs bloques */}
-      <div className="flex gap-2 mb-4">
-        {INTERVIEW_BLOCKS.map((b,i)=>(
-          <button key={b.id} type="button" onClick={()=>setBlock(i)}
-            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl border-2 transition-all ${block===i?b.color:'border-slate-100 bg-slate-50 hover:bg-slate-100'}`}>
-            <span className="text-base">{b.icon}</span>
-            <span className="text-xs font-semibold hidden sm:block">{b.label}</span>
-          </button>
-        ))}
+      <div className="overflow-y-auto flex-1 pr-1 space-y-2">
+        {iv.risk_level && <Field label="Riesgo suicida" value={iv.risk_level.replace(/_/g,' ')} />}
+        {iv.consultation_reason && <Field label="Motivo de consulta" value={iv.consultation_reason} />}
+        {iv.global_severity && <Field label="Severidad global" value={iv.global_severity} />}
+        {iv.diag_clinical?.length > 0 && <Field label="Diagnóstico clínico" value={iv.diag_clinical} />}
+        {iv.diag_contextual?.length > 0 && <Field label="Problema contextual" value={iv.diag_contextual} />}
+        {iv.symptoms_mood?.length > 0 && <Field label="Síntomas — estado de ánimo" value={iv.symptoms_mood} />}
+        {iv.symptoms_anxiety?.length > 0 && <Field label="Síntomas — ansiedad" value={iv.symptoms_anxiety} />}
+        {iv.maintaining_variables?.length > 0 && <Field label="Variables mantenedoras" value={iv.maintaining_variables} />}
+        {iv.protective_factors?.length > 0 && <Field label="Factores protectores" value={iv.protective_factors} />}
+        {iv.patient_expectations && <Field label="Expectativas del paciente" value={iv.patient_expectations} />}
+        {iv.instruments_confirmed?.length > 0 && <Field label="Instrumentos sesión 2" value={iv.instruments_confirmed} />}
+        {iv.evaluator_notes && <Field label="Observaciones del evaluador" value={iv.evaluator_notes} />}
+        {aiData && (
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mt-2">
+            <p className="text-xs font-semibold text-purple-700 mb-3">Resumen clínico IA</p>
+            {[['sintesis','Síntesis'],['hipotesis','Hipótesis funcional'],['riesgo_integrado','Riesgo integrado'],['sesion2','Sugerencias sesión 2']].map(([k,l])=>aiData[k]?(
+              <div key={k} className="mb-2 last:mb-0">
+                <p className="text-xs font-semibold text-purple-600 mb-0.5">{l}</p>
+                <p className="text-xs text-slate-700 leading-relaxed">{aiData[k]}</p>
+              </div>
+            ):null)}
+          </div>
+        )}
       </div>
-
-      <div className={`px-4 py-2.5 rounded-xl border mb-4 ${cur.color}`}>
-        <p className="font-semibold text-sm">{cur.icon} {cur.title}</p>
-      </div>
-
-      <div className="overflow-y-auto flex-1 pr-1">
-        {cur.fields.map(field=>(
-          <Field key={field.key} label={field.label} value={iv[field.key]} />
-        ))}
-        {block===3 && iv.next_session_date && <Field label="Próxima sesión" value={iv.next_session_date} />}
-      </div>
-
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+      <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 mt-3">
         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cerrar</button>
         <button onClick={onEdit} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium">Editar entrevista</button>
       </div>
@@ -4779,16 +5425,59 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
     setBusy(true); setErr('')
     const payload = {
       user_id: user.id, patient_id: patientId,
-      problem_description: form.problem_description||null, problem_frequency: form.problem_frequency||null,
-      problem_triggers: form.problem_triggers||null, problem_consequences: form.problem_consequences||null,
-      previous_solutions: form.previous_solutions||null, area_work: form.area_work||null,
-      area_family: form.area_family||null, area_social: form.area_social||null,
-      area_health: form.area_health||null, area_leisure: form.area_leisure||null,
-      previous_treatments: form.previous_treatments||null, current_medication: form.current_medication||null,
-      significant_events: form.significant_events||null, problem_history: form.problem_history||null,
-      patient_goals: form.patient_goals||null, clinical_goals: form.clinical_goals||null,
-      instruments_planned: form.instruments_planned||null, evaluator_notes: form.evaluator_notes||null,
-      next_session_date: form.next_session_date||null, status: form.status||'borrador'
+      risk_level: form.risk_level||null,
+      consultation_reason: form.consultation_reason||null,
+      problem_duration: form.problem_duration||null, problem_onset: form.problem_onset||null,
+      problem_course: form.problem_course||null, problem_intensity: form.problem_intensity||5,
+      problem_frequency: form.problem_frequency||null,
+      areas_affected: form.areas_affected||[], previous_solutions: form.previous_solutions||[],
+      previous_solutions_notes: form.previous_solutions_notes||null,
+      sat_work: form.sat_work||5, sat_family: form.sat_family||5,
+      sat_social: form.sat_social||5, sat_sleep: form.sat_sleep||5,
+      physical_activity: form.physical_activity||null, eating_habits: form.eating_habits||null,
+      support_network: form.support_network||[], context_notes: form.context_notes||null,
+      previous_treatments: form.previous_treatments||null,
+      previous_treatments_notes: form.previous_treatments_notes||null,
+      medication_type: form.medication_type||[], medication_detail: form.medication_detail||null,
+      significant_events: form.significant_events||[], significant_events_notes: form.significant_events_notes||null,
+      medical_history: form.medical_history||[],
+      substance_alcohol: form.substance_alcohol||'no_consume',
+      substance_tobacco: form.substance_tobacco||'no_consume',
+      substance_cannabis: form.substance_cannabis||'no_consume',
+      substance_other: form.substance_other||'no_consume',
+      mse_appearance: form.mse_appearance||'adecuada', mse_language: form.mse_language||'normal',
+      mse_psychomotor: form.mse_psychomotor||'normal', mse_thought: form.mse_thought||'logico',
+      mse_affect: form.mse_affect||'congruente', mse_reality: form.mse_reality||'conservado',
+      mood_subjective: form.mood_subjective||null,
+      symptoms_mood: form.symptoms_mood||[], symptoms_anxiety: form.symptoms_anxiety||[],
+      symptoms_cognitive: form.symptoms_cognitive||[], symptoms_behavioral: form.symptoms_behavioral||[],
+      diag_clinical: form.diag_clinical||[], diag_contextual: form.diag_contextual||[],
+      diag_notes: form.diag_notes||null, global_severity: form.global_severity||null,
+      problem_operationalized: form.problem_operationalized||null,
+      maintaining_variables: form.maintaining_variables||[],
+      predisposing_factors: form.predisposing_factors||null,
+      protective_factors: form.protective_factors||[],
+      patient_expectations: form.patient_expectations||null,
+      motivation: form.motivation||7, insight: form.insight||null,
+      session_frequency: form.session_frequency||'semanal',
+      derivation: form.derivation||'no',
+      instruments_confirmed: form.instruments_confirmed||[],
+      evaluator_notes: form.evaluator_notes||null,
+      session_course: form.session_course||'si',
+      session_course_reasons: form.session_course_reasons||[],
+      session_course_notes: form.session_course_notes||null,
+      // New fields v4
+      risk_has_plan: form.risk_has_plan||false,
+      risk_has_means: form.risk_has_means||false,
+      risk_immediate_intention: form.risk_immediate_intention||false,
+      risk_support_available: form.risk_support_available||false,
+      risk_can_stay_alone: form.risk_can_stay_alone!==undefined?form.risk_can_stay_alone:true,
+      triggers: form.triggers||[],
+      triggers_other: form.triggers_other||null,
+      consequences: form.consequences||[],
+      behavioral_objective: form.behavioral_objective||null,
+      ai_summary: form.ai_summary||null,
+      status: form.status||'borrador'
     }
     let error
     if (modal === 'edit') {
@@ -4843,8 +5532,8 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
 
       {(modal === 'create' || modal === 'edit') && (
         <Modal title={modal === 'edit' ? 'Editar entrevista' : 'Nueva entrevista inicial'} onClose={() => { setModal(null); setSelected(null) }} wide>
-          <InterviewForm initial={modal === 'edit' ? selected : {...EMPTY_INTERVIEW, patient_id: patientId}}
-            patients={patients} onSave={save} onClose={() => { setModal(null); setSelected(null) }} busy={busy} err={err} />
+          <InterviewForm initial={modal === 'edit' ? selected : null}
+            patientId={patientId} patients={patients} onSave={save} onClose={() => { setModal(null); setSelected(null) }} busy={busy} err={err} />
         </Modal>
       )}
       {modal === 'view' && selected && (
