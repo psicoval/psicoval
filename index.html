@@ -4756,6 +4756,252 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
   )
 }
 
+// ── Panel de Entrevista del Paciente ─────────────────────
+function PatientInterviewPanel({ user, patientId, patientName }) {
+  const [interviews, setInterviews] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [modal, setModal] = useState(null)
+  const [selected, setSelected] = useState(null)
+  const [patients, setPatients] = useState([{id: patientId, name: patientName}])
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  const load = async () => {
+    setLoading(true)
+    const { data } = await sb.from('initial_interviews').select('*').eq('patient_id', patientId).eq('user_id', user.id).order('created_at', { ascending: false })
+    setInterviews(data || [])
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [patientId])
+
+  const save = async (form) => {
+    setBusy(true); setErr('')
+    const payload = {
+      user_id: user.id, patient_id: patientId,
+      problem_description: form.problem_description||null, problem_frequency: form.problem_frequency||null,
+      problem_triggers: form.problem_triggers||null, problem_consequences: form.problem_consequences||null,
+      previous_solutions: form.previous_solutions||null, area_work: form.area_work||null,
+      area_family: form.area_family||null, area_social: form.area_social||null,
+      area_health: form.area_health||null, area_leisure: form.area_leisure||null,
+      previous_treatments: form.previous_treatments||null, current_medication: form.current_medication||null,
+      significant_events: form.significant_events||null, problem_history: form.problem_history||null,
+      patient_goals: form.patient_goals||null, clinical_goals: form.clinical_goals||null,
+      instruments_planned: form.instruments_planned||null, evaluator_notes: form.evaluator_notes||null,
+      next_session_date: form.next_session_date||null, status: form.status||'borrador'
+    }
+    let error
+    if (modal === 'edit') {
+      ;({ error } = await sb.from('initial_interviews').update({...payload, updated_at: new Date().toISOString()}).eq('id', selected.id))
+    } else {
+      ;({ error } = await sb.from('initial_interviews').insert(payload))
+    }
+    if (error) setErr('Error al guardar.')
+    else { setModal(null); setSelected(null); load() }
+    setBusy(false)
+  }
+
+  const STATUS_INT_COLORS = { borrador:'bg-slate-100 text-slate-600', completada:'bg-green-100 text-green-700' }
+  const STATUS_INT_LABELS = { borrador:'Borrador', completada:'Completada' }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-semibold text-slate-700">{interviews.length > 0 ? `${interviews.length} entrevista${interviews.length > 1 ? 's' : ''} registrada${interviews.length > 1 ? 's' : ''}` : 'Sin entrevistas registradas'}</p>
+        <button onClick={() => { setSelected(null); setErr(''); setModal('create') }}
+          className="bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+          Nueva entrevista
+        </button>
+      </div>
+
+      {loading ? <div className="text-center py-8 text-slate-400 text-sm">Cargando...</div>
+      : interviews.length === 0 ? (
+        <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-sm">
+          <p className="text-2xl mb-2">📝</p>
+          <p>Sin entrevista registrada</p>
+          <p className="text-xs mt-1">Después de la primera sesión, registra aquí la información recopilada</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {interviews.map(iv => (
+            <div key={iv.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-slate-800 text-sm">Entrevista inicial</span>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_INT_COLORS[iv.status]||STATUS_INT_COLORS.borrador}`}>{STATUS_INT_LABELS[iv.status]||'Borrador'}</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-2">{new Date(iv.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
+              {iv.problem_description && <p className="text-xs text-slate-600 line-clamp-2">{iv.problem_description}</p>}
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => { setSelected(iv); setModal('view') }} className="text-xs text-brand-500 hover:text-brand-700 font-medium px-2 py-1 rounded hover:bg-brand-50">Ver detalle</button>
+                <button onClick={() => { setSelected(iv); setErr(''); setModal('edit') }} className="text-xs text-slate-500 hover:text-slate-700 font-medium px-2 py-1 rounded hover:bg-slate-100">Editar</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(modal === 'create' || modal === 'edit') && (
+        <Modal title={modal === 'edit' ? 'Editar entrevista' : 'Nueva entrevista inicial'} onClose={() => { setModal(null); setSelected(null) }} wide>
+          <InterviewForm initial={modal === 'edit' ? selected : {...EMPTY_INTERVIEW, patient_id: patientId}}
+            patients={patients} onSave={save} onClose={() => { setModal(null); setSelected(null) }} busy={busy} err={err} />
+        </Modal>
+      )}
+      {modal === 'view' && selected && (
+        <Modal title="Entrevista inicial" onClose={() => { setModal(null); setSelected(null) }} wide>
+          <InterviewDetail interview={selected} patientName={patientName} onEdit={() => setModal('edit')} onClose={() => { setModal(null); setSelected(null) }} />
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+// ── Panel de Consentimiento del Paciente ──────────────────
+function PatientConsentPanel({ user, patient, profile }) {
+  const [consents, setConsents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [modal, setModal] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [signedDate, setSignedDate] = useState(new Date().toISOString().split('T')[0])
+
+  const load = async () => {
+    setLoading(true)
+    const { data } = await sb.from('informed_consents').select('*').eq('patient_id', patient.id).eq('user_id', user.id).order('created_at', { ascending: false })
+    setConsents(data || [])
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [patient.id])
+
+  const printConsent = () => {
+    const prof = profile || {}
+    const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+    <title>Consentimiento Informado — ${patient.name}</title>
+    <style>
+      @page{margin:18mm 20mm}
+      body{font-family:Arial,sans-serif;font-size:12px;color:#1e293b}
+      .header{border-bottom:2px solid #4361ee;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between}
+      .logo{font-family:Georgia,serif;font-size:20px;color:#1a2460;font-weight:bold}
+      h1{color:#1a2460;font-size:15px;margin-bottom:4px}
+      h2{color:#1a2460;font-size:12px;margin:14px 0 4px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
+      p{font-size:11px;margin-bottom:6px;line-height:1.6}
+      .patient-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:11px}
+      .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px}
+      .sign-line{border-bottom:1px solid #334155;min-height:32px;margin-bottom:4px}
+      .sign-label{font-size:10px;color:#64748b}
+      .footer{margin-top:20px;border-top:1px solid #e2e8f0;padding-top:8px;font-size:9px;color:#94a3b8;text-align:center}
+    </style></head><body>
+    <div class="header">
+      <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Consentimiento informado</div></div>
+      <div style="text-align:right;font-size:10px;color:#64748b">
+        <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
+        <div>${prof.specialty||''} ${prof.license_number?'· Reg. '+prof.license_number:''}</div>
+        <div>Fecha: ${now}</div>
+      </div>
+    </div>
+    <h1>Consentimiento Informado para Proceso Psicológico</h1>
+    <div class="patient-box"><strong>Paciente:</strong> ${patient.name} &nbsp;|&nbsp; <strong>Fecha:</strong> ${now}</div>
+    <h2>1. Naturaleza del proceso</h2>
+    <p>El proceso psicológico consiste en sesiones de evaluación, orientación y acompañamiento profesional. El/la psicólogo/a utilizará técnicas y procedimientos validados, adaptados a la situación particular del paciente. Las sesiones tienen una duración aproximada de 50 minutos.</p>
+    <h2>2. Participación voluntaria</h2>
+    <p>La participación es completamente voluntaria. El/la paciente puede retirar su consentimiento en cualquier momento sin consecuencia negativa alguna.</p>
+    <h2>3. Confidencialidad</h2>
+    <p>Toda la información compartida es estrictamente confidencial. Solo puede romperse ante riesgo inminente para la vida, mandato judicial o supervisión clínica (con datos anonimizados).</p>
+    <h2>4. Uso de herramientas digitales</h2>
+    <p>Se autoriza el uso de la plataforma Psicoval para el registro y gestión de la información clínica, tratada con estricta confidencialidad.</p>
+    <h2>5. Instrumentos de evaluación</h2>
+    <p>Se da consentimiento para la aplicación de instrumentos psicométricos validados que el/la profesional considere pertinentes.</p>
+    <h2>6. Derechos del paciente</h2>
+    <p>Derecho a: información clara sobre el proceso; hacer preguntas; acceder a información de su caso; solicitar derivación; dar por terminado el proceso cuando lo considere.</p>
+    <h2>Declaración de consentimiento</h2>
+    <p>He leído y comprendido la información anterior y otorgo mi consentimiento libre e informado para participar en el proceso psicológico.</p>
+    <div class="sign-grid">
+      <div>
+        <div class="sign-line"></div><p class="sign-label">Nombre del paciente</p>
+        <div class="sign-line" style="margin-top:12px"></div><p class="sign-label">Firma del paciente</p>
+      </div>
+      <div>
+        <div style="min-height:32px;margin-bottom:4px;padding-top:6px"><p style="font-size:11px">${prof.full_name||''}</p></div>
+        <p class="sign-label">Nombre del/la profesional</p>
+        <div class="sign-line" style="margin-top:12px"></div><p class="sign-label">Firma del/la profesional</p>
+      </div>
+    </div>
+    <div style="margin-top:12px"><div class="sign-line" style="max-width:200px"></div><p class="sign-label">Fecha</p></div>
+    <div class="footer">Psicoval · Consentimiento informado · ${now} · Documento confidencial</div>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500) }
+  }
+
+  const registerSigned = async () => {
+    setSaving(true)
+    await sb.from('informed_consents').insert({
+      user_id: user.id, patient_id: patient.id,
+      patient_name: patient.name, signed_date: signedDate, status: 'firmado'
+    })
+    load(); setModal(null); setSaving(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <p className="text-sm font-semibold text-blue-800 mb-1">Consentimiento informado</p>
+        <p className="text-xs text-blue-600 mb-4">Documento obligatorio antes de iniciar el proceso terapéutico. Genera el documento, imprímelo, fírmalo con el paciente y regístralo aquí.</p>
+        <div className="flex gap-2">
+          <button onClick={printConsent}
+            className="flex-1 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium flex items-center justify-center gap-2 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Generar e imprimir
+          </button>
+          <button onClick={() => setModal('register')}
+            className="flex-1 py-2.5 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs font-medium flex items-center justify-center gap-2 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+            Registrar firmado
+          </button>
+        </div>
+      </div>
+
+      {loading ? <div className="text-center py-6 text-slate-400 text-sm">Cargando...</div>
+      : consents.length === 0 ? (
+        <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-sm">
+          <p className="text-2xl mb-2">📄</p>
+          <p>Sin consentimiento registrado</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Historial</p>
+          {consents.map(c => (
+            <div key={c.id} className="bg-white border border-green-200 rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">✓ Firmado</span>
+                <p className="text-xs text-slate-500 mt-1">{c.signed_date ? new Date(c.signed_date+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'}) : '—'}</p>
+              </div>
+              <button onClick={printConsent} className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded hover:bg-slate-100">🖨️ Reimprimir</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {modal === 'register' && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl fade-in">
+            <h3 className="text-lg font-semibold text-slate-800 mb-1">Registrar consentimiento firmado</h3>
+            <p className="text-slate-500 text-sm mb-4">Ingresa la fecha en que el paciente firmó el consentimiento.</p>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Fecha de firma</label>
+            <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              value={signedDate} onChange={e => setSignedDate(e.target.value)} />
+            <div className="flex gap-3">
+              <button onClick={() => setModal(null)} className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
+              <button onClick={registerSigned} disabled={saving} className="flex-1 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium disabled:opacity-50">
+                {saving ? 'Guardando...' : 'Registrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Expediente del Paciente (página completa) ─────────────
 function PatientExpedient({ user, role, planExpiry, patient, profile, allSessions, allInstrResults, onBack, onEdit }) {
   const [tab, setTab] = useState('ficha')
@@ -4764,10 +5010,12 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
   const tabs = [
     { id: 'ficha',        icon: '📋', label: 'Ficha' },
     { id: 'primera_cita', icon: '🖨️', label: 'Primera cita' },
+    { id: 'entrevista',   icon: '📝', label: 'Entrevista' },
     { id: 'plan',         icon: '🎯', label: 'Plan' },
     { id: 'sesiones',     icon: '💬', label: 'Sesiones' },
     { id: 'instrumentos', icon: '📊', label: 'Instrumentos' },
     { id: 'riesgo',       icon: '⚠️', label: 'Riesgo' },
+    { id: 'consentimiento', icon: '📄', label: 'Consentimiento' },
   ]
 
   const Field = ({ label, value }) => !value ? null : (
@@ -4892,6 +5140,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
                   ['📝', 'Entrevista inicial en blanco', '4 bloques estructurados con instrucciones y espacios para escribir'],
                   ['⚠️', 'Protocolo de riesgo suicida', 'Guía para el profesional con indicadores, preguntas clave y niveles de riesgo'],
                   ['💙', 'Plan de seguridad para el paciente', 'Documento para entregar al paciente con pasos ante una crisis'],
+                  ['📄', 'Consentimiento informado', 'Documento obligatorio con firma del paciente antes de iniciar el proceso'],
                 ].map(([icon, title, desc]) => (
                   <li key={title} className="flex gap-3">
                     <span className="text-lg flex-shrink-0">{icon}</span>
@@ -4935,6 +5184,20 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {tab === 'riesgo' && (
           <div className="max-w-2xl">
             <SuicideRiskPanel user={user} patientId={p.id} patientName={p.name} />
+          </div>
+        )}
+
+        {/* ENTREVISTA INICIAL */}
+        {tab === 'entrevista' && (
+          <div className="max-w-2xl">
+            <PatientInterviewPanel user={user} patientId={p.id} patientName={p.name} />
+          </div>
+        )}
+
+        {/* CONSENTIMIENTO INFORMADO */}
+        {tab === 'consentimiento' && (
+          <div className="max-w-xl">
+            <PatientConsentPanel user={user} patient={p} profile={profile} />
           </div>
         )}
 
@@ -5459,6 +5722,70 @@ function generateFirstVisitPrintable(patient, profile) {
 
   <div class="footer">Psicoval · Plan personal de seguridad · Elaborado el ${now} · Este documento es confidencial</div>
 
+  <!-- ===== DOCUMENTO 4: CONSENTIMIENTO INFORMADO ===== -->
+  <div class="page-break"></div>
+  <div class="header">
+    <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Consentimiento informado para proceso psicológico</div></div>
+    <div class="prof-info">
+      <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
+      <div>${prof.specialty||''} ${prof.license_number?'· Reg. '+prof.license_number:''}</div>
+      <div>${prof.city||''}</div>
+      <div>Fecha: ${now}</div>
+    </div>
+  </div>
+
+  <h1 style="font-size:16px">Consentimiento Informado para Proceso Psicológico</h1>
+  ${p.name ? `<div class="patient-data"><strong>Paciente:</strong> ${p.name} &nbsp;|&nbsp; <strong>Fecha:</strong> ${now}</div>` : `<div class="patient-data"><strong>Paciente:</strong> __________________________________ &nbsp;|&nbsp; <strong>Fecha:</strong> ________________</div>`}
+
+  <h2>1. Naturaleza del proceso</h2>
+  <p style="font-size:11px">El proceso psicológico consiste en sesiones de evaluación, orientación y acompañamiento profesional. El/la psicólogo/a utilizará técnicas y procedimientos validados, adaptados a la situación particular del paciente. Las sesiones tienen una duración aproximada de 50 minutos.</p>
+
+  <h2>2. Objetivos</h2>
+  <p style="font-size:11px">Los objetivos del proceso terapéutico serán definidos de manera conjunta entre el/la profesional y el/la paciente, y podrán ser revisados y ajustados a lo largo del proceso.</p>
+
+  <h2>3. Participación voluntaria</h2>
+  <p style="font-size:11px">La participación en este proceso es completamente voluntaria. El/la paciente puede retirar su consentimiento y dar por terminado el proceso en cualquier momento, sin que ello suponga consecuencia negativa alguna.</p>
+
+  <h2>4. Confidencialidad</h2>
+  <p style="font-size:11px">Toda la información compartida durante el proceso terapéutico es estrictamente confidencial. La confidencialidad únicamente puede romperse en los siguientes casos excepcionales: riesgo inminente para la vida del paciente u otras personas; mandato legal o requerimiento judicial; supervisión clínica profesional (manteniendo la anonimización de datos).</p>
+
+  <h2>5. Uso de herramientas digitales</h2>
+  <p style="font-size:11px">Se autoriza el uso de la plataforma Psicoval para el registro y gestión de la información clínica. Los datos son tratados con estricta confidencialidad y almacenados de manera segura.</p>
+
+  <h2>6. Instrumentos de evaluación</h2>
+  <p style="font-size:11px">Se da consentimiento para la aplicación de instrumentos psicométricos validados que el/la profesional considere pertinentes para la evaluación de la situación.</p>
+
+  <h2>7. Derechos del paciente</h2>
+  <p style="font-size:11px">El/la paciente tiene derecho a: recibir información clara sobre el proceso y los objetivos; hacer preguntas en cualquier momento; acceder a la información registrada sobre su caso; solicitar derivación a otro profesional; dar por terminado el proceso cuando lo considere.</p>
+
+  <h2>8. Honorarios y modalidad</h2>
+  <p style="font-size:11px">Los honorarios, frecuencia de sesiones y modalidad (presencial/online) han sido acordados previamente con el/la profesional.</p>
+
+  <div style="margin-top:24px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">
+    <p style="font-size:11px;font-weight:bold;color:#1a2460;margin-bottom:10px">Declaración de consentimiento</p>
+    <p style="font-size:11px;margin-bottom:16px">He leído y comprendido la información anterior. He tenido la oportunidad de hacer preguntas y han sido respondidas satisfactoriamente. Otorgo mi consentimiento libre e informado para participar en el proceso psicológico.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px">
+      <div>
+        <div style="border-bottom:1px solid #334155;min-height:36px;margin-bottom:6px"></div>
+        <p style="font-size:10px;color:#64748b">Nombre del paciente</p>
+        <div style="border-bottom:1px solid #334155;min-height:36px;margin:12px 0 6px"></div>
+        <p style="font-size:10px;color:#64748b">Firma del paciente</p>
+      </div>
+      <div>
+        <div style="min-height:36px;margin-bottom:6px;padding-top:8px"><p style="font-size:11px;color:#1e293b">${prof.full_name||'___________________________'}</p></div>
+        <p style="font-size:10px;color:#64748b">Nombre del/la profesional</p>
+        <div style="border-bottom:1px solid #334155;min-height:36px;margin:12px 0 6px"></div>
+        <p style="font-size:10px;color:#64748b">Firma del/la profesional</p>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <div style="border-bottom:1px solid #334155;min-height:28px;margin-bottom:6px"></div>
+      <p style="font-size:10px;color:#64748b">Fecha</p>
+    </div>
+  </div>
+
+  <div class="footer">Psicoval · Consentimiento informado · ${now} · Documento confidencial de uso clínico</div>
+
   </body></html>`
 
   const w = window.open('','_blank')
@@ -5934,20 +6261,30 @@ function Patients({ user, role, planExpiry }) {
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
             </div>
             <h3 className="text-lg font-semibold text-slate-800 text-center mb-1">Paciente registrado</h3>
-            <p className="text-slate-500 text-sm text-center mb-6"><strong>{newPatientCreated.name}</strong> fue agregado. ¿Qué deseas hacer ahora?</p>
+            <p className="text-slate-500 text-sm text-center mb-2"><strong>{newPatientCreated.name}</strong> fue agregado correctamente.</p>
+            <p className="text-xs text-slate-400 text-center mb-5">Sigue los pasos para preparar la primera cita:</p>
             <div className="space-y-3">
-              <button onClick={()=>{ setModal(null); generateFirstVisitPrintable(newPatientCreated, profile) }}
-                className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Generar documentos primera cita
-              </button>
-              <button onClick={()=>{ setModal(null); setSelectedExpedient(newPatientCreated) }}
-                className="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Agendar primera cita
-              </button>
+              {/* Paso 1 */}
+              <div className="border border-orange-200 rounded-xl p-3 bg-orange-50">
+                <p className="text-xs font-bold text-orange-700 mb-2">Paso 1 — Imprime los documentos</p>
+                <p className="text-xs text-orange-600 mb-3">Entrevista inicial · Protocolo de riesgo · Plan de seguridad · Consentimiento informado</p>
+                <button onClick={()=>{ generateFirstVisitPrintable(newPatientCreated, profile) }}
+                  className="w-full py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                  Generar e imprimir documentos
+                </button>
+              </div>
+              {/* Paso 2 */}
+              <div className="border border-brand-200 rounded-xl p-3 bg-brand-50">
+                <p className="text-xs font-bold text-brand-700 mb-2">Paso 2 — Agenda la primera cita</p>
+                <button onClick={()=>{ setModal(null); setSelectedExpedient(newPatientCreated) }}
+                  className="w-full py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  Ir al expediente y agendar
+                </button>
+              </div>
               <button onClick={()=>setModal(null)}
-                className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                className="w-full py-2 rounded-xl border border-slate-200 text-slate-500 text-xs font-medium hover:bg-slate-50 transition-colors">
                 Hacer esto después
               </button>
             </div>
