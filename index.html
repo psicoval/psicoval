@@ -2671,18 +2671,19 @@ function generateReportHTML(type, data) {
     </div>`
 
   const styles = `<style>
-    body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
-    h2{color:#1a2460;font-size:16px;margin:20px 0 8px}
-    h3{color:#334155;font-size:14px;margin:16px 0 6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-    .field{margin-bottom:10px} .label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
-    .value{color:#1e293b;line-height:1.5} .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
-    .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:14px}
-    table{width:100%;border-collapse:collapse;margin-top:8px} th{background:#f1f5f9;text-align:left;padding:6px 10px;font-size:11px;color:#64748b;text-transform:uppercase}
-    td{padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:12px} tr:last-child td{border-bottom:none}
-    .score-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:4px}
-    .score-fill{height:100%;border-radius:4px} @media print{body{padding:10px}}
-    .footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
+    @page{margin:12mm 14mm}
+    body{font-family:Arial,sans-serif;font-size:10px;color:#1e293b;line-height:1.4}
+    h2{color:#1a2460;font-size:13px;margin:10px 0 5px}
+    h3{color:#334155;font-size:11px;margin:8px 0 4px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
+    .field{margin-bottom:6px} .label{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:1px}
+    .value{color:#1e293b;line-height:1.4} .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:9px;font-weight:600}
+    .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;margin-bottom:8px;page-break-inside:avoid}
+    table{width:100%;border-collapse:collapse;margin-top:5px} th{background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;color:#64748b;text-transform:uppercase}
+    td{padding:4px 6px;border-bottom:1px solid #f1f5f9;font-size:10px} tr:last-child td{border-bottom:none}
+    .score-bar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-top:3px}
+    .score-fill{height:100%;border-radius:3px} @media print{body{padding:0}}
+    .footer{margin-top:12px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:8px;color:#94a3b8;text-align:center}
   </style>`
 
   let body = ''
@@ -3904,13 +3905,13 @@ function SuicideRiskPage({ user }) {
     const now  = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
     const interventions = INTERVENTIONS[riskData.level]||[]
     const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Evaluación Riesgo Suicida</title>
-    <style>body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
-    h1{color:#1a2460;font-size:18px} h2{color:#1a2460;font-size:15px;margin-top:20px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-    .badge{display:inline-block;padding:4px 14px;border-radius:50px;font-weight:700;font-size:14px}
-    .section{background:#f8fafc;border-radius:8px;padding:12px;margin:10px 0}
-    ul{margin:8px 0 0 20px} li{margin-bottom:6px;font-size:13px}
-    .footer{margin-top:30px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;color:#94a3b8;text-align:center}
-    @media print{body{padding:8px}}</style></head><body>
+    <style>@page{margin:12mm 14mm}body{font-family:Arial,sans-serif;font-size:10px;color:#1e293b;line-height:1.4}
+    h1{color:#1a2460;font-size:13px;margin-bottom:3px} h2{color:#1a2460;font-size:11px;margin:8px 0 3px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
+    .badge{display:inline-block;padding:3px 10px;border-radius:50px;font-weight:700;font-size:12px}
+    .section{background:#f8fafc;border-radius:6px;padding:7px 10px;margin:5px 0;page-break-inside:avoid}
+    ul{margin:4px 0 0 16px} li{margin-bottom:3px;font-size:10px}
+    .footer{margin-top:12px;border-top:1px solid #e2e8f0;padding-top:6px;font-size:8px;color:#94a3b8;text-align:center}
+    @media print{body{padding:0}}</style></head><body>
     <h1>Evaluación de Riesgo Suicida</h1>
     <p style="color:#64748b;font-size:12px">Paciente: <strong>${pat?.name||'—'}</strong> · Fecha: ${now} · Generado por Psicoval</p>
     <div style="margin:16px 0">
@@ -4458,7 +4459,7 @@ function SuicideRiskPanel({ user, patientId, patientName }) {
     const interventions = INTERVENTIONS[useRisk.level] || []
     const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
     const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Evaluación Riesgo</title>
-    <style>body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
+    <style>@page{margin:12mm 14mm}body{font-family:Arial,sans-serif;font-size:10px;color:#1e293b;line-height:1.4}
     h1{color:#1a2460;font-size:18px}h2{color:#1a2460;font-size:15px;margin-top:20px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
     .badge{display:inline-block;padding:4px 14px;border-radius:50px;font-weight:700;font-size:14px}
     .section{background:#f8fafc;border-radius:8px;padding:12px;margin:10px 0}
@@ -4877,18 +4878,18 @@ function PatientConsentPanel({ user, patient, profile }) {
     const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
     <title>Consentimiento Informado — ${patient.name}</title>
     <style>
-      @page{margin:18mm 20mm}
-      body{font-family:Arial,sans-serif;font-size:12px;color:#1e293b}
-      .header{border-bottom:2px solid #4361ee;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between}
-      .logo{font-family:Georgia,serif;font-size:20px;color:#1a2460;font-weight:bold}
-      h1{color:#1a2460;font-size:15px;margin-bottom:4px}
-      h2{color:#1a2460;font-size:12px;margin:14px 0 4px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
-      p{font-size:11px;margin-bottom:6px;line-height:1.6}
-      .patient-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:11px}
-      .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px}
-      .sign-line{border-bottom:1px solid #334155;min-height:32px;margin-bottom:4px}
-      .sign-label{font-size:10px;color:#64748b}
-      .footer{margin-top:20px;border-top:1px solid #e2e8f0;padding-top:8px;font-size:9px;color:#94a3b8;text-align:center}
+      @page{margin:12mm 14mm}
+      body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b;line-height:1.5}
+      .header{border-bottom:2px solid #4361ee;padding-bottom:7px;margin-bottom:10px;display:flex;justify-content:space-between}
+      .logo{font-family:Georgia,serif;font-size:17px;color:#1a2460;font-weight:bold}
+      h1{color:#1a2460;font-size:13px;margin-bottom:4px}
+      h2{color:#1a2460;font-size:11px;margin:8px 0 3px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
+      p{font-size:10px;margin-bottom:4px;line-height:1.5}
+      .patient-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:5px 10px;margin-bottom:8px;font-size:10px}
+      .sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+      .sign-line{border-bottom:1px solid #334155;min-height:26px;margin-bottom:3px}
+      .sign-label{font-size:9px;color:#64748b}
+      .footer{margin-top:12px;border-top:1px solid #e2e8f0;padding-top:6px;font-size:8px;color:#94a3b8;text-align:center}
     </style></head><body>
     <div class="header">
       <div><div class="logo">Psicoval</div><div style="font-size:10px;color:#64748b">Consentimiento informado</div></div>
@@ -5330,24 +5331,25 @@ function exportPatientPDF(patient, profile, interviews, sessions, instrResults) 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
   <title>Ficha — ${p.name}</title>
   <style>
-    body{font-family:Arial,sans-serif;font-size:13px;color:#1e293b;max-width:800px;margin:0 auto;padding:20px}
-    .header{border-bottom:2px solid #4361ee;padding-bottom:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start}
-    .logo{font-family:Georgia,serif;font-size:22px;color:#1a2460;font-weight:bold}
-    .prof-info{text-align:right;font-size:11px;color:#64748b}
-    h2{color:#1a2460;font-size:16px;margin:20px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-    .field{margin-bottom:8px}
-    .label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px}
-    .value{color:#1e293b;line-height:1.5;margin-top:2px}
-    .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin-bottom:12px}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th{background:#f1f5f9;text-align:left;padding:6px 8px;font-size:11px;color:#64748b;text-transform:uppercase}
-    td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
-    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:bold}
-    .footer{margin-top:30px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
-    .sign-box{margin-top:40px;display:flex;justify-content:flex-end}
-    .sign{text-align:center;border-top:1px solid #334155;padding-top:6px;min-width:200px;font-size:11px}
-    @media print{body{padding:10px}}
+    @page{margin:12mm 14mm}
+    body{font-family:Arial,sans-serif;font-size:10px;color:#1e293b;line-height:1.4}
+    .header{border-bottom:2px solid #4361ee;padding-bottom:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start}
+    .logo{font-family:Georgia,serif;font-size:18px;color:#1a2460;font-weight:bold}
+    .prof-info{text-align:right;font-size:9px;color:#64748b}
+    h2{color:#1a2460;font-size:12px;margin:10px 0 5px;border-bottom:1px solid #e2e8f0;padding-bottom:2px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+    .field{margin-bottom:5px}
+    .label{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px}
+    .value{color:#1e293b;line-height:1.4;margin-top:1px}
+    .section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:8px 10px;margin-bottom:7px;page-break-inside:avoid}
+    table{width:100%;border-collapse:collapse;margin-top:5px}
+    th{background:#f1f5f9;text-align:left;padding:4px 6px;font-size:9px;color:#64748b;text-transform:uppercase}
+    td{padding:4px 6px;border-bottom:1px solid #f1f5f9;font-size:10px}
+    .badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:9px;font-weight:bold}
+    .footer{margin-top:12px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:8px;color:#94a3b8;text-align:center}
+    .sign-box{margin-top:20px;display:flex;justify-content:flex-end}
+    .sign{text-align:center;border-top:1px solid #334155;padding-top:4px;min-width:180px;font-size:10px}
+    @media print{body{padding:0}}
   </style></head><body>
   <div class="header">
     <div><div class="logo">Psicoval</div><div style="font-size:11px;color:#64748b">Plataforma de evaluación psicológica</div></div>
@@ -5445,33 +5447,33 @@ function generateFirstVisitPrintable(patient, profile) {
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
   <title>Documentos Primera Cita — ${p.name||'Nuevo Paciente'}</title>
   <style>
-    @page { margin: 18mm 20mm; }
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #1e293b; }
+    @page { margin: 12mm 14mm; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #1e293b; line-height:1.4; }
     .page-break { page-break-before: always; }
-    .header { border-bottom: 2px solid #4361ee; padding-bottom: 10px; margin-bottom: 16px; display:flex; justify-content:space-between; align-items:flex-start; }
-    .logo { font-family:Georgia,serif; font-size:20px; color:#1a2460; font-weight:bold; }
-    .prof-info { text-align:right; font-size:10px; color:#64748b; }
-    h1 { color:#1a2460; font-size:15px; margin:0 0 4px; }
-    h2 { color:#1a2460; font-size:13px; margin:14px 0 6px; border-bottom:1px solid #e2e8f0; padding-bottom:3px; }
-    h3 { color:#334155; font-size:11px; margin:10px 0 4px; }
-    .block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:12px; }
-    .block-title { font-size:12px; font-weight:bold; color:#1a2460; margin-bottom:8px; }
-    .field-label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; margin-top:8px; }
-    .tip { font-size:10px; color:#94a3b8; font-style:italic; margin-bottom:4px; }
-    .lines-1 { border-bottom:1px solid #cbd5e1; min-height:28px; margin-bottom:4px; }
+    .header { border-bottom: 2px solid #4361ee; padding-bottom: 8px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:flex-start; }
+    .logo { font-family:Georgia,serif; font-size:18px; color:#1a2460; font-weight:bold; }
+    .prof-info { text-align:right; font-size:9px; color:#64748b; }
+    h1 { color:#1a2460; font-size:14px; margin:0 0 4px; }
+    h2 { color:#1a2460; font-size:11px; margin:8px 0 4px; border-bottom:1px solid #e2e8f0; padding-bottom:2px; }
+    h3 { color:#334155; font-size:10px; margin:6px 0 3px; }
+    .block { background:#f8fafc; border:1px solid #e2e8f0; border-radius:5px; padding:7px 10px; margin-bottom:7px; page-break-inside:avoid; }
+    .block-title { font-size:11px; font-weight:bold; color:#1a2460; margin-bottom:5px; }
+    .field-label { font-size:9px; color:#64748b; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:2px; margin-top:6px; }
+    .tip { font-size:9px; color:#94a3b8; font-style:italic; margin-bottom:3px; }
+    .lines-1 { border-bottom:1px solid #cbd5e1; min-height:22px; margin-bottom:3px; }
     .lines-2 { } .lines-3 { } .lines-4 { }
-    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .alert-box { background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px 12px; margin-bottom:12px; }
-    .alert-title { color:#b91c1c; font-weight:bold; font-size:12px; margin-bottom:6px; }
-    .safety-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px 12px; margin:8px 0; }
-    .safety-title { color:#166534; font-weight:bold; font-size:12px; margin-bottom:6px; }
-    .badge { display:inline-block; background:#1a2460; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; margin-right:4px; }
-    .patient-data { background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px 12px; margin-bottom:14px; font-size:11px; }
-    table { width:100%; border-collapse:collapse; margin:8px 0; font-size:11px; }
-    th { background:#f1f5f9; text-align:left; padding:5px 8px; color:#64748b; text-transform:uppercase; font-size:10px; }
-    td { padding:5px 8px; border-bottom:1px solid #f1f5f9; }
-    .footer { margin-top:20px; padding-top:10px; border-top:1px solid #e2e8f0; font-size:9px; color:#94a3b8; text-align:center; }
-    @media print { body { font-size:11px; } }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .alert-box { background:#fef2f2; border:1px solid #fecaca; border-radius:5px; padding:7px 10px; margin-bottom:8px; page-break-inside:avoid; }
+    .alert-title { color:#b91c1c; font-weight:bold; font-size:11px; margin-bottom:4px; }
+    .safety-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:5px; padding:7px 10px; margin:5px 0; page-break-inside:avoid; }
+    .safety-title { color:#166534; font-weight:bold; font-size:11px; margin-bottom:4px; }
+    .badge { display:inline-block; background:#1a2460; color:#fff; font-size:9px; padding:2px 6px; border-radius:8px; margin-right:3px; }
+    .patient-data { background:#eff6ff; border:1px solid #bfdbfe; border-radius:5px; padding:5px 10px; margin-bottom:8px; font-size:10px; }
+    table { width:100%; border-collapse:collapse; margin:5px 0; font-size:10px; }
+    th { background:#f1f5f9; text-align:left; padding:4px 6px; color:#64748b; text-transform:uppercase; font-size:9px; }
+    td { padding:4px 6px; border-bottom:1px solid #f1f5f9; }
+    .footer { margin-top:12px; padding-top:8px; border-top:1px solid #e2e8f0; font-size:8px; color:#94a3b8; text-align:center; }
+    @media print { body { font-size:10px; } .footer { position:fixed; bottom:0; width:100%; } }
   </style>
   </head><body>
 
