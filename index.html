@@ -571,22 +571,8 @@ function Evaluations({ user, onPage }) {
     } else {
       ;({ error } = await sb.from('initial_interviews').insert(payload))
     }
-    if (error) { setErr('Error al guardar. Intenta de nuevo.'); setBusy(false); return }
-    
-    if (modal === 'create') {
-      // New patient: show post-create options
-      const { data: refreshed } = await sb.from('patients').select('*').eq('user_id', user.id).order('created_at', {ascending: false}).limit(1)
-      await load()
-      setModal('post_create')
-      setNewPatientCreated(refreshed?.[0] || {name: form.name.trim()})
-    } else {
-      close()
-      await load()
-      if (selectedExpedient) {
-        const { data: refreshed } = await sb.from('patients').select('*').eq('id', selectedExpedient.id).single()
-        if (refreshed) setSelectedExpedient(refreshed)
-      }
-    }
+    if (error) setErr('Error al guardar. Intenta de nuevo.')
+    else { close(); load() }
     setBusy(false)
   }
 
@@ -5850,8 +5836,20 @@ function Patients({ user, role, planExpiry }) {
     let error
     if (modal==='edit') { ;({ error } = await sb.from('patients').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selected.id)) }
     else { ;({ error } = await sb.from('patients').insert(payload)) }
-    if (error) setErr('Error al guardar. Intenta de nuevo.')
-    else { close(); load() }
+    if (error) { setErr('Error al guardar. Intenta de nuevo.'); setBusy(false); return }
+    if (modal === 'edit') {
+      close(); await load()
+      if (selectedExpedient) {
+        const { data: refreshed } = await sb.from('patients').select('*').eq('id', selectedExpedient.id).single()
+        if (refreshed) setSelectedExpedient(refreshed)
+      }
+    } else {
+      // New patient — load list then show post-create options
+      await load()
+      const { data: refreshed } = await sb.from('patients').select('*').eq('user_id', user.id).order('created_at', {ascending: false}).limit(1)
+      setNewPatientCreated(refreshed?.[0] || { name: form.name.trim() })
+      setModal('post_create')
+    }
     setBusy(false)
   }
   const destroy = async () => { await sb.from('patients').delete().eq('id', selected.id); close(); load() }
