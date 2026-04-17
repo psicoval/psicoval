@@ -6143,9 +6143,18 @@ function PatientConsentPanel({ user, patient, profile }) {
 // ── Expediente del Consultante (página completa) ─────────────
 function PatientExpedient({ user, role, planExpiry, patient, profile, allSessions, allInstrResults, onBack, onEdit }) {
   const [tab, setTab] = useState('ficha')
+  const [latestInterview, setLatestInterview] = useState(null)
   const p = patient
 
   const canFeat = (f) => canUseFeature(role, f, planExpiry)
+
+  // Load latest interview to show in ficha
+  useEffect(() => {
+    if (!patient?.id) return
+    sb.from('initial_interviews').select('consultation_reason,problem_intensity,global_severity,diag_clinical,symptoms_mood,symptoms_anxiety,ai_summary')
+      .eq('patient_id', patient.id).order('created_at', {ascending: false}).limit(1)
+      .then(({ data }) => { if (data?.[0]) setLatestInterview(data[0]) })
+  }, [patient?.id])
 
   const tabs = [
     { id: 'ficha',          icon: '📋', label: 'Ficha',        show: true },
@@ -6232,14 +6241,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
       <div className="flex-1 overflow-y-auto p-6">
 
         {/* FICHA */}
-        {tab === 'ficha' && (() => {
-          const instrCount = allInstrResults?.filter(r=>r.patient_id===p.id).length || 0
-          const sessCount = allSessions?.filter(s=>s.patient_id===p.id).length || 0
-          const hasPersonalExtra = p.education_level || p.support_network || p.emergency_contact_name
-          const hasClinical = p.consultation_reason || p.presumptive_diagnosis || p.therapeutic_approach || p.referral_source
-          const hasBackground = p.background_personal || p.background_family || p.background_medical
-          const hasDiag = p.diagnostic_axes || p.notes
-          return (
+        {tab === 'ficha' && (
           <div className="max-w-2xl space-y-3">
 
             {/* Header card */}
@@ -6268,11 +6270,11 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
               {/* Stats strip */}
               <div className="-mt-4 mx-4 mb-4 bg-white rounded-xl border border-slate-200 shadow-sm grid grid-cols-3 divide-x divide-slate-100">
                 <div className="px-4 py-3 text-center">
-                  <p className="text-lg font-bold text-brand-600">{sessCount}</p>
+                  <p className="text-lg font-bold text-brand-600">{allSessions?.filter(s=>s.patient_id===p.id).length||0}</p>
                   <p className="text-xs text-slate-500">Sesiones</p>
                 </div>
                 <div className="px-4 py-3 text-center">
-                  <p className="text-lg font-bold text-brand-600">{instrCount}</p>
+                  <p className="text-lg font-bold text-brand-600">{allInstrResults?.filter(r=>r.patient_id===p.id).length||0}</p>
                   <p className="text-xs text-slate-500">Instrumentos</p>
                 </div>
                 <div className="px-4 py-3 text-center">
@@ -6290,21 +6292,23 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
               </div>
             </div>
 
-            {/* Motivo de consulta — desde la ficha del paciente */}
-            {p.consultation_reason ? (
+            {/* Motivo de consulta — desde entrevista o ficha */}
+            {(latestInterview?.consultation_reason || p.consultation_reason) ? (
               <div className="bg-white border border-slate-200 rounded-xl p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Motivo de consulta</p>
-                <p className="text-sm text-slate-700 leading-relaxed">{p.consultation_reason}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Motivo de consulta</p>
+                  {latestInterview?.consultation_reason && <span className="text-xs text-brand-400 bg-brand-50 px-2 py-0.5 rounded-full">Desde entrevista</span>}
+                </div>
+                <p className="text-sm text-slate-700 leading-relaxed">{latestInterview?.consultation_reason || p.consultation_reason}</p>
               </div>
             ) : (
-              <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4">
-                <p className="text-sm text-slate-400 text-center mb-1">Motivo de consulta no registrado en la ficha</p>
-                <p className="text-xs text-slate-400 text-center">Puedes agregarlo desde <button onClick={onEdit} className="text-brand-500 underline font-medium">Editar ficha</button> → pestaña Ficha clínica, o desde la <button onClick={()=>setTab('entrevista')} className="text-brand-500 underline font-medium">Entrevista inicial</button></p>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                <p className="text-xs text-slate-400">Sin motivo de consulta registrado — completa la entrevista inicial</p>
               </div>
             )}
 
             {/* Grid clínico */}
-            {hasClinical && (
+            {(p.consultation_reason||p.presumptive_diagnosis||p.therapeutic_approach||p.referral_source) && (
               <div className="grid grid-cols-2 gap-3">
                 {p.presumptive_diagnosis && (
                   <div className="bg-white border border-slate-200 rounded-xl p-3">
@@ -6322,7 +6326,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
             )}
 
             {/* Datos personales adicionales */}
-            {hasPersonalExtra && (
+            {(p.education_level||p.support_network||p.emergency_contact_name) && (
               <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Datos adicionales</p>
                 {p.education_level && <Field label="Nivel educativo" value={p.education_level}/>}
@@ -6332,7 +6336,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
             )}
 
             {/* Antecedentes */}
-            {hasBackground && (
+            {(p.background_personal||p.background_family||p.background_medical) && (
               <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Antecedentes</p>
                 {p.background_personal && <Field label="Personales" value={p.background_personal}/>}
@@ -6358,8 +6362,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
             )}
 
           </div>
-          )
-        })()}
+        )}
 
         {/* PRIMERA CITA */}
         {tab === 'primera_cita' && (
