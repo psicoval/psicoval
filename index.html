@@ -555,11 +555,15 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         body: JSON.stringify({prompt})
       })
       const data = await res.json()
-      const raw = (data.result||'').replace(/```json|```/g,'').trim()
-      const parsed = JSON.parse(raw)
+      const raw = (data.result||data.text||'')
+        .replace(/```json/gi,'').replace(/```/g,'').trim()
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('No JSON: ' + raw.slice(0,100))
+      const parsed = JSON.parse(jsonMatch[0])
       f('ai_summary', JSON.stringify(parsed))
       setAiDone(true)
     } catch(e) {
+      console.error('Interview AI error:', e.message)
       f('ai_summary','error')
     }
     setAiLoading(false)
@@ -6935,19 +6939,35 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
         body: JSON.stringify({prompt})
       })
       const data = await res.json()
-      const raw = (data.result||'').replace(/```json|```/g,'').trim()
-      const parsed = JSON.parse(raw)
-      setPlan(parsed)
+      console.log('AI plan raw response:', JSON.stringify(data).slice(0,500))
+      const raw = (data.result||data.text||'')
+        .replace(/```json/gi,'').replace(/```/g,'').trim()
+      // Extract JSON object if wrapped in extra text
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('No JSON found in response: ' + raw.slice(0,200))
+      const parsed = JSON.parse(jsonMatch[0])
+      // Normalize fields - handle both array and string values
+      const toArr = v => Array.isArray(v) ? v : (typeof v==='string' ? v.split('\n').filter(Boolean) : [])
+      const toStr = v => typeof v==='string' ? v : (Array.isArray(v) ? v.join('. ') : String(v||''))
+      setPlan({
+        objetivos: toArr(parsed.objetivos),
+        sesiones_estimadas: toStr(parsed.sesiones_estimadas),
+        estructura_sesiones: toStr(parsed.estructura_sesiones),
+        estrategias: toArr(parsed.estrategias),
+        instrumentos_sugeridos: toArr(parsed.instrumentos_sugeridos),
+        observaciones: toStr(parsed.observaciones)
+      })
       setEditData({
-        objetivos: parsed.objetivos.join('\n'),
-        sesiones_estimadas: parsed.sesiones_estimadas,
-        estructura_sesiones: parsed.estructura_sesiones,
-        estrategias: parsed.estrategias.join('\n'),
-        instrumentos_sugeridos: parsed.instrumentos_sugeridos.join('\n'),
-        observaciones: parsed.observaciones
+        objetivos: toArr(parsed.objetivos).join('\n'),
+        sesiones_estimadas: toStr(parsed.sesiones_estimadas),
+        estructura_sesiones: toStr(parsed.estructura_sesiones),
+        estrategias: toArr(parsed.estrategias).join('\n'),
+        instrumentos_sugeridos: toArr(parsed.instrumentos_sugeridos).join('\n'),
+        observaciones: toStr(parsed.observaciones)
       })
     } catch(e) {
-      setError('Error al generar el plan. Intenta de nuevo.')
+      console.error('Plan parse error:', e.message)
+      setError('Error al generar el plan: ' + e.message)
     }
     setLoading(false)
   }
