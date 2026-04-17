@@ -5584,9 +5584,7 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
           user_id: payload.user_id,
           patient_id: payload.patient_id,
           status: 'borrador',
-          evaluator_notes: (payload.evaluator_notes||'') + '
-
-[DATOS PENDIENTES DE MIGRACIÓN DB]',
+          evaluator_notes: (payload.evaluator_notes||'') + '\n[DATOS PENDIENTES DE MIGRACIÓN DB]',
           problem_description: payload.consultation_reason||null,
         })
         if (res3.error) {
