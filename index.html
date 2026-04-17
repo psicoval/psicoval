@@ -6239,8 +6239,6 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
           const hasClinical = p.consultation_reason || p.presumptive_diagnosis || p.therapeutic_approach || p.referral_source
           const hasBackground = p.background_personal || p.background_family || p.background_medical
           const hasDiag = p.diagnostic_axes || p.notes
-          const isIncomplete = !p.consultation_reason && !p.therapeutic_approach && !p.presumptive_diagnosis
-
           return (
           <div className="max-w-2xl space-y-3">
 
@@ -6292,27 +6290,17 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
               </div>
             </div>
 
-            {/* Aviso ficha incompleta */}
-            {isIncomplete && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-3">
-                <span className="text-amber-500 text-lg mt-0.5">⚠️</span>
-                <div>
-                  <p className="text-sm font-semibold text-amber-800">Ficha incompleta</p>
-                  <p className="text-xs text-amber-600 mt-0.5">Completa el motivo de consulta, enfoque terapéutico y diagnóstico presuntivo desde el botón <strong>Editar ficha</strong>.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Motivo de consulta */}
+            {/* Motivo de consulta — desde la ficha del paciente */}
             {p.consultation_reason ? (
               <div className="bg-white border border-slate-200 rounded-xl p-4">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Motivo de consulta</p>
                 <p className="text-sm text-slate-700 leading-relaxed">{p.consultation_reason}</p>
               </div>
             ) : (
-              <button onClick={onEdit} className="w-full bg-white border border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-brand-400 hover:bg-brand-50 transition-colors">
-                <p className="text-sm text-slate-400">+ Agregar motivo de consulta</p>
-              </button>
+              <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4">
+                <p className="text-sm text-slate-400 text-center mb-1">Motivo de consulta no registrado en la ficha</p>
+                <p className="text-xs text-slate-400 text-center">Puedes agregarlo desde <button onClick={onEdit} className="text-brand-500 underline font-medium">Editar ficha</button> → pestaña Ficha clínica, o desde la <button onClick={()=>setTab('entrevista')} className="text-brand-500 underline font-medium">Entrevista inicial</button></p>
+              </div>
             )}
 
             {/* Grid clínico */}
