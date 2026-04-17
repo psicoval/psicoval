@@ -136,9 +136,14 @@ function RoleBadge({ role }) {
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_COLORS[role]||ROLE_COLORS.free}`}>{ROLE_LABELS[role]||'Gratis'}</span>
 }
 function Modal({ title, onClose, children, wide }) {
+  React.useEffect(()=>{
+    document.body.style.overflow='hidden'
+    return ()=>{ document.body.style.overflow='' }
+  },[])
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className={`bg-white rounded-2xl w-full ${wide?'max-w-3xl':'max-w-lg'} p-6 shadow-2xl fade-in my-4`}>
+    <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 p-4" style={{overflowY:'scroll'}}>
+      <div className={`bg-white rounded-2xl w-full ${wide?'max-w-3xl':'max-w-lg'} p-6 shadow-2xl fade-in my-4 relative`}
+        onClick={e=>e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button>
@@ -199,7 +204,9 @@ const EMPTY_INTERVIEW = {
   areas_affected:[], previous_solutions:[], previous_solutions_notes:'',
   // Eje funcional — antecedentes y consecuencias
   triggers:[], triggers_other:'',
-  consequences:[],
+  behaviors:[], behaviors_notes:'',
+  consequences:[], consequences_notes:'',
+  medical_detail:'',
   // B2: Contexto vital
   sat_work:5, sat_family:5, sat_social:5, sat_sleep:5,
   physical_activity:'', eating_habits:'', support_network:[], context_notes:'',
@@ -382,13 +389,22 @@ function RadioGroup({ label, name, options, value, onChange }) {
 }
 
 function ScaleInput({ label, value, onChange, min=0, max=10, leftLabel='0', rightLabel='10' }) {
+  const handleChange = (e) => {
+    e.stopPropagation()
+    onChange(parseInt(e.target.value))
+  }
+  const prevent = (e) => e.stopPropagation()
   return (
     <div>
-      {label && <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">{label}</p>}
+      {label && <p className="text-xs text-slate-400 mb-1" style={{textTransform:'none',letterSpacing:'normal'}}>{label}</p>}
       <div className="flex items-center gap-2">
         <span className="text-xs text-slate-400 whitespace-nowrap">{leftLabel}</span>
-        <input type="range" min={min} max={max} value={value} onChange={e=>onChange(parseInt(e.target.value))} className="flex-1"/>
-        <span className="text-sm font-semibold text-slate-700 w-6 text-center">{value}</span>
+        <input type="range" min={min} max={max} value={value} step={1}
+          onChange={handleChange}
+          onMouseDown={prevent} onTouchStart={prevent}
+          onPointerDown={prevent}
+          style={{flex:1, cursor:'pointer', touchAction:'none'}}/>
+        <span className="text-sm font-semibold text-brand-600 w-6 text-center">{value}</span>
         <span className="text-xs text-slate-400 whitespace-nowrap">{rightLabel}</span>
       </div>
     </div>
@@ -611,7 +627,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
   const Divider = () => <div className="border-t border-slate-100 my-3"/>
 
   return (
-    <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="flex flex-col" style={{maxHeight:'82vh'}}>
+    <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="flex flex-col" onClick={e=>e.stopPropagation()}>
       <Alert msg={err}/>
 
       {/* Selector paciente si no viene del expediente */}
@@ -629,28 +645,29 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
       {/* Nav bloques */}
       <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
         {BLOCKS.map((b,i)=>(
-          <button key={b.id} type="button" onClick={()=>setBlock(i)}
-            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-all border ${block===i?b.color+' border-current':'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-            <span>{b.icon}</span><span className="hidden sm:block">{b.label}</span>
+          <button key={b.id} type="button" onClick={e=>{e.stopPropagation();setBlock(i)}}
+            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl text-xs font-medium transition-all border ${block===i?b.color+' border-current':'border-transparent text-slate-500 hover:bg-slate-100'}`}>
+            <span style={{fontSize:'14px'}}>{b.icon}</span>
+            <span style={{fontSize:'10px',whiteSpace:'nowrap'}}>{b.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="overflow-y-auto flex-1 pr-1 space-y-3">
+      <div className="pr-1 space-y-3">
 
         {/* BLOQUE 0: MOTIVO DE CONSULTA Y ANÁLISIS DEL PROBLEMA */}
         {block===0 && (
           <div className="space-y-3">
-            <Sec title="¿Qué te trae hoy a consulta?">
-              <Textarea label="Respuesta del paciente (registrar textualmente)" rows={4}
+            <Sec title="¿Qué te trae hoy a consulta? (Motivo de consulta)">
+              <Textarea label="Respuesta del paciente — registrar textualmente" rows={4}
                 placeholder="«Si tuvieras que resumir el problema principal, ¿cómo lo describirías con tus propias palabras?»"
                 value={form.consultation_reason||''} onChange={e=>f('consultation_reason',e.target.value)} />
             </Sec>
             <Divider/>
-            <Sec title="¿Desde cuándo te está pasando esto?">
+            <Sec title="¿Desde cuándo te está pasando esto? (Evolución temporal)">
               <div className="grid grid-cols-3 gap-3 mb-3">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">¿Cuánto tiempo lleva?</label>
+                  <label className="text-xs text-slate-400 mb-1 block">Duración</label>
                   <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                     value={form.problem_duration||''} onChange={e=>f('problem_duration',e.target.value)}>
                     <option value="">Seleccionar</option>
@@ -658,7 +675,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">¿Cómo empezó?</label>
+                  <label className="text-xs text-slate-400 mb-1 block">Inicio</label>
                   <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                     value={form.problem_onset||''} onChange={e=>f('problem_onset',e.target.value)}>
                     <option value="">Seleccionar</option>
@@ -666,7 +683,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">¿Ha mejorado, empeorado o va por etapas?</label>
+                  <label className="text-xs text-slate-400 mb-1 block">Curso</label>
                   <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                     value={form.problem_course||''} onChange={e=>f('problem_course',e.target.value)}>
                     <option value="">Seleccionar</option>
@@ -674,28 +691,32 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                   </select>
                 </div>
               </div>
-              <ScaleInput label="Si lo ponemos en una escala del 0 al 10, ¿qué tan intenso es el malestar?" value={form.problem_intensity} onChange={v=>f('problem_intensity',v)} leftLabel="0 — ninguno" rightLabel="10 — extremo"/>
+              <ScaleInput label="Si lo ponemos en una escala del 0 al 10, ¿qué tan intenso es el malestar? (Intensidad)" value={form.problem_intensity} onChange={v=>f('problem_intensity',v)} leftLabel="0 — ninguno" rightLabel="10 — extremo"/>
               <div className="mt-3">
-                <RadioGroup label="¿Con qué frecuencia te ocurre?" name="freq" value={form.problem_frequency} onChange={v=>f('problem_frequency',v)}
+                <RadioGroup label="¿Con qué frecuencia te ocurre? (Frecuencia)" name="freq" value={form.problem_frequency} onChange={v=>f('problem_frequency',v)}
                   options={[['varias_dia','Varias veces al día'],['diario','A diario'],['varias_sem','Varias veces/sem'],['1-2_sem','1–2 veces/sem'],['ocasional','Ocasionalmente']]} />
               </div>
             </Sec>
             <Divider/>
-            <CheckGroup label="¿En qué áreas de tu vida sientes que esto te está afectando más?" options={AREAS} value={form.areas_affected} onChange={v=>f('areas_affected',v)} />
+            <CheckGroup label="¿En qué áreas de tu vida sientes que esto te está afectando más? (Áreas afectadas)" options={AREAS} value={form.areas_affected} onChange={v=>f('areas_affected',v)} />
             <Divider/>
             <div>
-              <CheckGroup label="¿Qué has intentado para solucionar esto?" options={SOLUTIONS} value={form.previous_solutions} onChange={v=>f('previous_solutions',v)} />
+              <CheckGroup label="¿Qué has intentado para solucionar esto? (Intentos de solución)" options={SOLUTIONS} value={form.previous_solutions} onChange={v=>f('previous_solutions',v)} />
               <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
                 rows={2} placeholder="¿Qué te ha ayudado aunque sea un poco? ¿Qué no ha funcionado?" value={form.previous_solutions_notes||''} onChange={e=>f('previous_solutions_notes',e.target.value)}/>
             </div>
             <Divider/>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">Eje funcional A-B-C</p>
-                <p className="text-xs text-slate-400 mb-3">«¿En qué momentos suele aparecer el problema? ¿Qué lo activa? ¿Qué pasa después?»</p>
+                <p className="text-xs text-slate-400 mb-2">Análisis funcional del problema — Antecedentes → Conducta → Consecuencias</p>
               </div>
-              <div>
-                <CheckGroup label="¿Tiene que ver con situaciones, pensamientos o emociones específicas?" options={[
+
+              {/* A - Antecedentes */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-blue-700">A — Antecedentes / Disparadores</p>
+                <p className="text-xs text-blue-500 italic">«¿En qué momentos ocurre? ¿Qué situaciones, pensamientos o emociones lo activan?»</p>
+                <CheckGroup label="" options={[
                   ['situaciones_sociales','Situaciones sociales'],
                   ['pensamientos','Pensamientos específicos'],
                   ['emociones_intensas','Emociones intensas'],
@@ -706,19 +727,49 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                   ['noche','Horario nocturno'],
                   ['sin_estructura','Falta de rutina'],
                 ]} value={form.triggers} onChange={v=>f('triggers',v)} />
-                <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
-                  placeholder="Otros disparadores..." value={form.triggers_other||''} onChange={e=>f('triggers_other',e.target.value)}/>
+                <input type="text" className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  placeholder="Otros disparadores específicos..."
+                  value={form.triggers_other||''} onChange={e=>f('triggers_other',e.target.value)}/>
               </div>
-              <CheckGroup label="¿Qué haces cuando esto aparece? ¿Qué pasa después?" options={[
-                ['alivio_inmediato','Sientes alivio inmediato'],
-                ['evitacion','Evitas o escapas'],
-                ['conflictos','Genera conflictos con otros'],
-                ['culpa','Sientes culpa o vergüenza'],
-                ['aislamiento','Te aíslas'],
-                ['malestar_prolongado','El malestar se prolonga'],
-                ['conducta_compensatoria','Tienes conductas compensatorias'],
-                ['busqueda_apoyo','Buscas apoyo de alguien'],
-              ]} value={form.consequences} onChange={v=>f('consequences',v)} />
+
+              {/* B - Conducta/Respuesta */}
+              <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-purple-700">B — Conducta / Respuesta ante el disparador</p>
+                <p className="text-xs text-purple-500 italic">«¿Qué haces cuando esto aparece? ¿Cómo reaccionas?»</p>
+                <CheckGroup label="" options={[
+                  ['evitacion_cond','Evitas la situación'],
+                  ['escape','Escapas / te retiras'],
+                  ['busqueda_tranquil','Buscas tranquilizarte (respiración, distracciones)'],
+                  ['rumiacion','Le das vueltas al problema (rumiación)'],
+                  ['busqueda_apoyo_b','Buscas apoyo en otra persona'],
+                  ['paralisis','Te quedas paralizado/a, sin actuar'],
+                  ['irritabilidad','Reaccionas con irritabilidad o agresividad'],
+                  ['compensacion','Haces algo para compensar (comer, comprar, otros)'],
+                  ['enduras','Lo aguantas y sigues (supresión)'],
+                ]} value={form.behaviors||[]} onChange={v=>f('behaviors',v)} />
+                <textarea className="w-full border border-purple-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white resize-none"
+                  rows={2} placeholder="Describe cómo responde el paciente ante el disparador..."
+                  value={form.behaviors_notes||''} onChange={e=>f('behaviors_notes',e.target.value)}/>
+              </div>
+
+              {/* C - Consecuencias */}
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-amber-700">C — Consecuencias</p>
+                <p className="text-xs text-amber-500 italic">«¿Qué pasa después? ¿Sientes alivio, empeora, genera problemas?»</p>
+                <CheckGroup label="" options={[
+                  ['alivio_inmediato','Alivio inmediato (refuerzo negativo)'],
+                  ['evitacion','Evitación / escape mantenido'],
+                  ['conflictos','Conflictos relacionales'],
+                  ['culpa','Culpa o vergüenza'],
+                  ['aislamiento','Mayor aislamiento'],
+                  ['malestar_prolongado','Malestar que se prolonga'],
+                  ['conducta_compensatoria','Conductas compensatorias'],
+                  ['busqueda_apoyo','Búsqueda de apoyo externo'],
+                ]} value={form.consequences} onChange={v=>f('consequences',v)} />
+                <textarea className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white resize-none"
+                  rows={2} placeholder="Consecuencias adicionales relevantes..."
+                  value={form.consequences_notes||''} onChange={e=>f('consequences_notes',e.target.value)}/>
+              </div>
             </div>
           </div>
         )}
@@ -727,12 +778,12 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         {block===1 && (
           <div className="space-y-4">
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-slate-600 mb-1">Indicación clínica</p>
+              <p className="text-xs font-semibold text-slate-600 mb-1">Indicación clínica (Evaluación de riesgo)</p>
               <p className="text-xs text-slate-500 italic">Después de escuchar el motivo de consulta, y de forma natural: «Antes de continuar, necesito preguntarte algo importante: ¿Has tenido pensamientos de hacerte daño o de quitarte la vida?»</p>
               <p className="text-xs text-slate-400 mt-1">Si la respuesta es no → registrar "Sin ideación" y avanzar. Si es sí → desplegar el protocolo.</p>
             </div>
 
-            <RadioGroup label="Respuesta del paciente" name="risk" value={form.risk_level}
+            <RadioGroup label="Respuesta del paciente (Nivel de ideación)" name="risk" value={form.risk_level}
               onChange={v=>f('risk_level',v)}
               options={[['sin_ideacion','Sin ideación'],['pasiva','Ideación pasiva'],['activa_sin_plan','Activa sin plan'],['con_plan','Con plan'],['intento_previo','Intento previo']]} />
 
@@ -794,7 +845,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                 {/* B2: CONTEXTO VITAL */}
         {block===2 && (
           <div className="space-y-3">
-            <Sec title="Si tuvieras que calificar estas áreas del 0 al 10, ¿qué número dirías?">
+            <Sec title="Si tuvieras que calificar estas áreas del 0 al 10, ¿qué número dirías? (Satisfacción vital)">
               <div className="grid grid-cols-1 gap-3">
                 <ScaleInput label="Trabajo o estudios" value={form.sat_work} onChange={v=>f('sat_work',v)} leftLabel="0 — muy mal" rightLabel="10 — excelente"/>
                 <ScaleInput label="Relación de pareja o familia" value={form.sat_family} onChange={v=>f('sat_family',v)} leftLabel="0 — muy mal" rightLabel="10 — excelente"/>
@@ -805,7 +856,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
             <Divider/>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">¿Realizas actividad física? ¿Con qué frecuencia?</label>
+                <label className="text-xs text-slate-400 mb-1 block">¿Realizas actividad física? ¿Con qué frecuencia? (Hábitos de salud)</label>
                 <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                   value={form.physical_activity||''} onChange={e=>f('physical_activity',e.target.value)}>
                   <option value="">Seleccionar</option>
@@ -813,7 +864,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">¿Cómo describirías tu alimentación actualmente?</label>
+                <label className="text-xs text-slate-400 mb-1 block">¿Cómo describirías tu alimentación actualmente? (Hábitos alimentarios)</label>
                 <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                   value={form.eating_habits||''} onChange={e=>f('eating_habits',e.target.value)}>
                   <option value="">Seleccionar</option>
@@ -822,7 +873,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
               </div>
             </div>
             <Divider/>
-            <CheckGroup label="¿Con quién cuentas en tu vida en este momento? ¿Hay personas cercanas en las que puedas apoyarte?" options={SUPPORT} value={form.support_network} onChange={v=>f('support_network',v)} />
+            <CheckGroup label="¿Con quién cuentas en tu vida en este momento? (Red de apoyo)" options={SUPPORT} value={form.support_network} onChange={v=>f('support_network',v)} />
             <Divider/>
             <Textarea label="Notas del psicólogo (opcional)" rows={2} placeholder="Aspectos del contexto vital relevantes no recogidos arriba..."
               value={form.context_notes||''} onChange={e=>f('context_notes',e.target.value)} />
@@ -833,13 +884,13 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         {block===3 && (
           <div className="space-y-3">
             <div>
-              <RadioGroup label="¿Has ido antes a terapia o tratamiento psiquiátrico?" name="tto" value={form.previous_treatments} onChange={v=>f('previous_treatments',v)}
+              <RadioGroup label="¿Has ido antes a terapia o tratamiento psiquiátrico? (Tratamientos previos)" name="tto" value={form.previous_treatments} onChange={v=>f('previous_treatments',v)}
                 options={[['ninguno','Sin tratamiento previo'],['uno','1 proceso'],['dos_tres','2–3 procesos'],['mas_tres','Más de 3'],['paralelo','Tratamiento paralelo actual']]} />
               <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
                 rows={2} placeholder="¿Cómo fue esa experiencia? ¿Por qué terminó?" value={form.previous_treatments_notes||''} onChange={e=>f('previous_treatments_notes',e.target.value)}/>
             </div>
             <Divider/>
-            <Sec title="¿Estás tomando algún medicamento? ¿Quién te lo recetó?">
+            <Sec title="¿Estás tomando algún medicamento? (Medicación actual)">
               <div className="grid grid-cols-2 gap-3">
                 <CheckGroup options={[['ninguna','Sin medicación'],['psicofarmaco','Psicofármaco'],['medica','Médica general']]} value={form.medication_type} onChange={v=>f('medication_type',v)} />
                 <Input label="Nombre / dosis" placeholder="Nombre del medicamento, dosis, quién lo recetó..." value={form.medication_detail||''} onChange={e=>f('medication_detail',e.target.value)} />
@@ -847,14 +898,19 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
             </Sec>
             <Divider/>
             <div>
-              <CheckGroup label="¿Ha ocurrido algo importante en tu vida — recientemente o en el pasado — que creas que influye en cómo te sientes ahora?" name="events" options={EVENTS} value={form.significant_events} onChange={v=>f('significant_events',v)} />
+              <CheckGroup label="¿Ha ocurrido algo importante — reciente o del pasado — que creas que influye en cómo te sientes? (Eventos vitales)" name="events" options={EVENTS} value={form.significant_events} onChange={v=>f('significant_events',v)} />
               <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
                 rows={2} placeholder="Cuéntame más sobre lo que consideras más relevante..." value={form.significant_events_notes||''} onChange={e=>f('significant_events_notes',e.target.value)}/>
             </div>
             <Divider/>
-            <CheckGroup label="¿Tienes alguna condición médica importante que deba conocer?" name="medical" options={MEDICAL} value={form.medical_history} onChange={v=>f('medical_history',v)} />
+            <div>
+              <CheckGroup label="¿Tienes alguna condición médica importante que deba conocer? (Antecedentes médicos)" name="medical" options={MEDICAL} value={form.medical_history} onChange={v=>f('medical_history',v)} />
+              <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none"
+                rows={2} placeholder="Describe la condición específica: Ej. lumbalgia crónica L4-L5, hipertensión arterial controlada..."
+                value={form.medical_detail||''} onChange={e=>f('medical_detail',e.target.value)}/>
+            </div>
             <Divider/>
-            <Sec title="¿Consumes alcohol u otras sustancias? ¿Con qué frecuencia?">
+            <Sec title="¿Consumes alcohol u otras sustancias? (Consumo de sustancias)">
               <div className="space-y-2">
                 <SubstanceRow label="Alcohol" value={form.substance_alcohol} onChange={v=>f('substance_alcohol',v)} />
                 <SubstanceRow label="Tabaco" value={form.substance_tobacco} onChange={v=>f('substance_tobacco',v)} />
@@ -868,7 +924,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         {/* B4: EVALUACIÓN CLÍNICA */}
         {block===4 && (
           <div className="space-y-3">
-            <Sec title="Observación clínica del psicólogo (durante la sesión)">
+            <Sec title="Observación clínica (Estado mental) — completar durante la sesión">
               <div className="grid grid-cols-2 gap-3">
                 {[
                   ['mse_appearance','Apariencia',[['adecuada','Adecuada'],['descuidada','Descuidada'],['llamativa','Llamativa'],['deteriorada','Deteriorada']]],
@@ -887,7 +943,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
                   </div>
                 ))}
               </div>
-              <Input label="«Si tuvieras que ponerle una palabra a cómo te sientes, ¿cuál sería?»" placeholder="Respuesta del paciente (registrar literalmente)..."
+              <Input label="«Si tuvieras que ponerle una palabra a cómo te sientes, ¿cuál sería?» (Estado de ánimo subjetivo)" placeholder="Respuesta del paciente (registrar literalmente)..."
                 value={form.mood_subjective||''} onChange={e=>f('mood_subjective',e.target.value)} />
             </Sec>
             <Divider/>
@@ -939,22 +995,22 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         {/* B5: FORMULACIÓN */}
         {block===5 && (
           <div className="space-y-3">
-            <Textarea label="Si tuviéramos que describir el problema en términos concretos, ¿qué está pasando exactamente en el día a día?" rows={3} placeholder="¿Cuál es el problema en términos funcionales/conductuales concretos?"
+            <Textarea label="Si tuviéramos que describir el problema en términos concretos, ¿qué está pasando? (Problema operacionalizado)" rows={3} placeholder="¿Cuál es el problema en términos funcionales/conductuales concretos?"
               value={form.problem_operationalized||''} onChange={e=>f('problem_operationalized',e.target.value)} />
             <Divider/>
-            <CheckGroup label="¿Qué hace que este problema se mantenga? Variables identificadas:" options={MAINTAINING} value={form.maintaining_variables} onChange={v=>f('maintaining_variables',v)} />
+            <CheckGroup label="¿Qué hace que este problema se mantenga? (Variables mantenedoras)" options={MAINTAINING} value={form.maintaining_variables} onChange={v=>f('maintaining_variables',v)} />
             <Divider/>
-            <Textarea label="Mirando hacia atrás, ¿hay experiencias o etapas que lo hicieron más vulnerable a esto?" rows={2} placeholder="Historia de aprendizaje, eventos tempranos, vulnerabilidad biológica..."
+            <Textarea label="Mirando hacia atrás, ¿experiencias que lo hicieron más vulnerable? (Factores predisponentes)" rows={2} placeholder="Historia de aprendizaje, eventos tempranos, vulnerabilidad biológica..."
               value={form.predisposing_factors||''} onChange={e=>f('predisposing_factors',e.target.value)} />
             <Divider/>
-            <CheckGroup label="¿Qué recursos tiene a su favor? ¿Qué le ha ayudado a seguir adelante hasta ahora?" options={PROTECTIVE} value={form.protective_factors} onChange={v=>f('protective_factors',v)} />
+            <CheckGroup label="¿Qué recursos tiene a su favor? (Factores protectores)" options={PROTECTIVE} value={form.protective_factors} onChange={v=>f('protective_factors',v)} />
           </div>
         )}
 
         {/* B6: PLAN */}
         {block===6 && (
           <div className="space-y-3">
-            <Textarea label="¿Qué te gustaría lograr con este proceso?" rows={3} placeholder="¿Qué espera lograr? ¿Cómo sería su vida si mejorara el problema?"
+            <Textarea label="¿Qué te gustaría lograr con este proceso? (Expectativas del paciente)" rows={3} placeholder="¿Qué espera lograr? ¿Cómo sería su vida si mejorara el problema?"
               value={form.patient_expectations||''} onChange={e=>f('patient_expectations',e.target.value)} />
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
               <p className="text-xs font-semibold text-amber-800 mb-1">«Si esto mejorara, ¿qué estarías haciendo diferente en tu vida?» — Objetivo conductual observable</p>
@@ -965,8 +1021,8 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
             </div>
             <Divider/>
             <div className="grid grid-cols-2 gap-4">
-              <ScaleInput label="Del 0 al 10, ¿qué tan motivado/a te sientes para trabajar en esto?" value={form.motivation} onChange={v=>f('motivation',v)} leftLabel="0 — nula" rightLabel="10 — alta"/>
-              <RadioGroup label="¿Qué tanto sientes que entiendes lo que te está pasando?" name="insight" value={form.insight} onChange={v=>f('insight',v)}
+              <ScaleInput label="Del 0 al 10, ¿qué tan motivado/a te sientes para trabajar en esto? (Motivación)" value={form.motivation} onChange={v=>f('motivation',v)} leftLabel="0 — nula" rightLabel="10 — alta"/>
+              <RadioGroup label="¿Qué tanto sientes que entiendes lo que te está pasando? (Insight)" name="insight" value={form.insight} onChange={v=>f('insight',v)}
                 options={[['nulo','Nulo'],['parcial','Parcial'],['adecuado','Adecuado'],['elevado','Elevado']]} />
             </div>
             <Divider/>
@@ -1144,7 +1200,7 @@ function InterviewDetail({ interview: iv, patientName, onEdit, onClose }) {
         {iv.symptoms_mood?.length > 0 && <Field label="Síntomas — estado de ánimo" value={iv.symptoms_mood} />}
         {iv.symptoms_anxiety?.length > 0 && <Field label="Síntomas — ansiedad" value={iv.symptoms_anxiety} />}
         {iv.maintaining_variables?.length > 0 && <Field label="Variables mantenedoras" value={iv.maintaining_variables} />}
-        {iv.protective_factors?.length > 0 && <Field label="¿Qué recursos tiene a su favor? ¿Qué le ha ayudado a seguir adelante hasta ahora?" value={iv.protective_factors} />}
+        {iv.protective_factors?.length > 0 && <Field label="¿Qué recursos tiene a su favor? (Factores protectores)" value={iv.protective_factors} />}
         {iv.patient_expectations && <Field label="Expectativas del paciente" value={iv.patient_expectations} />}
         {iv.instruments_confirmed?.length > 0 && <Field label="Instrumentos sesión 2" value={iv.instruments_confirmed} />}
         {iv.evaluator_notes && <Field label="Observaciones del evaluador" value={iv.evaluator_notes} />}
@@ -5473,7 +5529,11 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
       risk_can_stay_alone: form.risk_can_stay_alone!==undefined?form.risk_can_stay_alone:true,
       triggers: form.triggers||[],
       triggers_other: form.triggers_other||null,
+      behaviors: form.behaviors||[],
+      behaviors_notes: form.behaviors_notes||null,
       consequences: form.consequences||[],
+      consequences_notes: form.consequences_notes||null,
+      medical_detail: form.medical_detail||null,
       behavioral_objective: form.behavioral_objective||null,
       ai_summary: form.ai_summary||null,
       status: form.status||'borrador'
@@ -5484,8 +5544,26 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
     } else {
       ;({ error } = await sb.from('initial_interviews').insert(payload))
     }
-    if (error) setErr('Error al guardar.')
-    else { setModal(null); setSelected(null); load() }
+    if (error) {
+      // If 400: possibly new columns not yet in DB — try with base fields only
+      if (error.code === '42703' || error.message?.includes('column') || error.details?.includes('column')) {
+        const basePayload = { user_id:payload.user_id, patient_id:payload.patient_id,
+          consultation_reason:payload.consultation_reason, problem_duration:payload.problem_duration,
+          problem_intensity:payload.problem_intensity, problem_frequency:payload.problem_frequency,
+          areas_affected:payload.areas_affected, evaluator_notes:payload.evaluator_notes,
+          status:payload.status, risk_level:payload.risk_level }
+        let err2
+        if (modal === 'edit') {
+          ;({error:err2} = await sb.from('initial_interviews').update({...basePayload, updated_at: new Date().toISOString()}).eq('id', selected.id))
+        } else {
+          ;({error:err2} = await sb.from('initial_interviews').insert(basePayload))
+        }
+        if (err2) setErr('Error al guardar. Verifica que ejecutaste el SQL de migración en Supabase.')
+        else { setModal(null); setSelected(null); load(); setErr('') }
+      } else {
+        setErr('Error al guardar: ' + (error.message || JSON.stringify(error)))
+      }
+    } else { setModal(null); setSelected(null); load() }
     setBusy(false)
   }
 
@@ -5862,10 +5940,10 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
               <h4 className="font-medium text-slate-700 text-sm mb-2">El paquete incluye:</h4>
               <ul className="space-y-2">
                 {[
-                  ['📝', 'Entrevista inicial en blanco', '4 bloques estructurados con instrucciones y espacios para escribir'],
-                  ['⚠️', 'Protocolo de riesgo suicida', 'Guía para el profesional con indicadores, preguntas clave y niveles de riesgo'],
-                  ['💙', 'Plan de seguridad para el paciente', 'Documento para entregar al paciente con pasos ante una crisis'],
-                  ['📄', 'Consentimiento informado', 'Documento obligatorio con firma del paciente antes de iniciar el proceso'],
+                  ['📝', 'Entrevista clínica inicial', '6 bloques estructurados con preguntas guía, escalas y casillas — mismo formato que el sistema digital'],
+                  ['⚠️', 'Evaluación de riesgo suicida', 'Micro-protocolo integrado: ideación, plan, medios, intención inmediata y factores protectores'],
+                  ['💙', 'Plan de seguridad personal', 'Documento para entregar al paciente con pasos concretos ante una crisis'],
+                  ['📄', 'Consentimiento informado', '12 puntos — documento obligatorio con firma antes de iniciar el proceso'],
                 ].map(([icon, title, desc]) => (
                   <li key={title} className="flex gap-3">
                     <span className="text-lg flex-shrink-0">{icon}</span>
@@ -5879,7 +5957,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <p className="text-sm font-medium text-blue-800 mb-1">Después de la primera cita</p>
-              <p className="text-xs text-blue-600">Una vez que completes la entrevista en papel, ve a la pestaña <strong>Evaluaciones</strong> para ingresar los datos recopilados y generar el análisis IA.</p>
+              <p className="text-xs text-blue-600">Una vez que completes la entrevista en papel, ve a la pestaña <strong>Entrevista</strong> del expediente del paciente para ingresar los datos recopilados y generar el resumen clínico con IA.</p>
             </div>
           </div>
         )}
@@ -6272,21 +6350,28 @@ function generateFirstVisitPrintable(patient, profile) {
     <div class="field-label">Resultados (¿qué funcionó, qué no?):</div>
     ${lineBlock(2)}
 
-    <div class="field-label" style="margin-top:6px;color:#3C3489">Eje funcional A-B-C — «¿En qué momentos ocurre? ¿Qué lo activa? ¿Qué pasa después?»</div>
-    <div class="grid2" style="margin-top:3px">
-      <div>
-        <div class="field-label">Disparadores — «¿Tiene que ver con situaciones, pensamientos o emociones?»</div>
-        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
-          ${['□ Situaciones sociales','□ Pensamientos específicos','□ Emociones intensas','□ Contexto laboral/académico','□ Conflictos interpersonales','□ Estar solo/a','□ Cansancio/fatiga','□ Horario nocturno','□ Falta de estructura/rutina'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
-        </div>
-        <div class="field-label" style="margin-top:4px">Otros:</div>
-        ${lineBlock(1)}
+    <div class="field-label" style="margin-top:6px;color:#3C3489">Eje funcional A-B-C</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:4px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:5px">
+        <div style="font-size:9px;font-weight:bold;color:#1d4ed8;margin-bottom:2px">A — Antecedentes / Disparadores</div>
+        <div style="font-size:8px;color:#3b82f6;font-style:italic;margin-bottom:3px">«¿En qué momentos ocurre? ¿Qué lo activa?»</div>
+        ${['□ Situaciones sociales','□ Pensamientos específicos','□ Emociones intensas','□ Contexto laboral','□ Conflictos','□ Estar solo/a','□ Cansancio/fatiga','□ Horario nocturno','□ Falta de rutina'].map(o=>`<div style="font-size:8.5px">${o}</div>`).join('')}
+        <div style="font-size:8.5px;margin-top:3px;color:#64748b">Otros/notas:</div>
+        ${lineBlock(2)}
       </div>
-      <div>
-        <div class="field-label">Consecuencias — «¿Qué haces cuando aparece? ¿Sientes alivio, empeora, genera problemas?»</div>
-        <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px">
-          ${['□ Alivio inmediato','□ Evitación/escape','□ Conflictos relacionales','□ Culpa/vergüenza','□ Aislamiento','□ Malestar prolongado','□ Conducta compensatoria','□ Búsqueda de apoyo'].map(o=>`<span style="font-size:9px">${o}</span>`).join('')}
-        </div>
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:5px">
+        <div style="font-size:9px;font-weight:bold;color:#7c3aed;margin-bottom:2px">B — Conducta / Respuesta</div>
+        <div style="font-size:8px;color:#8b5cf6;font-style:italic;margin-bottom:3px">«¿Qué haces cuando aparece?»</div>
+        ${['□ Evitas la situación','□ Escapas / te retiras','□ Buscas tranquilizarte','□ Rumiación (le das vueltas)','□ Buscas apoyo de otros','□ Te quedas paralizado/a','□ Reaccionas con irritabilidad','□ Compensas con otra conducta','□ Lo aguantas (supresión)'].map(o=>`<div style="font-size:8.5px">${o}</div>`).join('')}
+        <div style="font-size:8.5px;margin-top:3px;color:#64748b">Notas:</div>
+        ${lineBlock(2)}
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:5px">
+        <div style="font-size:9px;font-weight:bold;color:#d97706;margin-bottom:2px">C — Consecuencias</div>
+        <div style="font-size:8px;color:#f59e0b;font-style:italic;margin-bottom:3px">«¿Qué pasa después del episodio?»</div>
+        ${['□ Alivio inmediato','□ Evitación mantenida','□ Conflictos relacionales','□ Culpa/vergüenza','□ Mayor aislamiento','□ Malestar prolongado','□ Conductas compensatorias','□ Búsqueda de apoyo'].map(o=>`<div style="font-size:8.5px">${o}</div>`).join('')}
+        <div style="font-size:8.5px;margin-top:3px;color:#64748b">Notas:</div>
+        ${lineBlock(2)}
       </div>
     </div>
   </div>
@@ -6742,27 +6827,47 @@ function TherapeuticPlan({ patient, profile, supabaseUrl }) {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(false)
   const [editData, setEditData] = useState({})
+  const [interview, setInterview] = useState(null)
+  const [interviewLoaded, setInterviewLoaded] = useState(false)
+
+  useEffect(()=>{
+    if (!patient?.id) return
+    sb.from('initial_interviews').select('*').eq('patient_id', patient.id).order('created_at',{ascending:false}).limit(1)
+      .then(({data})=>{ setInterview(data?.[0]||null); setInterviewLoaded(true) })
+  },[patient?.id])
 
   const generatePlan = async () => {
     const p = patient
-    if (!p.consultation_reason && !p.presumptive_diagnosis) {
-      setError('Completa al menos el motivo de consulta antes de generar el plan.'); return
+    const iv = interview
+    if (!p.consultation_reason && !p.presumptive_diagnosis && !iv?.consultation_reason) {
+      setError('Registra primero la entrevista inicial del paciente para generar el plan terapéutico.'); return
     }
     setLoading(true); setError('')
-    const prompt = `Eres un asistente clínico de apoyo para psicólogos. Basándote en la información del paciente, genera un plan terapéutico sugerido de trabajo.
+    const prompt = `Eres un asistente clínico de apoyo para psicólogos. Basándote en la información del paciente y su entrevista inicial, genera un plan terapéutico sugerido.
 
 DATOS DEL PACIENTE:
-- Nombre: ${p.name||'No especificado'}
-- Edad: ${p.age||'No especificado'}, Sexo: ${p.sex||'No especificado'}
-- Ocupación: ${p.occupation||'No especificado'}
-- Estado civil: ${p.marital_status||'No especificado'}
-- Motivo de consulta: ${p.consultation_reason||'No especificado'}
-- Antecedentes personales: ${p.background_personal||'No especificados'}
-- Antecedentes familiares: ${p.background_family||'No especificados'}
-- Antecedentes médicos: ${p.background_medical||'No especificados'}
-- Diagnóstico presuntivo: ${p.presumptive_diagnosis||'No especificado'}
-- Formulación del caso: ${p.diagnostic_axes||'No especificada'}
-- Enfoque terapéutico del profesional: ${p.therapeutic_approach||'No especificado (usa enfoque basado en evidencia general)'}
+- Nombre: ${p.name||'NS'}, Edad: ${p.age||'NS'}, Ocupación: ${p.occupation||'NS'}
+- Motivo de consulta (ficha): ${p.consultation_reason||'NS'}
+- Diagnóstico presuntivo: ${p.presumptive_diagnosis||'NS'}
+- Enfoque terapéutico: ${p.therapeutic_approach||'Basado en evidencia general'}
+
+ENTREVISTA CLÍNICA INICIAL:
+- Motivo de consulta: ${iv?.consultation_reason||p.consultation_reason||'NS'}
+- Duración: ${iv?.problem_duration||'NS'} | Intensidad: ${iv?.problem_intensity||'NS'}/10 | Severidad: ${iv?.global_severity||'NS'}
+- Áreas afectadas: ${(iv?.areas_affected||[]).join(', ')||'NS'}
+- Síntomas ánimo: ${(iv?.symptoms_mood||[]).join(', ')||'NS'}
+- Síntomas ansiedad: ${(iv?.symptoms_anxiety||[]).join(', ')||'NS'}
+- Síntomas cognitivos: ${(iv?.symptoms_cognitive||[]).join(', ')||'NS'}
+- Síntomas conductuales: ${(iv?.symptoms_behavioral||[]).join(', ')||'NS'}
+- Diagnóstico clínico: ${(iv?.diag_clinical||[]).join(', ')||'NS'}
+- Variables mantenedoras: ${(iv?.maintaining_variables||[]).join(', ')||'NS'}
+- Factores protectores: ${(iv?.protective_factors||[]).join(', ')||'NS'}
+- Expectativas del paciente: ${iv?.patient_expectations||'NS'}
+- Objetivo conductual: ${iv?.behavioral_objective||'NS'}
+- Motivación: ${iv?.motivation||'NS'}/10 | Insight: ${iv?.insight||'NS'}
+- Instrumentos confirmados: ${(iv?.instruments_confirmed||[]).join(', ')||'NS'}
+- Observaciones del evaluador: ${iv?.evaluator_notes||'NS'}
+- Resumen IA entrevista: ${iv?.ai_summary ? JSON.parse(iv.ai_summary||'{}')?.sintesis||'NS' : 'NS'}
 
 INSTRUCCIONES:
 1. Si se especifica un enfoque terapéutico, adapta el plan a ese modelo. Si no, usa principios clínicos generales basados en evidencia.
@@ -6853,14 +6958,26 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
   if (!plan && !loading) return (
     <div className="mt-4">
       {error && <div className="text-xs text-red-600 mb-3 bg-red-50 px-3 py-2 rounded-lg">{error}</div>}
-      <div className="bg-gradient-to-br from-purple-50 to-brand-50 border border-purple-200 rounded-xl p-4 text-center">
-        <div className="text-2xl mb-2">🎯</div>
-        <p className="text-sm font-medium text-slate-700 mb-1">Plan terapéutico con apoyo IA</p>
-        <p className="text-xs text-slate-500 mb-4">La IA analizará los datos del paciente y sugerirá objetivos, estructura de sesiones y estrategias según el enfoque del profesional. Todo es editable.</p>
-        <button onClick={generatePlan} className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-          Generar plan sugerido
-        </button>
-      </div>
+      {!interviewLoaded ? (
+        <div className="text-center py-6 text-slate-400 text-sm">Cargando...</div>
+      ) : !interview ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <p className="text-sm font-semibold text-amber-800 mb-1">Completa la entrevista inicial primero</p>
+          <p className="text-xs text-amber-600 mb-3">El plan terapéutico se genera a partir de los datos recogidos en la entrevista clínica inicial. Ve a la pestaña <strong>Entrevista</strong>, registra los datos de la primera sesión y vuelve aquí.</p>
+          <p className="text-xs text-amber-500">Si ya tienes datos básicos del paciente puedes generar un plan preliminar:</p>
+          <button onClick={generatePlan} className="mt-2 text-xs text-amber-700 underline">Generar plan preliminar de todas formas</button>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-br from-purple-50 to-brand-50 border border-purple-200 rounded-xl p-4 text-center">
+          <div className="text-2xl mb-2">🎯</div>
+          <p className="text-sm font-medium text-slate-700 mb-1">Plan terapéutico con apoyo IA</p>
+          <p className="text-xs text-slate-500 mb-1">La IA integrará los datos de la entrevista inicial para sugerir objetivos, estructura y estrategias. Todo es editable.</p>
+          {interview && <p className="text-xs text-green-600 mb-3">✓ Entrevista inicial disponible — {new Date(interview.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>}
+          <button onClick={generatePlan} className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+            Generar plan terapéutico
+          </button>
+        </div>
+      )}
     </div>
   )
 
