@@ -5546,32 +5546,64 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
       ai_summary: form.ai_summary||null,
       status: form.status||'borrador'
     }
-    let error
-    if (modal === 'edit') {
-      ;({ error } = await sb.from('initial_interviews').update({...payload, updated_at: new Date().toISOString()}).eq('id', selected.id))
-    } else {
-      ;({ error } = await sb.from('initial_interviews').insert(payload))
-    }
-    if (error) {
-      // If 400: possibly new columns not yet in DB — try with base fields only
-      if (error.code === '42703' || error.message?.includes('column') || error.details?.includes('column')) {
-        const basePayload = { user_id:payload.user_id, patient_id:payload.patient_id,
-          consultation_reason:payload.consultation_reason, problem_duration:payload.problem_duration,
-          problem_intensity:payload.problem_intensity, problem_frequency:payload.problem_frequency,
-          areas_affected:payload.areas_affected, evaluator_notes:payload.evaluator_notes,
-          status:payload.status, risk_level:payload.risk_level }
-        let err2
-        if (modal === 'edit') {
-          ;({error:err2} = await sb.from('initial_interviews').update({...basePayload, updated_at: new Date().toISOString()}).eq('id', selected.id))
-        } else {
-          ;({error:err2} = await sb.from('initial_interviews').insert(basePayload))
-        }
-        if (err2) setErr('Error al guardar. Verifica que ejecutaste el SQL de migración en Supabase.')
-        else { setModal(null); setSelected(null); load(); setErr('') }
+    // Helper: attempt save, return {ok, error}
+    const attemptSave = async (p) => {
+      let res
+      if (modal === 'edit') {
+        res = await sb.from('initial_interviews').update({...p, updated_at: new Date().toISOString()}).eq('id', selected.id)
       } else {
-        setErr('Error al guardar: ' + (error.message || JSON.stringify(error)))
+        res = await sb.from('initial_interviews').insert(p)
       }
-    } else { setModal(null); setSelected(null); load() }
+      return res
+    }
+
+    // Try 1: full payload
+    let { error } = await attemptSave(payload)
+
+    if (error) {
+      console.error('Save error (full payload):', JSON.stringify(error))
+
+      // Try 2: strip new columns that might not exist yet, keep original + v4 base
+      const v4Payload = {
+        user_id: payload.user_id,
+        patient_id: payload.patient_id,
+        status: payload.status||'borrador',
+        evaluator_notes: payload.evaluator_notes||null,
+        // Original columns (always exist)
+        problem_description: payload.consultation_reason||null,
+        problem_frequency: payload.problem_frequency||null,
+        previous_solutions: Array.isArray(payload.previous_solutions) ? payload.previous_solutions.join(', ') : (payload.previous_solutions||null),
+        evaluator_notes: payload.evaluator_notes||null,
+      }
+      let res2 = await attemptSave(v4Payload)
+      console.error('Save error (v4 payload):', JSON.stringify(res2.error))
+
+      // Try 3: absolute minimum - user_id, patient_id, status only
+      if (res2.error) {
+        let res3 = await attemptSave({
+          user_id: payload.user_id,
+          patient_id: payload.patient_id,
+          status: 'borrador',
+          evaluator_notes: (payload.evaluator_notes||'') + '
+
+[DATOS PENDIENTES DE MIGRACIÓN DB]',
+          problem_description: payload.consultation_reason||null,
+        })
+        if (res3.error) {
+          console.error('Save error (minimum):', JSON.stringify(res3.error))
+          setErr('Error al guardar (código ' + (error.code||'400') + '): ' + (error.message||'columna no existe') + '. Ejecuta el SQL de migración completo en Supabase y recarga la página.')
+        } else {
+          setModal(null); setSelected(null); load()
+          // Show warning that full data wasn't saved
+          setTimeout(()=>alert('⚠️ Guardado parcial: algunos campos nuevos no pudieron guardarse porque faltan columnas en la base de datos. Ejecuta el SQL de migración en Supabase para guardar todos los datos.'), 100)
+        }
+      } else {
+        setModal(null); setSelected(null); load()
+        setTimeout(()=>alert('⚠️ Guardado con datos limitados. Ejecuta el SQL de migración completo para guardar todos los campos clínicos.'), 100)
+      }
+    } else {
+      setModal(null); setSelected(null); load()
+    }
     setBusy(false)
   }
 
