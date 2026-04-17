@@ -7851,13 +7851,20 @@ function Patients({ user, role, planExpiry }) {
   // Show expedient if a patient is selected
   if (selectedExpedient) {
     return (
-      <PatientExpedient
-        user={user} role={role} planExpiry={planExpiry}
-        patient={selectedExpedient} profile={profile}
-        allSessions={sessions} allInstrResults={instrResults}
-        onBack={() => { setSelectedExpedient(null); load() }}
-        onEdit={() => { setSelected(selectedExpedient); setErr(''); setModal('edit') }}
-      />
+      <>
+        <PatientExpedient
+          user={user} role={role} planExpiry={planExpiry}
+          patient={selectedExpedient} profile={profile}
+          allSessions={sessions} allInstrResults={instrResults}
+          onBack={() => { setSelectedExpedient(null); load() }}
+          onEdit={() => { setSelected(selectedExpedient); setErr(''); setModal('edit') }}
+        />
+        {(modal==='create'||modal==='edit') && (
+          <Modal title={modal==='edit'?'Editar datos del consultante':'Nuevo consultante'} onClose={close} wide>
+            <PatientForm initial={modal==='edit'?selected:null} onSave={save} onClose={close} busy={busy} err={err} />
+          </Modal>
+        )}
+      </>
     )
   }
 
