@@ -2862,7 +2862,15 @@ function InstrumentApply({ instrument, patient, onSave, onClose, busy }) {
   const handleSave = () => {
     if (!allAnswered) return setErr('Responde todas las preguntas.')
     const scores = instrument.score(answers)
-    onSave({ answers, scores, interpretation })
+    const total = typeof scores === 'number' ? scores : (scores?.total ?? scores?.composite ?? null)
+    onSave({
+      key: instrument.key,
+      name: instrument.name,
+      answers,
+      scores,
+      total,
+      interpretation: interpretation || (interpData ? interpData.level + ': ' + interpData.desc : '')
+    })
   }
 
   const scores = allAnswered ? instrument.score(answers) : null
@@ -5335,15 +5343,23 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
 
   const handleSaveInstrument = async (result) => {
     setBusy(true)
-    await sb.from('instrument_results').insert({
-      user_id: user.id, patient_id: patientId,
-      instrument_key: result.key, instrument_name: result.name,
-      scores: result.scores, total_score: result.total,
-      interpretation: result.interpretation,
-      subscales: result.subscales || null,
+    const { error } = await sb.from('instrument_results').insert({
+      user_id: user.id,
+      patient_id: patientId,
+      instrument_key: result.key,
+      instrument_name: result.name,
+      scores: typeof result.scores === 'object' ? result.scores : { total: result.scores },
+      total_score: result.total ?? (typeof result.scores === 'number' ? result.scores : null),
+      interpretation: result.interpretation || '',
+      subscales: null,
       applied_at: new Date().toISOString().split('T')[0]
     })
-    setModal(null); setSelInstrument(null); load()
+    if (error) {
+      console.error('Error saving instrument:', error)
+      alert('Error al guardar: ' + error.message)
+    } else {
+      setModal(null); setSelInstrument(null); load()
+    }
     setBusy(false)
   }
 
@@ -5354,14 +5370,76 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
     return acc
   }, {})
 
+  const printInstrument = (ins) => {
+    const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    const rows = ins.questions.map((q,i) => {
+      const opts = ins.options || []
+      const optCells = ins.type==='vlq'
+        ? `<td style="text-align:center">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="display:inline-block;width:22px;height:22px;border:1px solid #cbd5e1;border-radius:3px;text-align:center;line-height:22px;font-size:10px;margin:1px">${n}</span>`).join('')}</td><td style="text-align:center">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="display:inline-block;width:22px;height:22px;border:1px solid #cbd5e1;border-radius:3px;text-align:center;line-height:22px;font-size:10px;margin:1px">${n}</span>`).join('')}</td>`
+        : opts.map(opt=>`<td style="text-align:center;width:${Math.floor(200/Math.max(opts.length,1))}px"><div style="width:18px;height:18px;border:1.5px solid #64748b;border-radius:50%;margin:0 auto"></div></td>`).join('')
+      return `<tr><td style="padding:6px 8px;font-size:10px;vertical-align:middle;border-bottom:1px solid #f1f5f9"><span style="color:#4361ee;font-weight:bold">${i+1}.</span> ${q}</td>${optCells}</tr>`
+    }).join('')
+    const optHeaders = ins.type==='vlq'
+      ? `<th style="text-align:center;font-size:9px;padding:4px">Importancia (1-10)</th><th style="text-align:center;font-size:9px;padding:4px">Consistencia (1-10)</th>`
+      : (ins.options||[]).map(opt=>`<th style="text-align:center;font-size:9px;padding:4px;min-width:40px">${opt}</th>`).join('')
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
+    <title>${ins.name} — ${patientName}</title>
+    <style>
+      @page{margin:14mm 16mm}
+      body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b}
+      .header{border-bottom:2px solid #4361ee;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between}
+      .logo{font-family:Georgia,serif;font-size:18px;color:#1a2460;font-weight:bold}
+      h1{color:#1a2460;font-size:14px;margin-bottom:3px}
+      .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:6px 10px;margin-bottom:10px;font-size:10px}
+      .instr-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:6px 10px;margin-bottom:10px;font-size:10px;font-style:italic;color:#475569}
+      table{width:100%;border-collapse:collapse}
+      thead tr{background:#f1f5f9}
+      th{padding:5px 6px;text-align:left;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
+      tr:nth-child(even){background:#f8fafc}
+      .score-box{margin-top:14px;border:1px solid #e2e8f0;border-radius:5px;padding:8px 10px}
+      .score-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+      .score-cell{border:1px solid #cbd5e1;border-radius:4px;padding:4px 10px;min-width:60px;text-align:center}
+      .footer{margin-top:12px;padding-top:6px;border-top:1px solid #e2e8f0;font-size:8px;color:#94a3b8;text-align:center}
+    </style></head><body>
+    <div class="header">
+      <div><div class="logo">Psicoval</div><div style="font-size:9px;color:#64748b">${ins.category} · ${ins.name}</div></div>
+      <div style="text-align:right;font-size:9px;color:#64748b"><div>Consultante: <strong>${patientName}</strong></div><div>Fecha: ${now}</div></div>
+    </div>
+    <h1>${ins.name}</h1>
+    <div class="info-box"><strong>${ins.fullName||ins.name}</strong> · ${ins.questions.length} ítems · Puntaje máx: ${ins.maxScore||'—'}</div>
+    <div class="instr-box">${ins.instructions}</div>
+    <table>
+      <thead><tr><th style="min-width:200px">Ítem</th>${optHeaders}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="score-box">
+      <p style="font-size:10px;font-weight:bold;color:#1a2460">Puntuación</p>
+      <div class="score-row">
+        ${ins.subscales ? ins.subscales.map(s=>`<div class="score-cell"><div style="font-size:8px;color:#64748b">${s.name}</div><div style="font-size:16px;font-weight:bold;color:#4361ee">___</div></div>`).join('') : ''}
+        <div class="score-cell"><div style="font-size:8px;color:#64748b">Total</div><div style="font-size:16px;font-weight:bold;color:#4361ee">___</div></div>
+        <div class="score-cell" style="flex:1"><div style="font-size:8px;color:#64748b">Interpretación</div><div style="font-size:11px;margin-top:2px">_______________________</div></div>
+      </div>
+    </div>
+    <div class="footer">Psicoval · ${ins.name} · ${now} · Documento confidencial de uso clínico</div>
+    </body></html>`
+    const w = window.open('','_blank')
+    if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500) }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-slate-700">{results.length} aplicación{results.length !== 1 ? 'es' : ''} registrada{results.length !== 1 ? 's' : ''}</p>
-        <button onClick={() => setModal('select')}
-          className="bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-          Aplicar instrumento
+        <div className="flex gap-2">
+          <button onClick={() => setModal('print-select')}
+            className="border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Imprimir en blanco
+          </button>
+          <button onClick={() => setModal('select')}
+            className="bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+            Aplicar instrumento
         </button>
       </div>
 
@@ -5378,7 +5456,20 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
             <div key={key} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <p className="font-semibold text-slate-800 text-sm">{apps[0].instrument_name}</p>
-                <span className="text-xs text-slate-400">{apps.length} aplicación{apps.length !== 1 ? 'es' : ''}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">{apps.length} aplicación{apps.length !== 1 ? 'es' : ''}</span>
+                  {Object.values(INSTRUMENTS).find(i=>i.key===key) && (
+                    <button onClick={()=>printInstrument(Object.values(INSTRUMENTS).find(i=>i.key===key))}
+                      className="text-xs text-orange-500 hover:text-orange-700 px-2 py-1 rounded hover:bg-orange-50 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                      Imprimir
+                    </button>
+                  )}
+                  <button onClick={()=>{ setSelInstrument(Object.values(INSTRUMENTS).find(i=>i.key===key)||{key,name:apps[0].instrument_name}); setModal('apply') }}
+                    className="text-xs text-brand-500 hover:text-brand-700 px-2 py-1 rounded hover:bg-brand-50">
+                    + Reaplicar
+                  </button>
+                </div>
               </div>
               {apps.length > 1 && (() => {
                 const sorted = [...apps].reverse() // oldest first
@@ -5464,6 +5555,24 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
         <Modal title={selInstrument.name} onClose={() => { setModal(null); setSelInstrument(null) }} wide>
           <InstrumentApply instrument={selInstrument} patient={{id: patientId, name: patientName}}
             onSave={handleSaveInstrument} onClose={() => { setModal(null); setSelInstrument(null) }} busy={busy} />
+        </Modal>
+      )}
+
+      {modal === 'print-select' && (
+        <Modal title="Imprimir instrumento en blanco" onClose={() => setModal(null)} wide>
+          <p className="text-xs text-slate-500 mb-3">Selecciona el instrumento que deseas imprimir para que el consultante lo llene en papel:</p>
+          <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+            {availableInstruments.map(ins => (
+              <button key={ins.key} onClick={() => { printInstrument(ins); setModal(null) }}
+                className="text-left p-3 border border-slate-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition-colors flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-slate-800 text-sm">{ins.name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{ins.description}</p>
+                </div>
+                <svg className="w-4 h-4 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              </button>
+            ))}
+          </div>
         </Modal>
       )}
     </div>
