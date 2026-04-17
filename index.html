@@ -2370,10 +2370,68 @@ function Appointments({ user }) {
 
 // ── Configuración de planes ───────────────────────────────
 const PLAN_LIMITS = {
-  free:    { maxPatients: 5,   instruments: 'all', reports: true,  label: 'Gratis' },
-  basic:   { maxPatients: 30,  instruments: 'all', reports: true,  label: 'Básico' },
-  premium: { maxPatients: null, instruments: 'all', reports: true,  label: 'Premium' },
-  admin:   { maxPatients: null, instruments: 'all', reports: true,  label: 'Admin' },
+  free: {
+    label: 'Gratis',
+    maxPatients: 3,
+    instruments: ['PHQ-9','GAD-7','DASS-21'],  // only 3 basic instruments
+    reports: false,
+    ai: false,          // no AI analysis
+    sessions: false,    // no session tracking
+    risk: false,        // no suicide risk protocol
+    interview: true,    // basic interview yes
+    plan: false,        // no therapeutic plan
+    consent: true,      // consent doc yes
+    primera_cita: true, // first appointment pack yes
+    maxSessions: 0,
+  },
+  basic: {
+    label: 'Básico',
+    maxPatients: 20,
+    instruments: ['PHQ-9','GAD-7','DASS-21','Rosenberg','AAQ-II','PCL-5','PSQI','STAI-E','STAI-R'],
+    reports: true,
+    ai: true,
+    sessions: true,
+    risk: true,
+    interview: true,
+    plan: true,
+    consent: true,
+    primera_cita: true,
+    maxSessions: null,
+  },
+  premium: {
+    label: 'Premium',
+    maxPatients: null,
+    instruments: 'all',
+    reports: true,
+    ai: true,
+    sessions: true,
+    risk: true,
+    interview: true,
+    plan: true,
+    consent: true,
+    primera_cita: true,
+    maxSessions: null,
+  },
+  admin: {
+    label: 'Admin',
+    maxPatients: null,
+    instruments: 'all',
+    reports: true,
+    ai: true,
+    sessions: true,
+    risk: true,
+    interview: true,
+    plan: true,
+    consent: true,
+    primera_cita: true,
+    maxSessions: null,
+  },
+}
+
+function canUseFeature(role, feature, planExpiry) {
+  const r = effectiveRole(role, planExpiry)
+  const plan = PLAN_LIMITS[r] || PLAN_LIMITS.free
+  return plan[feature] !== false
 }
 
 function isPlanExpired(planExpiry) {
@@ -2391,7 +2449,7 @@ function canUseInstrument(role, instrumentKey, planExpiry) {
   const r = effectiveRole(role, planExpiry)
   const plan = PLAN_LIMITS[r] || PLAN_LIMITS.free
   if (plan.instruments === 'all') return true
-  return plan.instruments.includes(instrumentKey)
+  return Array.isArray(plan.instruments) && plan.instruments.includes(instrumentKey)
 }
 
 function canAddPatient(role, currentCount, planExpiry) {
@@ -2443,12 +2501,29 @@ const INSTRUMENTS = {
     questions:['Poco interés o placer en hacer las cosas','Se ha sentido decaído/a, deprimido/a o sin esperanza','Ha tenido dificultad para quedarse dormido/a, o para seguir durmiendo, o ha dormido demasiado','Se ha sentido cansado/a o con poca energía','Sin apetito o comiendo en exceso','Se ha sentido mal consigo mismo/a, o que es un fracasado/a, o que se ha fallado a sí mismo/a o a su familia','Dificultad para concentrarse en cosas tales como leer el periódico o ver la televisión','Se ha movido o hablado tan despacio que otras personas lo/la han notado, o ha estado tan inquieto/a que se ha movido mucho más de lo habitual','Ha pensado que estaría mejor muerto/a o que de alguna manera se haría daño'],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
-      if(score<=4)  return {level:'Mínimo',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Síntomas depresivos mínimos. No se requiere intervención específica.'}
-      if(score<=9)  return {level:'Leve',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Depresión leve. Monitorizar y considerar intervención.'}
-      if(score<=14) return {level:'Moderado',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',desc:'Depresión moderada. Se recomienda intervención terapéutica.'}
-      if(score<=19) return {level:'Moderadamente grave',color:'text-red-500',bg:'bg-red-50',border:'border-red-200',desc:'Depresión moderadamente grave. Intervención activa recomendada.'}
-      return {level:'Grave',color:'text-red-700',bg:'bg-red-100',border:'border-red-300',desc:'Depresión grave. Evaluar derivación y tratamiento urgente.'}
-    }, maxScore:27
+      if(score<=4)  return {level:'Mínimo',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Síntomas depresivos mínimos o ausentes. No se indica intervención específica para depresión en este momento. Se recomienda monitoreo en caso de cambios en el contexto vital.',
+        clinical:'Puntuación 0-4. La persona no reporta interferencia significativa en su funcionamiento cotidiano relacionada con síntomas depresivos. Puede haber días difíciles aislados sin configurar un cuadro clínico. Acción: psicoeducación preventiva si hay factores de riesgo.'}
+      if(score<=9)  return {level:'Leve',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Depresión leve. Los síntomas generan molestia pero el funcionamiento cotidiano se mantiene relativamente preservado. Se recomienda monitorear y evaluar intervención.',
+        clinical:'Puntuación 5-9. Presencia de síntomas depresivos que pueden incluir bajo estado de ánimo, fatiga o dificultades de concentración ocasionales. El consultante suele mantener sus actividades habituales aunque con mayor esfuerzo. Acción: psicoeducación, activación conductual, reevaluación en 2-4 semanas.'}
+      if(score<=14) return {level:'Moderado',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',
+        desc:'Depresión moderada. Los síntomas afectan de forma notable el funcionamiento en varias áreas de la vida. Se recomienda intervención terapéutica estructurada.',
+        clinical:'Puntuación 10-14. Síntomas persistentes que interfieren con el trabajo, las relaciones y el autocuidado. Es frecuente la anhedonia, los pensamientos negativos recurrentes y alteraciones del sueño o apetito. Acción: intervención psicoterapéutica activa (TCC, ACT o similar), considerar evaluación psiquiátrica si hay comorbilidad.'}
+      if(score<=19) return {level:'Moderadamente grave',color:'text-red-500',bg:'bg-red-50',border:'border-red-200',
+        desc:'Depresión moderadamente grave. Interferencia importante en el funcionamiento global. Intervención activa e intensiva recomendada. Evaluar riesgo.',
+        clinical:'Puntuación 15-19. Cuadro depresivo con afectación clara de múltiples áreas vitales. Alta probabilidad de ideación pasiva de muerte. Es imprescindible evaluar el ítem 9 (ideación suicida) de forma específica. Acción: psicoterapia intensiva, derivación a psiquiatría para evaluación de medicación, plan de seguridad si corresponde.'}
+      return {level:'Grave',color:'text-red-700',bg:'bg-red-100',border:'border-red-300',
+        desc:'Depresión grave. Afectación severa del funcionamiento. Requiere atención prioritaria, evaluación de riesgo suicida y posible derivación urgente.',
+        clinical:'Puntuación 20-27. Cuadro depresivo mayor severo con alta interferencia funcional. El consultante puede presentar dificultades para llevar a cabo actividades básicas. Riesgo suicida elevado — aplicar protocolo de evaluación de riesgo. Acción: derivación urgente a psiquiatría, tratamiento combinado (psicoterapia + farmacoterapia), contacto frecuente y red de apoyo activa.'}
+    },
+    subscales:[
+      {name:'Ánimo/Afecto', items:[0,1,5], desc:'Ítems 1, 2, 6 — Estado de ánimo deprimido, anhedonia, autoestima'},
+      {name:'Somático/Vegetativo', items:[2,3,4,7], desc:'Ítems 3, 4, 5, 8 — Sueño, energía, apetito, psicomotricidad'},
+      {name:'Cognitivo', items:[6], desc:'Ítem 7 — Dificultad de concentración'},
+      {name:'Ideación suicida', items:[8], desc:'Ítem 9 — Pensamientos de muerte o autolesión (evaluar individualmente)'},
+    ],
+    maxScore:27
   },
   'gad7': {
     key:'gad7', name:'GAD-7', fullName:'Generalized Anxiety Disorder-7',
@@ -2460,11 +2535,25 @@ const INSTRUMENTS = {
     questions:['Se ha sentido nervioso/a, ansioso/a o con los nervios de punta','No ha podido dejar de preocuparse o no ha podido controlar su preocupación','Se ha preocupado demasiado por diferentes cosas','Ha tenido dificultad para relajarse','Ha estado tan inquieto/a que no ha podido quedarse sentado/a tranquilo/a','Se ha molestado o irritado fácilmente','Ha sentido miedo, como si fuera a pasar algo terrible'],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
-      if(score<=4)  return {level:'Mínimo',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Ansiedad mínima.'}
-      if(score<=9)  return {level:'Leve',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Ansiedad leve. Monitorizar.'}
-      if(score<=14) return {level:'Moderado',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',desc:'Ansiedad moderada. Se recomienda intervención.'}
-      return {level:'Grave',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Ansiedad grave. Intervención activa recomendada.'}
-    }, maxScore:21
+      if(score<=4)  return {level:'Mínimo',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Ansiedad mínima o ausente. Nivel de preocupación dentro de lo esperable para el funcionamiento cotidiano.',
+        clinical:'Puntuación 0-4. Sin indicadores de trastorno ansioso. El consultante puede manejar sus preocupaciones con recursos propios. Acción: psicoeducación preventiva si hay estresores identificados.'}
+      if(score<=9)  return {level:'Leve',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Ansiedad leve. Síntomas presentes pero sin comprometer significativamente el funcionamiento habitual.',
+        clinical:'Puntuación 5-9. El consultante experimenta preocupaciones frecuentes o tensión que puede generar malestar. Las actividades cotidianas se mantienen aunque con mayor esfuerzo. Acción: técnicas de regulación (respiración, mindfulness), reevaluación en 2-4 semanas, psicoeducación sobre ansiedad.'}
+      if(score<=14) return {level:'Moderado',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',
+        desc:'Ansiedad moderada. Interferencia notable en el funcionamiento. Intervención psicoterapéutica recomendada.',
+        clinical:'Puntuación 10-14. Síntomas ansiosos que afectan relaciones, trabajo o autocuidado. Puede haber evitación de situaciones, dificultad para concentrarse y síntomas físicos (tensión muscular, palpitaciones). Acción: psicoterapia estructurada (TCC, ACT, exposición si corresponde), considerar evaluación médica para descartar causas orgánicas.'}
+      return {level:'Grave',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Ansiedad grave. Afectación severa del funcionamiento. Intervención activa e intensiva recomendada.',
+        clinical:'Puntuación 15-21. Ansiedad incapacitante con alta interferencia en múltiples áreas. Probable presencia de ataques de pánico, evitación generalizada o síntomas somáticos prominentes. Acción: psicoterapia intensiva, derivación a psiquiatría para evaluación de tratamiento farmacológico, plan de manejo de crisis.'}
+    },
+    subscales:[
+      {name:'Preocupación / Control', items:[0,1,2], desc:'Ítems 1, 2, 3 — Nerviosismo, preocupación incontrolable, múltiples preocupaciones'},
+      {name:'Activación física', items:[3,4,5], desc:'Ítems 4, 5, 6 — Dificultad para relajarse, inquietud, irritabilidad'},
+      {name:'Aprensión', items:[6], desc:'Ítem 7 — Sensación de que algo terrible va a ocurrir'},
+    ],
+    maxScore:21
   },
   'dass21': {
     key:'dass21', name:'DASS-21', fullName:'Depression Anxiety Stress Scale-21',
@@ -2496,10 +2585,23 @@ const INSTRUMENTS = {
     questions:['Me molestaron cosas que generalmente no me molestan','No me sentí con ganas de comer; no tenía apetito','Me sentí que no podía quitarme la tristeza aunque me ayudara mi familia o amigos','Me sentí igual de buena persona que los demás','Tuve dificultad para mantener mi mente concentrada en lo que hacía','Me sentí deprimido/a','Sentí que todo lo que hacía era un esfuerzo','Me sentí esperanzado/a sobre el futuro','Pensé que mi vida había sido un fracaso','Me sentí temeroso/a','Mi sueño fue inquieto','Fui feliz','Hablé menos de lo usual','Me sentí solo/a','La gente fue antipática o poco amigable','Disfruté de la vida','Tuve episodios de llanto','Me sentí triste','Sentí que la gente no me quería','Sentí que no podía hacer nada bien'],
     score:(answers)=>{const rev=[3,7,11,15];return answers.reduce((s,v,i)=>s+(rev.includes(i)?3-v:v),0)},
     interpret:(score)=>{
-      if(score<=15) return {level:'Sin depresión significativa',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Puntaje dentro del rango normal. No se evidencian síntomas depresivos significativos.'}
-      if(score<=21) return {level:'Depresión leve',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Síntomas depresivos leves presentes. Se recomienda monitorizar y explorar en sesión.'}
-      return {level:'Depresión clínicamente significativa',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Síntomas depresivos clínicamente significativos. Se recomienda evaluación más profunda e intervención.'}
-    }, maxScore:60
+      if(score<=15) return {level:'Sin depresión significativa',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Puntaje dentro del rango normativo. No se evidencian síntomas depresivos significativos en la última semana.',
+        clinical:'Puntuación 0-15. El consultante no reporta una frecuencia ni intensidad de síntomas que configure un cuadro depresivo. Los ítems inversos (optimismo, disfrute) suelen puntuarse positivamente. Acción: sin intervención específica para depresión; reforzar recursos y bienestar.'}
+      if(score<=21) return {level:'Depresión leve',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Síntomas depresivos leves presentes con cierta regularidad en la última semana. Se recomienda monitorizar y explorar en sesión.',
+        clinical:'Puntuación 16-21. Los síntomas son frecuentes pero no dominantes. Pueden incluir tristeza episódica, fatiga y menor disfrute de actividades. Acción: activación conductual, psicoeducación, seguimiento en 2-3 semanas.'}
+      return {level:'Depresión clínicamente significativa',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Síntomas depresivos clínicamente significativos. Evaluación profunda e intervención terapéutica estructurada recomendadas.',
+        clinical:'Puntuación ≥22. Criterio clínico de sintomatología depresiva relevante. Alta frecuencia de síntomas como tristeza persistente, soledad, sentimientos de fracaso y pérdida de energía. Acción: psicoterapia activa, evaluar comorbilidades, considerar derivación psiquiátrica.'}
+    },
+    subscales:[
+      {name:'Afecto depresivo', items:[0,2,4,5,6,10,12,13,16,17], desc:'Estado de ánimo deprimido, llanto, soledad, tristeza'},
+      {name:'Afecto positivo (inv.)', items:[3,7,11,15], desc:'Ítems invertidos: esperanza, felicidad, disfrute, autoestima'},
+      {name:'Somatización', items:[1,9,19], desc:'Apetito, miedo, ineficacia'},
+      {name:'Relaciones interpersonales', items:[14,18], desc:'Percepción de hostilidad social y rechazo'},
+    ],
+    maxScore:60
   },
 
   // ═══════════════════════════════════════════════
@@ -2516,10 +2618,21 @@ const INSTRUMENTS = {
     questions:['Siento que soy una persona digna de aprecio, al menos en igual medida que los demás','Estoy convencido/a de que tengo cualidades buenas','Soy capaz de hacer las cosas tan bien como la mayoría de la gente','Tengo una actitud positiva hacia mí mismo/a','En general estoy satisfecho/a de mí mismo/a','Siento que no tengo mucho de lo que estar orgulloso/a','En general me inclino a pensar que soy un fracasado/a','Me gustaría poder sentir más respeto por mí mismo/a','Hay veces que realmente pienso que soy un inútil','A veces creo que no soy buena persona'],
     score:(answers)=>{const rev=[5,6,7,8,9];return answers.reduce((s,v,i)=>s+(rev.includes(i)?5-v:v),0)},
     interpret:(score)=>{
-      if(score<=15) return {level:'Autoestima baja',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Autoestima baja. Se recomienda intervención dirigida al fortalecimiento del autoconcepto.'}
-      if(score<=25) return {level:'Autoestima media',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Autoestima media. Área relevante a trabajar en el proceso terapéutico.'}
-      return {level:'Autoestima elevada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Autoestima elevada. Factor protector para el proceso terapéutico.'}
-    }, maxScore:40
+      if(score<=15) return {level:'Autoestima baja',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Autoestima baja. El consultante presenta una valoración negativa de sí mismo de forma consistente. Intervención directa recomendada.',
+        clinical:'Puntuación 10-15. Alta frecuencia de autocrítica, pensamientos de fracaso e ineficacia. Suele asociarse a depresión, vergüenza y relaciones interpersonales conflictivas. Acción: trabajo en autoconcepto y autocompasión, reestructuración de creencias centrales negativas (TCC), o trabajo desde la defusión y valores (ACT).'}
+      if(score<=25) return {level:'Autoestima media',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Autoestima media. Valoración de sí mismo/a moderada con áreas de inseguridad identificables. Relevante abordar en el proceso.',
+        clinical:'Puntuación 16-25. La persona tiene recursos de autoestima pero presenta vulnerabilidad en contextos específicos (evaluación social, fracasos, comparación con otros). Acción: explorar áreas específicas de baja autoestima, fortalecer identidad y valores personales.'}
+      return {level:'Autoestima elevada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Autoestima elevada. El consultante tiene una valoración positiva consolidada de sí mismo/a. Factor protector importante.',
+        clinical:'Puntuación 26-40. Autoconcepto positivo y estable. Funciona como factor protector ante el estrés y la adversidad. Acción: mantener y fortalecer; en casos extremos (>38) evaluar si hay componente narcisista.'}
+    },
+    subscales:[
+      {name:'Autoestima positiva', items:[0,1,2,3,4], desc:'Ítems 1-5: dignidad, cualidades, capacidad, actitud, satisfacción'},
+      {name:'Autoestima negativa (inv.)', items:[5,6,7,8,9], desc:'Ítems 6-10 (invertidos): orgullo, fracaso, respeto, inutilidad, valor personal'},
+    ],
+    maxScore:40
   },
 
   // ═══════════════════════════════════════════════
@@ -2541,9 +2654,15 @@ const INSTRUMENTS = {
     ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
-      if(score<=32) return {level:'Regulación emocional adecuada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Las dificultades en regulación emocional son mínimas.'}
-      if(score<=48) return {level:'Dificultades moderadas',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Presencia de dificultades moderadas en regulación emocional. Área relevante a trabajar en terapia.'}
-      return {level:'Dificultades severas',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Dificultades severas en regulación emocional. Se recomienda intervención específica.'}
+      if(score<=32) return {level:'Regulación emocional adecuada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Las dificultades en regulación emocional son mínimas. El consultante cuenta con recursos para manejar sus emociones.',
+        clinical:'Puntuación 16-32. Las emociones no interfieren significativamente con el comportamiento o el logro de metas. Acción: psicoeducación emocional como complemento; no requiere intervención específica en RE.'}
+      if(score<=48) return {level:'Dificultades moderadas',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Presencia de dificultades moderadas en regulación emocional. Las emociones interfieren con el funcionamiento en situaciones de malestar.',
+        clinical:'Puntuación 33-48. El consultante tiene dificultades para manejar emociones intensas: puede actuar impulsivamente, evitar las emociones o quedarse "atrapado/a" en ellas. Revisar qué dimensiones son más elevadas. Acción: trabajo en tolerancia al malestar (DBT), habilidades de mindfulness, regulación emocional desde ACT.'}
+      return {level:'Dificultades severas',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Dificultades severas en regulación emocional. Alta interferencia con el funcionamiento. Intervención específica y estructurada recomendada.',
+        clinical:'Puntuación 49-80. Desregulación emocional significativa con probable impacto en relaciones, decisiones y autocuidado. Frecuentemente asociada a TLP, trauma complejo o depresión crónica. Acción: DBT como enfoque principal, trabajo en habilidades de tolerancia al malestar, regulación emocional e interpersonal.'}
     }, maxScore:80
   },
 
@@ -2560,9 +2679,15 @@ const INSTRUMENTS = {
     questions:['Mis experiencias y recuerdos dolorosos hacen que me sea difícil vivir la vida que querría tener','Me da miedo sentir ansiedad o depresión','Me preocupa no ser capaz de controlar mis preocupaciones y sentimientos','Mis recuerdos dolorosos me impiden llevar una vida plena','Las emociones causan problemas en mi vida','Parece que la mayoría de personas están llevando sus vidas mejor que yo','Las preocupaciones se interponen en mi camino hacia el éxito'],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
-      if(score<=24) return {level:'Flexibilidad psicológica adecuada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Niveles bajos de inflexibilidad. Buena capacidad de aceptación y acción comprometida.'}
-      if(score<=34) return {level:'Inflexibilidad moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Cierto nivel de evitación experiencial. Área relevante a trabajar en terapia.'}
-      return {level:'Inflexibilidad alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Alta inflexibilidad psicológica. Se recomienda trabajo específico en aceptación y defusión.'}
+      if(score<=24) return {level:'Flexibilidad psicológica adecuada',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Niveles bajos de evitación experiencial. El consultante tiene buena capacidad de aceptar sus experiencias internas y actuar desde sus valores.',
+        clinical:'Puntuación 7-24. La persona no suprime ni evita sistemáticamente sus emociones o pensamientos. Es capaz de actuar hacia lo que le importa incluso en presencia de malestar. Acción: reforzar contacto con valores; la ACT puede emplearse en modo de crecimiento más que de intervención remedial.'}
+      if(score<=34) return {level:'Inflexibilidad moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Evitación experiencial moderada. El consultante tiende a luchar contra ciertas experiencias internas lo que limita su funcionamiento en algunas áreas.',
+        clinical:'Puntuación 25-34. La evitación experiencial interfiere de forma intermitente con la toma de decisiones y las relaciones. Pensamientos y emociones dolorosos pueden "manejar" la conducta. Acción: trabajo en defusión cognitiva, aceptación y contacto con valores desde ACT.'}
+      return {level:'Inflexibilidad alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Alta inflexibilidad psicológica. El consultante evita activamente experiencias internas, lo que limita su vida de forma significativa.',
+        clinical:'Puntuación 35-49. La evitación experiencial es el patrón dominante: la persona organiza su vida alrededor de no sentir ciertos estados internos. Asociada a depresión crónica, ansiedad persistente y pérdida de vitalidad. Acción: ACT como enfoque central — trabajo en hexaflex completo: aceptación, defusión, yo como contexto, momento presente, valores y acción comprometida.'}
     }, maxScore:49
   },
   'cfq': {
@@ -2640,9 +2765,15 @@ const INSTRUMENTS = {
     questions:['Me siento calmado/a','Me siento seguro/a','Estoy tenso/a','Estoy contrariado/a','Me siento cómodo/a (estoy a gusto)','Me siento alterado/a','Estoy preocupado/a ahora por posibles desgracias futuras','Me siento descansado/a','Me siento angustiado/a','Me siento confortable','Tengo confianza en mí mismo/a','Me siento nervioso/a','Estoy desasosegado/a','Me siento muy "atado/a" (como oprimido/a)','Estoy relajado/a','Me siento satisfecho/a','Estoy preocupado/a','Me siento muy excitado/a y aturdido/a','Me siento alegre','En este momento me siento bien'],
     score:(answers)=>{const rev=[1,3,6,9,12,14,17];return answers.reduce((s,v,i)=>s+(rev.includes(i)?5-v:v),0)},
     interpret:(score)=>{
-      if(score<=29) return {level:'Ansiedad baja',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Nivel de ansiedad estado bajo en el momento actual.'}
-      if(score<=44) return {level:'Ansiedad moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Nivel de ansiedad estado moderado.'}
-      return {level:'Ansiedad alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Nivel de ansiedad estado alto en el momento actual. Se recomienda explorar el contexto situacional.'}
+      if(score<=29) return {level:'Ansiedad baja',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Ansiedad estado baja. La persona se siente tranquila y sin tensión en este momento.',
+        clinical:'Puntuación 20-29. Estado emocional calmado en el momento de aplicación. Acción: sin indicación de intervención por ansiedad estado; útil como línea base.'}
+      if(score<=44) return {level:'Ansiedad moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Ansiedad estado moderada. El consultante experimenta tensión o preocupación notable en este momento.',
+        clinical:'Puntuación 30-44. Activación ansiosa presente en el momento actual. Puede relacionarse con el contexto de la consulta o con factores situacionales. Acción: explorar el contexto, técnicas de regulación inmediata, comparar con STAI-R.'}
+      return {level:'Ansiedad alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Ansiedad estado alta. Activación ansiosa intensa en el momento presente. Interfiere con el funcionamiento inmediato.',
+        clinical:'Puntuación 45-80. Ansiedad estado severa. Comparar con STAI-R para determinar si es situacional (estado > rasgo) o constitutiva (estado ≈ rasgo). Acción: intervención de regulación inmediata, evaluar si hay detonante reciente.'}
     }, maxScore:80
   },
   'stair': {
@@ -2656,9 +2787,15 @@ const INSTRUMENTS = {
     questions:['Me siento bien','Me canso rápidamente','Siento ganas de llorar','Me gustaría ser tan feliz como otros','Pierdo oportunidades por no decidirme pronto','Me siento descansado/a','Soy una persona tranquila, serena y sosegada','Veo que las dificultades se amontonan y no puedo con ellas','Me preocupo demasiado por cosas sin importancia','Soy feliz','Suelo tomar las cosas demasiado seriamente','Me falta confianza en mí mismo/a','Me siento seguro/a','No suelo afrontar las crisis o dificultades','Me siento triste (melancólico/a)','Estoy satisfecho/a','Me rondan y molestan pensamientos sin importancia','Me afectan tanto los desengaños que no me los puedo quitar de la cabeza','Soy una persona estable','Cuando pienso sobre asuntos y preocupaciones actuales, me pongo tenso/a y agitado/a'],
     score:(answers)=>{const rev=[0,2,9,12,13,15,18];return answers.reduce((s,v,i)=>s+(rev.includes(i)?5-v:v),0)},
     interpret:(score)=>{
-      if(score<=29) return {level:'Ansiedad rasgo baja',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Tendencia baja a experimentar ansiedad como rasgo estable de personalidad.'}
-      if(score<=44) return {level:'Ansiedad rasgo moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',desc:'Tendencia moderada a experimentar ansiedad como rasgo.'}
-      return {level:'Ansiedad rasgo alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Alta tendencia a percibir situaciones como amenazantes. Factor predisponente importante a considerar en el proceso terapéutico.'}
+      if(score<=29) return {level:'Ansiedad rasgo baja',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Baja tendencia a experimentar ansiedad como rasgo estable. La persona no percibe habitualmente las situaciones como amenazantes.',
+        clinical:'Puntuación 20-29. Factor protector significativo. La ansiedad no es un patrón de respuesta habitual. Acción: sin indicación específica.'}
+      if(score<=44) return {level:'Ansiedad rasgo moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
+        desc:'Tendencia moderada a percibir situaciones como amenazantes. Puede generar vulnerabilidad ante estresores sostenidos.',
+        clinical:'Puntuación 30-44. Predisposición ansiosa presente pero no dominante. En situaciones de estrés el consultante tiende a experimentar más ansiedad que el promedio. Acción: psicoeducación sobre ansiedad rasgo, estrategias de regulación anticipatoria.'}
+      return {level:'Ansiedad rasgo alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Alta tendencia estable a percibir situaciones como amenazantes. Factor predisponente central para trastornos ansiosos y depresivos.',
+        clinical:'Puntuación 45-80. La ansiedad es un patrón de respuesta habitual y generalizado. El consultante interpreta crónicamente los estímulos neutrales como peligrosos. Asociado a TAG, trastorno de pánico y depresión. Acción: trabajo en creencias de amenaza, tolerancia a la incertidumbre, regulación emocional a largo plazo.'}
     }, maxScore:80
   },
 
@@ -2682,9 +2819,15 @@ const INSTRUMENTS = {
     ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
-      if(score<=4)  return {level:'Buena calidad del sueño',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Calidad del sueño adecuada. No se evidencian alteraciones significativas.'}
-      if(score<=10) return {level:'Mala calidad del sueño',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',desc:'Calidad del sueño deficiente. Se recomienda explorar hábitos de higiene del sueño e intervenir.'}
-      return {level:'Trastorno del sueño severo',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Alteraciones severas del sueño. Se recomienda evaluación especializada y posible derivación.'}
+      if(score<=4)  return {level:'Buena calidad del sueño',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Calidad del sueño adecuada en el último mes. Sin alteraciones significativas en los componentes evaluados.',
+        clinical:'Puntuación 0-4. El consultante duerme bien, se despierta descansado/a y no reporta disfunción diurna. Acción: reforzar hábitos de higiene del sueño actuales.'}
+      if(score<=10) return {level:'Mala calidad del sueño',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',
+        desc:'Calidad del sueño deficiente. Uno o más componentes muestran alteración que afecta el descanso y el funcionamiento diurno.',
+        clinical:'Puntuación 5-10. Revisar qué componentes están más elevados: latencia, perturbaciones nocturnas o disfunción diurna. Frecuentemente asociado a estrés, ansiedad o depresión. Acción: higiene del sueño estructurada, restricción del sueño, técnicas de relajación, explorar comorbilidades.'}
+      return {level:'Trastorno del sueño severo',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+        desc:'Alteraciones severas del sueño con alta interferencia en el funcionamiento diario. Evaluación especializada recomendada.',
+        clinical:'Puntuación 11-21. Insomnio u otras alteraciones del sueño de entidad clínica. Puede implicar uso de medicación, somnolencia diurna severa y múltiples despertares. Acción: TCC para el insomnio (TCC-I), derivación a médico o somnólogo si hay sospecha de apnea u otro trastorno primario.'}
     }, maxScore:21
   },
 
@@ -2707,8 +2850,15 @@ const INSTRUMENTS = {
     ],
     score:(answers)=>answers.reduce((a,b)=>a+b,0),
     interpret:(score)=>{
-      if(score<=32) return {level:'Sin TEPT probable',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',desc:'Puntaje por debajo del umbral clínico. No se sugiere diagnóstico probable de TEPT.'}
-      return {level:'TEPT probable',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Puntaje en rango clínico (≥33). Se sugiere evaluación diagnóstica formal para TEPT. Se recomienda intervención especializada.'}
+      if(score<=32) return {level:'Sin TEPT probable',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
+        desc:'Puntaje por debajo del umbral clínico para TEPT probable. Los síntomas postraumáticos no configuran el cuadro completo.',
+        clinical:'Puntuación 0-32. No se cumplen criterios de probable TEPT según el umbral DSM-5 (≥33). Puede haber sintomatología subclínica. Revisar las dimensiones para identificar áreas de vulnerabilidad. Acción: explorar el impacto del evento, psicoeducación sobre respuestas traumáticas.'}
+      if(score<=49) return {level:'TEPT probable moderado',color:'text-orange-600',bg:'bg-orange-50',border:'border-orange-200',
+        desc:'Puntaje en rango clínico para TEPT probable. Intervención especializada recomendada.',
+        clinical:'Puntuación 33-49. Síntomas postraumáticos que cumplen el umbral para TEPT probable. Revisar qué dimensiones son más altas. Acción: evaluación diagnóstica formal, intervención centrada en trauma (EMDR, TCC centrada en trauma, PE).'}
+      return {level:'TEPT probable severo',color:'text-red-700',bg:'bg-red-100',border:'border-red-300',
+        desc:'Sintomatología postraumática severa. Alta probabilidad diagnóstica de TEPT. Intervención urgente y especializada.',
+        clinical:'Puntuación 50-80. Cuadro postraumático severo con probable impacto en múltiples áreas. Es común la disociación, el embotamiento afectivo y la hiperactivación persistente. Acción: derivación a especialista en trauma, EMDR, intervención en crisis si hay riesgo, considerar medicación.'}
     }, maxScore:80
   },
 
@@ -3054,13 +3204,20 @@ function InstrumentApply({ instrument, patient, onSave, onClose, busy }) {
                   <div className="h-3 bg-white rounded-full border border-slate-200 overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{width:`${(scores/instrument.maxScore)*100}%`, background: scores/instrument.maxScore<0.33?'#22c55e':scores/instrument.maxScore<0.66?'#f59e0b':'#ef4444'}}/>
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">{interpData?.desc}</p>
+                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">{interpData?.desc}</p>
                 </div>
+                {/* Nota clínica detallada */}
+                {interpData?.clinical && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-slate-600 mb-1.5">📋 Nota clínica para el profesional</p>
+                    <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{interpData.clinical}</p>
+                  </div>
+                )}
                 {/* Dimensiones/subscales si las tiene */}
                 {instrument.subscales && instrument.subscales.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resultados por dimensión</p>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {instrument.subscales.map(sub => {
                         const subScore = sub.items.reduce((s,i)=>{
                           const ans = typeof answers[i] === 'number' ? answers[i] : 0
@@ -3068,16 +3225,18 @@ function InstrumentApply({ instrument, patient, onSave, onClose, busy }) {
                         }, 0)
                         const pct = (subScore/sub.max)*100
                         const barColor = pct<33?'#22c55e':pct<66?'#f59e0b':'#ef4444'
+                        const elevated = sub.cutoff && subScore >= sub.cutoff
                         return (
-                          <div key={sub.name}>
+                          <div key={sub.name} className={elevated?'bg-red-50 border border-red-100 rounded-lg p-2':'bg-slate-50 rounded-lg p-2'}>
                             <div className="flex justify-between text-xs mb-1">
-                              <span className="font-medium text-slate-700">{sub.name}</span>
-                              <span className="font-bold text-slate-800">{subScore}/{sub.max}</span>
+                              <span className="font-semibold text-slate-700">{sub.name}</span>
+                              <span className="font-bold text-slate-800">{subScore}/{sub.max} {elevated&&<span className="text-red-500 ml-1">↑ elevado</span>}</span>
                             </div>
-                            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-2.5 bg-white rounded-full border border-slate-200 overflow-hidden">
                               <div className="h-full rounded-full transition-all" style={{width:`${pct}%`, background:barColor}}/>
                             </div>
-                            {sub.cutoff && <p className="text-xs text-slate-400 mt-0.5">Punto de corte clínico: ≥{sub.cutoff}</p>}
+                            {sub.desc && <p className="text-xs text-slate-400 mt-1">{sub.desc}</p>}
+                            {sub.cutoff && <p className="text-xs text-slate-400 mt-0.5">Punto de corte: ≥{sub.cutoff} {elevated?'— puntuación elevada':'— dentro del rango'}</p>}
                           </div>
                         )
                       })}
@@ -5985,20 +6144,36 @@ function PatientConsentPanel({ user, patient, profile }) {
 }
 
 // ── Expediente del Consultante (página completa) ─────────────
+function UpgradeBanner({ feature, plan='Básico' }) {
+  return (
+    <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 text-center">
+      <div className="text-3xl mb-3">🔒</div>
+      <p className="font-semibold text-slate-800 mb-1">{feature}</p>
+      <p className="text-sm text-slate-500 mb-4">Esta función está disponible en el plan <strong className="text-amber-700">{plan}</strong> o superior.</p>
+      <div className="bg-white border border-amber-200 rounded-xl p-3 text-xs text-slate-600">
+        <p className="font-medium text-slate-700 mb-1">Tu plan actual: <span className="text-amber-600">Gratis</span></p>
+        <p>Actualiza para acceder a todas las funcionalidades clínicas.</p>
+      </div>
+    </div>
+  )
+}
+
 function PatientExpedient({ user, role, planExpiry, patient, profile, allSessions, allInstrResults, onBack, onEdit }) {
   const [tab, setTab] = useState('ficha')
   const p = patient
 
+  const canFeat = (f) => canUseFeature(role, f, planExpiry)
+
   const tabs = [
-    { id: 'ficha',        icon: '📋', label: 'Ficha' },
-    { id: 'primera_cita', icon: '🖨️', label: 'Primera cita' },
-    { id: 'entrevista',   icon: '📝', label: 'Entrevista' },
-    { id: 'plan',         icon: '🎯', label: 'Plan' },
-    { id: 'instrumentos', icon: '📊', label: 'Instrumentos' },
-    { id: 'sesiones',     icon: '💬', label: 'Sesiones' },
-    { id: 'riesgo',       icon: '⚠️', label: 'Riesgo' },
-    { id: 'consentimiento', icon: '📄', label: 'Consentimiento' },
-  ]
+    { id: 'ficha',          icon: '📋', label: 'Ficha',        show: true },
+    { id: 'primera_cita',   icon: '🖨️', label: 'Primera cita', show: canFeat('primera_cita') },
+    { id: 'entrevista',     icon: '📝', label: 'Entrevista',   show: canFeat('interview') },
+    { id: 'plan',           icon: '🎯', label: 'Plan',         show: canFeat('plan'),    locked: !canFeat('plan') },
+    { id: 'instrumentos',   icon: '📊', label: 'Instrumentos', show: true },
+    { id: 'sesiones',       icon: '💬', label: 'Sesiones',     show: canFeat('sessions'), locked: !canFeat('sessions') },
+    { id: 'riesgo',         icon: '⚠️', label: 'Riesgo',       show: canFeat('risk'),    locked: !canFeat('risk') },
+    { id: 'consentimiento', icon: '📄', label: 'Consentimiento', show: canFeat('consent') },
+  ].filter(t => t.show)
 
   const Field = ({ label, value }) => !value ? null : (
     <div>
@@ -6061,9 +6236,10 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {/* Tabs */}
         <div className="flex gap-1 mt-4 overflow-x-auto">
           {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${tab === t.id ? 'bg-brand-500 text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
-              <span>{t.icon}</span>{t.label}
+            <button key={t.id} onClick={() => !t.locked && setTab(t.id)}
+              title={t.locked ? 'Disponible en plan Básico o superior' : ''}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${t.locked ? 'text-slate-300 cursor-not-allowed' : tab === t.id ? 'bg-brand-500 text-white' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
+              <span>{t.icon}</span>{t.label}{t.locked && ' 🔒'}
             </button>
           ))}
         </div>
@@ -6144,14 +6320,18 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {/* PLAN TERAPÉUTICO */}
         {tab === 'plan' && (
           <div className="max-w-xl">
-            <TherapeuticPlan patient={p} profile={profile} supabaseUrl="https://lgbpuddqjzcbszmnuclb.supabase.co" />
+            {!canFeat('plan') ? <UpgradeBanner feature="Plan terapéutico con IA" plan="Básico" /> : (
+              <TherapeuticPlan patient={p} profile={profile} supabaseUrl="https://lgbpuddqjzcbszmnuclb.supabase.co" />
+            )}
           </div>
         )}
 
         {/* SESIONES */}
         {tab === 'sesiones' && (
           <div className="max-w-2xl">
-            <PatientSessionsPanel user={user} patientId={p.id} patientName={p.name} role={role} />
+            {!canFeat('sessions') ? <UpgradeBanner feature="Registro de sesiones" plan="Básico" /> : (
+              <PatientSessionsPanel user={user} patientId={p.id} patientName={p.name} role={role} />
+            )}
           </div>
         )}
 
@@ -6165,14 +6345,18 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {/* RIESGO SUICIDA */}
         {tab === 'riesgo' && (
           <div className="max-w-2xl">
-            <SuicideRiskPanel user={user} patientId={p.id} patientName={p.name} />
+            {!canFeat('risk') ? (
+              <UpgradeBanner feature="Protocolo de riesgo suicida" plan="Básico" />
+            ) : (
+              <SuicideRiskPanel user={user} patientId={p.id} patientName={p.name} />
+            )}
           </div>
         )}
 
         {/* ENTREVISTA INICIAL */}
         {tab === 'entrevista' && (
           <div className="max-w-2xl">
-            <PatientInterviewPanel user={user} patientId={p.id} patientName={p.name} />
+            <PatientInterviewPanel user={user} patientId={p.id} patientName={p.name} canUseAI={canFeat('ai')} />
           </div>
         )}
 
