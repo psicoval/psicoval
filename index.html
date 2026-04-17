@@ -5343,15 +5343,25 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
 
   const handleSaveInstrument = async (result) => {
     setBusy(true)
+    const scoresObj = typeof result.scores === 'object' && result.scores !== null
+      ? result.scores
+      : { total: result.scores }
+    const totalScore = result.total ?? (typeof result.scores === 'number' ? result.scores : (scoresObj?.total ?? null))
+    // Ensure answers is always a valid non-null array
+    let answersArr = []
+    if (Array.isArray(result.answers)) {
+      answersArr = result.answers.map(a => a === undefined ? null : a)
+    }
     const { error } = await sb.from('instrument_results').insert({
       user_id: user.id,
       patient_id: patientId,
       instrument_key: result.key,
       instrument_name: result.name,
-      scores: typeof result.scores === 'object' ? result.scores : { total: result.scores },
-      total_score: result.total ?? (typeof result.scores === 'number' ? result.scores : null),
+      answers: answersArr,
+      scores: scoresObj,
+      total_score: totalScore,
       interpretation: result.interpretation || '',
-      subscales: null,
+      subscales: result.subscales || null,
       applied_at: new Date().toISOString().split('T')[0]
     })
     if (error) {
