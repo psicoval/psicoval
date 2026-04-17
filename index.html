@@ -447,6 +447,15 @@ function SeveritySelector({ value, onChange }) {
   )
 }
 
+// Helper components defined OUTSIDE InterviewForm to prevent focus loss on re-render
+function Sec({title, children}) {
+  return <div className="mb-4 last:mb-0">
+    {title && <p className="text-xs font-semibold text-slate-400 mb-2" style={{textTransform:'none',letterSpacing:'normal'}}>{title}</p>}
+    {children}
+  </div>
+}
+function Divider() { return <div className="border-t border-slate-100 my-3"/> }
+
 function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, err }) {
   const [form, setForm] = useState(initial || {...EMPTY_INTERVIEW, patient_id: patientId||''})
   const [block, setBlock] = useState(0)
@@ -623,11 +632,10 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
     return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(e=>e[0]).slice(0,6)
   })()
 
-  const Sec = ({title,children}) => <div className="mb-4 last:mb-0"><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{title}</p>{children}</div>
-  const Divider = () => <div className="border-t border-slate-100 my-3"/>
+
 
   return (
-    <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="flex flex-col" onClick={e=>e.stopPropagation()}>
+    <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="flex flex-col">
       <Alert msg={err}/>
 
       {/* Selector paciente si no viene del expediente */}
