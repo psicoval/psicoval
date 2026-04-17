@@ -5372,57 +5372,74 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
 
   const printInstrument = (ins) => {
     const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
-    const rows = ins.questions.map((q,i) => {
-      const opts = ins.options || []
-      const optCells = ins.type==='vlq'
-        ? `<td style="text-align:center">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="display:inline-block;width:22px;height:22px;border:1px solid #cbd5e1;border-radius:3px;text-align:center;line-height:22px;font-size:10px;margin:1px">${n}</span>`).join('')}</td><td style="text-align:center">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<span style="display:inline-block;width:22px;height:22px;border:1px solid #cbd5e1;border-radius:3px;text-align:center;line-height:22px;font-size:10px;margin:1px">${n}</span>`).join('')}</td>`
-        : opts.map(opt=>`<td style="text-align:center;width:${Math.floor(200/Math.max(opts.length,1))}px"><div style="width:18px;height:18px;border:1.5px solid #64748b;border-radius:50%;margin:0 auto"></div></td>`).join('')
-      return `<tr><td style="padding:6px 8px;font-size:10px;vertical-align:middle;border-bottom:1px solid #f1f5f9"><span style="color:#4361ee;font-weight:bold">${i+1}.</span> ${q}</td>${optCells}</tr>`
-    }).join('')
-    const optHeaders = ins.type==='vlq'
-      ? `<th style="text-align:center;font-size:9px;padding:4px">Importancia (1-10)</th><th style="text-align:center;font-size:9px;padding:4px">Consistencia (1-10)</th>`
-      : (ins.options||[]).map(opt=>`<th style="text-align:center;font-size:9px;padding:4px;min-width:40px">${opt}</th>`).join('')
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
-    <title>${ins.name} — ${patientName}</title>
-    <style>
-      @page{margin:14mm 16mm}
-      body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b}
-      .header{border-bottom:2px solid #4361ee;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between}
-      .logo{font-family:Georgia,serif;font-size:18px;color:#1a2460;font-weight:bold}
-      h1{color:#1a2460;font-size:14px;margin-bottom:3px}
-      .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:6px 10px;margin-bottom:10px;font-size:10px}
-      .instr-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:6px 10px;margin-bottom:10px;font-size:10px;font-style:italic;color:#475569}
-      table{width:100%;border-collapse:collapse}
-      thead tr{background:#f1f5f9}
-      th{padding:5px 6px;text-align:left;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
-      tr:nth-child(even){background:#f8fafc}
-      .score-box{margin-top:14px;border:1px solid #e2e8f0;border-radius:5px;padding:8px 10px}
-      .score-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
-      .score-cell{border:1px solid #cbd5e1;border-radius:4px;padding:4px 10px;min-width:60px;text-align:center}
-      .footer{margin-top:12px;padding-top:6px;border-top:1px solid #e2e8f0;font-size:8px;color:#94a3b8;text-align:center}
-    </style></head><body>
-    <div class="header">
-      <div><div class="logo">Psicoval</div><div style="font-size:9px;color:#64748b">${ins.category} · ${ins.name}</div></div>
-      <div style="text-align:right;font-size:9px;color:#64748b"><div>Consultante: <strong>${patientName}</strong></div><div>Fecha: ${now}</div></div>
-    </div>
-    <h1>${ins.name}</h1>
-    <div class="info-box"><strong>${ins.fullName||ins.name}</strong> · ${ins.questions.length} ítems · Puntaje máx: ${ins.maxScore||'—'}</div>
-    <div class="instr-box">${ins.instructions}</div>
-    <table>
-      <thead><tr><th style="min-width:200px">Ítem</th>${optHeaders}</tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="score-box">
-      <p style="font-size:10px;font-weight:bold;color:#1a2460">Puntuación</p>
-      <div class="score-row">
-        ${ins.subscales ? ins.subscales.map(s=>`<div class="score-cell"><div style="font-size:8px;color:#64748b">${s.name}</div><div style="font-size:16px;font-weight:bold;color:#4361ee">___</div></div>`).join('') : ''}
-        <div class="score-cell"><div style="font-size:8px;color:#64748b">Total</div><div style="font-size:16px;font-weight:bold;color:#4361ee">___</div></div>
-        <div class="score-cell" style="flex:1"><div style="font-size:8px;color:#64748b">Interpretación</div><div style="font-size:11px;margin-top:2px">_______________________</div></div>
-      </div>
-    </div>
-    <div class="footer">Psicoval · ${ins.name} · ${now} · Documento confidencial de uso clínico</div>
-    </body></html>`
-    const w = window.open('','_blank')
+    const opts = ins.options || []
+    
+    // Build option headers
+    let optHeaders = ''
+    if (ins.type === 'vlq') {
+      optHeaders = '<th style="text-align:center;font-size:9px;padding:4px">Importancia (1-10)</th><th style="text-align:center;font-size:9px;padding:4px">Consistencia (1-10)</th>'
+    } else {
+      opts.forEach(opt => {
+        optHeaders += '<th style="text-align:center;font-size:9px;padding:4px;min-width:40px">' + opt + '</th>'
+      })
+    }
+    
+    // Build rows
+    let rows = ''
+    ins.questions.forEach((q, i) => {
+      let optCells = ''
+      if (ins.type === 'vlq') {
+        let imp = '', cons = ''
+        for (let n = 1; n <= 10; n++) {
+          const box = '<span style="display:inline-block;width:20px;height:20px;border:1px solid #cbd5e1;border-radius:3px;text-align:center;line-height:20px;font-size:9px;margin:1px">' + n + '</span>'
+          imp += box; cons += box
+        }
+        optCells = '<td style="text-align:center">' + imp + '</td><td style="text-align:center">' + cons + '</td>'
+      } else {
+        opts.forEach(() => {
+          optCells += '<td style="text-align:center;width:' + Math.floor(200/Math.max(opts.length,1)) + 'px"><div style="width:18px;height:18px;border:1.5px solid #64748b;border-radius:50%;margin:0 auto"></div></td>'
+        })
+      }
+      rows += '<tr><td style="padding:6px 8px;font-size:10px;vertical-align:middle;border-bottom:1px solid #f1f5f9"><span style="color:#4361ee;font-weight:bold">' + (i+1) + '.</span> ' + q + '</td>' + optCells + '</tr>'
+    })
+    
+    const html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>'
+      + '<title>' + ins.name + ' — ' + patientName + '</title>'
+      + '<style>'
+      + '@page{margin:14mm 16mm}'
+      + 'body{font-family:Arial,sans-serif;font-size:11px;color:#1e293b}'
+      + '.header{border-bottom:2px solid #4361ee;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between}'
+      + '.logo{font-family:Georgia,serif;font-size:18px;color:#1a2460;font-weight:bold}'
+      + 'h1{color:#1a2460;font-size:14px;margin-bottom:3px}'
+      + '.info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:6px 10px;margin-bottom:10px;font-size:10px}'
+      + '.instr-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:6px 10px;margin-bottom:10px;font-size:10px;font-style:italic;color:#475569}'
+      + 'table{width:100%;border-collapse:collapse}'
+      + 'thead tr{background:#f1f5f9}'
+      + 'th{padding:5px 6px;text-align:left;color:#64748b;text-transform:uppercase;letter-spacing:.3px}'
+      + 'tr:nth-child(even){background:#f8fafc}'
+      + '.score-box{margin-top:14px;border:1px solid #e2e8f0;border-radius:5px;padding:8px 10px}'
+      + '.score-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}'
+      + '.score-cell{border:1px solid #cbd5e1;border-radius:4px;padding:4px 10px;min-width:60px;text-align:center}'
+      + '.footer{margin-top:12px;padding-top:6px;border-top:1px solid #e2e8f0;font-size:8px;color:#94a3b8;text-align:center}'
+      + '</style></head><body>'
+      + '<div class="header">'
+      + '<div><div class="logo">Psicoval</div><div style="font-size:9px;color:#64748b">' + ins.category + ' · ' + ins.name + '</div></div>'
+      + '<div style="text-align:right;font-size:9px;color:#64748b"><div>Consultante: <strong>' + patientName + '</strong></div><div>Fecha: ' + now + '</div></div>'
+      + '</div>'
+      + '<h1>' + ins.name + '</h1>'
+      + '<div class="info-box"><strong>' + (ins.fullName||ins.name) + '</strong> · ' + ins.questions.length + ' ítems · Puntaje máx: ' + (ins.maxScore||'—') + '</div>'
+      + '<div class="instr-box">' + ins.instructions + '</div>'
+      + '<table><thead><tr><th style="min-width:200px">Ítem</th>' + optHeaders + '</tr></thead>'
+      + '<tbody>' + rows + '</tbody></table>'
+      + '<div class="score-box"><p style="font-size:10px;font-weight:bold;color:#1a2460">Puntuación</p>'
+      + '<div class="score-row">'
+      + '<div class="score-cell"><div style="font-size:8px;color:#64748b">Total</div><div style="font-size:16px;font-weight:bold;color:#4361ee">___</div></div>'
+      + '<div class="score-cell" style="flex:1"><div style="font-size:8px;color:#64748b">Interpretación</div><div style="font-size:11px;margin-top:2px">_______________________</div></div>'
+      + '</div></div>'
+      + '<div class="footer">Psicoval · ' + ins.name + ' · ' + now + ' · Documento confidencial de uso clínico</div>'
+      + '</body></html>'
+    
+    const w = window.open('', '_blank')
     if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500) }
   }
 
