@@ -1677,18 +1677,28 @@ function HomeOverview({ user, role, planExpiry, onPage }) {
         <div className="mt-6 bg-gradient-to-r from-brand-500 to-brand-700 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-white font-semibold text-sm">Plan Gratis — 5 consultantes máximo</p>
-              <p className="text-brand-200 text-xs mt-0.5">Actualiza para acceder a instrumentos, reportes y consultantes ilimitados</p>
+              <p className="text-white font-semibold text-sm">Plan Gratis — hasta 3 consultantes</p>
+              <p className="text-brand-200 text-xs mt-0.5">PHQ-9, GAD-7 y DASS-21 disponibles · Entrevista, primera cita y consentimiento incluidos</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/10 rounded-xl p-3 text-center">
+          <div className="grid grid-cols-2 gap-3 mb-1">
+            <div className="bg-white/10 rounded-xl p-3">
               <p className="text-white font-bold text-lg">$10<span className="text-brand-200 text-xs font-normal">/mes</span></p>
-              <p className="text-brand-200 text-xs">Plan Básico · 30 consultantes</p>
+              <p className="text-white text-xs font-semibold mt-0.5">Plan Básico</p>
+              <div className="mt-1.5 space-y-0.5">
+                {['Hasta 20 consultantes','9 instrumentos psicométricos','Plan terapéutico con IA','Registro de sesiones','Protocolo de riesgo suicida'].map(f=>(
+                  <p key={f} className="text-brand-200 text-xs">✓ {f}</p>
+                ))}
+              </div>
             </div>
-            <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="bg-white/10 rounded-xl p-3">
               <p className="text-white font-bold text-lg">$15<span className="text-brand-200 text-xs font-normal">/mes</span></p>
-              <p className="text-brand-200 text-xs">Plan Premium · Ilimitado</p>
+              <p className="text-white text-xs font-semibold mt-0.5">Plan Premium</p>
+              <div className="mt-1.5 space-y-0.5">
+                {['Consultantes ilimitados','17 instrumentos (todos)','Todo lo del plan Básico','Acceso prioritario a novedades'].map(f=>(
+                  <p key={f} className="text-brand-200 text-xs">✓ {f}</p>
+                ))}
+              </div>
             </div>
           </div>
           <a href="https://wa.me/593992774892?text=Hola%2C%20quiero%20actualizar%20mi%20plan%20de%20Psicoval.%20%C2%BFC%C3%B3mo%20procedo%3F" target="_blank"
@@ -5070,7 +5080,7 @@ function AdminPanel() {
           {msg && <Alert msg={msg} type={msg.includes('✓')?'success':'error'} />}
           <div className="space-y-3 mb-6">
             <p className="text-sm font-medium text-slate-700 mb-3">Seleccionar nuevo plan:</p>
-            {[{value:'free',label:'Gratis',desc:'Hasta 5 consultantes, sin evaluaciones',color:'bg-slate-100 border-slate-300'},{value:'basic',label:'Básico',desc:'Hasta 30 consultantes, 3 instrumentos',color:'bg-brand-50 border-brand-300'},{value:'premium',label:'Premium',desc:'Ilimitado, todos los instrumentos y reportes PDF',color:'bg-purple-50 border-purple-300'},{value:'admin',label:'Admin',desc:'Acceso total al sistema',color:'bg-yellow-50 border-yellow-300'}].map(opt=>(
+            {[{value:'free',label:'Gratis',desc:'Hasta 3 consultantes · PHQ-9, GAD-7, DASS-21',color:'bg-slate-100 border-slate-300'},{value:'basic',label:'Básico',desc:'Hasta 20 consultantes · 9 instrumentos · IA y sesiones',color:'bg-brand-50 border-brand-300'},{value:'premium',label:'Premium',desc:'Ilimitado · 17 instrumentos · todas las funciones',color:'bg-purple-50 border-purple-300'},{value:'admin',label:'Admin',desc:'Acceso total al sistema',color:'bg-yellow-50 border-yellow-300'}].map(opt=>(
               <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${newRole===opt.value?opt.color:'border-transparent bg-slate-50 hover:bg-slate-100'}`}>
                 <input type="radio" name="role" value={opt.value} checked={newRole===opt.value} onChange={()=>setNewRole(opt.value)} className="mt-0.5 accent-brand-500" />
                 <div><p className="text-sm font-semibold text-slate-800">{opt.label}</p><p className="text-xs text-slate-500">{opt.desc}</p></div>
