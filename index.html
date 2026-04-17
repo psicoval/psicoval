@@ -6927,8 +6927,15 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
 }`
 
     try {
-      const fnUrl = supabaseUrl.replace('https://','https://').replace('.supabase.co','.supabase.co/functions/v1/ai-analysis')
-      const res = await fetch(fnUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt}) })
+      const res = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM',
+          'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM'
+        },
+        body: JSON.stringify({prompt})
+      })
       const data = await res.json()
       const raw = (data.result||'').replace(/```json|```/g,'').trim()
       const parsed = JSON.parse(raw)
