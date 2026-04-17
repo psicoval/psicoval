@@ -2370,10 +2370,10 @@ function Appointments({ user }) {
 
 // ── Configuración de planes ───────────────────────────────
 const PLAN_LIMITS = {
-  free:    { maxPatients: 5,   instruments: [],                                        reports: false, label: 'Gratis' },
-  basic:   { maxPatients: 30,  instruments: ['phq9','gad7','dass21','rosenberg','aaqii'], reports: true,  label: 'Básico' },
-  premium: { maxPatients: null, instruments: 'all',                                    reports: true,  label: 'Premium' },
-  admin:   { maxPatients: null, instruments: 'all',                                    reports: true,  label: 'Admin' },
+  free:    { maxPatients: 5,   instruments: 'all', reports: true,  label: 'Gratis' },
+  basic:   { maxPatients: 30,  instruments: 'all', reports: true,  label: 'Básico' },
+  premium: { maxPatients: null, instruments: 'all', reports: true,  label: 'Premium' },
+  admin:   { maxPatients: null, instruments: 'all', reports: true,  label: 'Admin' },
 }
 
 function isPlanExpired(planExpiry) {
