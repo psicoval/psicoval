@@ -6885,47 +6885,51 @@ function TherapeuticPlan({ patient, profile, supabaseUrl }) {
       setError('Registra primero la entrevista inicial del paciente para generar el plan terapéutico.'); return
     }
     setLoading(true); setError('')
-    const prompt = `Eres un asistente clínico de apoyo para psicólogos. Basándote en la información del paciente y su entrevista inicial, genera un plan terapéutico sugerido.
+    const approach = planParams.approach || p.therapeutic_approach || 'basado en evidencia general'
+    const aiSummary = (() => { try { return iv?.ai_summary ? JSON.parse(iv.ai_summary) : null } catch(e){return null} })()
+
+    const prompt = `Eres un asistente clínico de apoyo para psicólogos de América Latina. Tu función es proponer un plan terapéutico REALISTA adaptado a los parámetros definidos por el profesional.
+
+PARÁMETROS DEFINIDOS POR EL PROFESIONAL (OBLIGATORIOS — no los cambies):
+- Sesiones disponibles: ${planParams.sessions}
+- Frecuencia: ${planParams.frequency}
+- Modalidad: ${planParams.modality}
+- Enfoque terapéutico: ${approach}
+${planParams.focus ? '- Objetivo principal del proceso: ' + planParams.focus : ''}
+${planParams.priority ? '- Consideraciones específicas: ' + planParams.priority : ''}
 
 DATOS DEL PACIENTE:
 - Nombre: ${p.name||'NS'}, Edad: ${p.age||'NS'}, Ocupación: ${p.occupation||'NS'}
-- Motivo de consulta (ficha): ${p.consultation_reason||'NS'}
-- Diagnóstico presuntivo: ${p.presumptive_diagnosis||'NS'}
-- Enfoque terapéutico: ${p.therapeutic_approach||'Basado en evidencia general'}
-
-ENTREVISTA CLÍNICA INICIAL:
 - Motivo de consulta: ${iv?.consultation_reason||p.consultation_reason||'NS'}
-- Duración: ${iv?.problem_duration||'NS'} | Intensidad: ${iv?.problem_intensity||'NS'}/10 | Severidad: ${iv?.global_severity||'NS'}
+- Diagnóstico presuntivo: ${p.presumptive_diagnosis||'NS'}
+- Duración del problema: ${iv?.problem_duration||'NS'} | Intensidad: ${iv?.problem_intensity||'NS'}/10 | Severidad: ${iv?.global_severity||'NS'}
 - Áreas afectadas: ${(iv?.areas_affected||[]).join(', ')||'NS'}
-- Síntomas ánimo: ${(iv?.symptoms_mood||[]).join(', ')||'NS'}
-- Síntomas ansiedad: ${(iv?.symptoms_anxiety||[]).join(', ')||'NS'}
-- Síntomas cognitivos: ${(iv?.symptoms_cognitive||[]).join(', ')||'NS'}
-- Síntomas conductuales: ${(iv?.symptoms_behavioral||[]).join(', ')||'NS'}
+- Síntomas: ánimo [${(iv?.symptoms_mood||[]).join(', ')||'NS'}] | ansiedad [${(iv?.symptoms_anxiety||[]).join(', ')||'NS'}] | cognitivos [${(iv?.symptoms_cognitive||[]).join(', ')||'NS'}] | conductuales [${(iv?.symptoms_behavioral||[]).join(', ')||'NS'}]
 - Diagnóstico clínico: ${(iv?.diag_clinical||[]).join(', ')||'NS'}
 - Variables mantenedoras: ${(iv?.maintaining_variables||[]).join(', ')||'NS'}
 - Factores protectores: ${(iv?.protective_factors||[]).join(', ')||'NS'}
 - Expectativas del paciente: ${iv?.patient_expectations||'NS'}
-- Objetivo conductual: ${iv?.behavioral_objective||'NS'}
+- Objetivo conductual observable: ${iv?.behavioral_objective||'NS'}
 - Motivación: ${iv?.motivation||'NS'}/10 | Insight: ${iv?.insight||'NS'}
-- Instrumentos confirmados: ${(iv?.instruments_confirmed||[]).join(', ')||'NS'}
-- Observaciones del evaluador: ${iv?.evaluator_notes||'NS'}
-- Resumen IA entrevista: ${iv?.ai_summary ? JSON.parse(iv.ai_summary||'{}')?.sintesis||'NS' : 'NS'}
+- Eje funcional — disparadores: ${(iv?.triggers||[]).join(', ')||'NS'} | consecuencias: ${(iv?.consequences||[]).join(', ')||'NS'}
+${aiSummary?.hipotesis ? '- Hipótesis funcional (IA entrevista): ' + aiSummary.hipotesis : ''}
 
-INSTRUCCIONES:
-1. Si se especifica un enfoque terapéutico, adapta el plan a ese modelo. Si no, usa principios clínicos generales basados en evidencia.
-2. Propón objetivos terapéuticos claros, medibles y alcanzables.
-3. Sugiere un número estimado de sesiones y su estructura.
-4. Sugiere estrategias de intervención coherentes con el enfoque.
-5. Sé concreto y práctico. Estas son SUGERENCIAS que el profesional puede editar.
+INSTRUCCIONES CRÍTICAS:
+1. El plan DEBE respetar el número de sesiones indicado (${planParams.sessions}). No sugieras más sesiones de las definidas.
+2. Si son pocas sesiones (1-6), prioriza intervenciones breves, focalizadas y de alto impacto.
+3. Adapta el lenguaje y las estrategias al enfoque indicado: ${approach}.
+4. Las estrategias deben ser concretas y aplicables en consulta, no genéricas.
+5. Considera la realidad latinoamericana: brevedad, pragmatismo, recursos limitados del paciente.
+6. En "estructura_sesiones" distribuye el trabajo en el número de sesiones disponibles.
 
 Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown):
 {
-  "objetivos": ["objetivo 1", "objetivo 2", "objetivo 3"],
-  "sesiones_estimadas": "número o rango (ej: 12-16 sesiones)",
-  "estructura_sesiones": "descripción breve de la estructura sugerida",
-  "estrategias": ["estrategia 1", "estrategia 2", "estrategia 3", "estrategia 4"],
+  "objetivos": ["objetivo específico 1", "objetivo específico 2", "objetivo específico 3"],
+  "sesiones_estimadas": "${planParams.sessions} sesiones — ${planParams.frequency}",
+  "estructura_sesiones": "descripción de cómo distribuir el trabajo en ${planParams.sessions} sesiones",
+  "estrategias": ["estrategia concreta 1", "estrategia concreta 2", "estrategia concreta 3", "estrategia concreta 4"],
   "instrumentos_sugeridos": ["instrumento 1", "instrumento 2"],
-  "observaciones": "consideraciones clínicas relevantes para este caso"
+  "observaciones": "consideraciones clínicas y contextuales relevantes"
 }`
 
     try {
@@ -7020,26 +7024,106 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
     if (w) { w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500) }
   }
 
+  const [planParams, setPlanParams] = useState({
+    sessions: '6',
+    frequency: 'semanal',
+    modality: 'presencial',
+    approach: patient?.therapeutic_approach || '',
+    focus: '',
+    priority: '',
+  })
+  const pp = (k,v) => setPlanParams(p=>({...p,[k]:v}))
+
   if (!plan && !loading) return (
-    <div className="mt-4">
+    <div className="mt-4 space-y-4">
       {error && <div className="text-xs text-red-600 mb-3 bg-red-50 px-3 py-2 rounded-lg">{error}</div>}
+
       {!interviewLoaded ? (
         <div className="text-center py-6 text-slate-400 text-sm">Cargando...</div>
-      ) : !interview ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-amber-800 mb-1">Completa la entrevista inicial primero</p>
-          <p className="text-xs text-amber-600 mb-3">El plan terapéutico se genera a partir de los datos recogidos en la entrevista clínica inicial. Ve a la pestaña <strong>Entrevista</strong>, registra los datos de la primera sesión y vuelve aquí.</p>
-          <p className="text-xs text-amber-500">Si ya tienes datos básicos del paciente puedes generar un plan preliminar:</p>
-          <button onClick={generatePlan} className="mt-2 text-xs text-amber-700 underline">Generar plan preliminar de todas formas</button>
+      ) : !interview && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <p className="text-xs font-semibold text-amber-800 mb-1">Sin entrevista inicial registrada</p>
+          <p className="text-xs text-amber-600">El plan será menos preciso. Completa la entrevista desde la pestaña <strong>Entrevista</strong> para mejores resultados.</p>
         </div>
-      ) : (
-        <div className="bg-gradient-to-br from-purple-50 to-brand-50 border border-purple-200 rounded-xl p-4 text-center">
-          <div className="text-2xl mb-2">🎯</div>
-          <p className="text-sm font-medium text-slate-700 mb-1">Plan terapéutico con apoyo IA</p>
-          <p className="text-xs text-slate-500 mb-1">La IA integrará los datos de la entrevista inicial para sugerir objetivos, estructura y estrategias. Todo es editable.</p>
-          {interview && <p className="text-xs text-green-600 mb-3">✓ Entrevista inicial disponible — {new Date(interview.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>}
-          <button onClick={generatePlan} className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-            Generar plan terapéutico
+      )}
+
+      {interviewLoaded && (
+        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-700 mb-0.5">Parámetros del plan</p>
+            <p className="text-xs text-slate-400">Define las condiciones reales del proceso antes de generar. La IA respetará estos parámetros.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Número de sesiones previstas</label>
+              <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                value={planParams.sessions} onChange={e=>pp('sessions',e.target.value)}>
+                <option value="1-3">1 a 3 sesiones (crisis / consulta puntual)</option>
+                <option value="4-6">4 a 6 sesiones (proceso breve)</option>
+                <option value="6-10">6 a 10 sesiones (proceso focalizado)</option>
+                <option value="10-16">10 a 16 sesiones (proceso moderado)</option>
+                <option value="16-24">16 a 24 sesiones (proceso extenso)</option>
+                <option value="indefinido">Abierto / sin límite definido</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Frecuencia de sesiones</label>
+              <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                value={planParams.frequency} onChange={e=>pp('frequency',e.target.value)}>
+                <option value="semanal">Semanal</option>
+                <option value="quincenal">Quincenal</option>
+                <option value="mensual">Mensual</option>
+                <option value="2_semana">2 veces por semana (intensivo)</option>
+                <option value="a_demanda">A demanda del paciente</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Modalidad</label>
+              <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                value={planParams.modality} onChange={e=>pp('modality',e.target.value)}>
+                <option value="presencial">Presencial</option>
+                <option value="online">Online / videollamada</option>
+                <option value="mixta">Mixta</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">Enfoque terapéutico</label>
+              <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                value={planParams.approach} onChange={e=>pp('approach',e.target.value)}>
+                <option value="">Sin enfoque específico (basado en evidencia)</option>
+                <option value="ACT">ACT — Terapia de Aceptación y Compromiso</option>
+                <option value="TCC">TCC — Cognitivo Conductual</option>
+                <option value="DBT">DBT — Dialéctico Conductual</option>
+                <option value="FAP">FAP — Psicoterapia Analítica Funcional</option>
+                <option value="EMDR">EMDR</option>
+                <option value="Humanista">Humanista / Centrado en la persona</option>
+                <option value="Sistémico">Sistémico</option>
+                <option value="Psicodinámico">Psicodinámico</option>
+                <option value="Ecléctico">Ecléctico / integrador</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Objetivo principal del proceso (opcional)</label>
+            <input type="text" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              placeholder="Ej: reducir sintomatología ansiosa, mejorar regulación emocional..."
+              value={planParams.focus} onChange={e=>pp('focus',e.target.value)}/>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Consideraciones específicas del caso (opcional)</label>
+            <textarea className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white resize-none" rows={2}
+              placeholder="Ej: paciente con recursos económicos limitados, disponibilidad reducida, resistencia al cambio..."
+              value={planParams.priority} onChange={e=>pp('priority',e.target.value)}/>
+          </div>
+
+          {interview && <p className="text-xs text-green-600">✓ Entrevista inicial disponible — {new Date(interview.created_at).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>}
+
+          <button onClick={generatePlan}
+            className="w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium transition-colors">
+            Generar plan terapéutico con IA
           </button>
         </div>
       )}
