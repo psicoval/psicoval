@@ -189,7 +189,7 @@ const TUTORIAL_STEPS = [
   {
     icon:'📊',
     title:'Paso 6 — Aplica instrumentos psicométricos',
-    body:'En la pestaña «Instrumentos» tienes 17 instrumentos validados: PHQ-9, GAD-7, DASS-21, AAQ-II, DERS-16, PCL-5, Rosenberg, VLQ y más. Puedes aplicarlos digitalmente o imprimir el formulario en blanco para que el consultante lo llene en papel. Los resultados incluyen puntaje, interpretación clínica detallada y resultados por dimensión. Las reaplicaciones permiten comparar la evolución pre-post.'
+    body:'En la pestaña «Instrumentos» tienes 14 instrumentos validados: PHQ-9, GAD-7, DASS-21, CES-D, AAQ-II, CFQ-7, VLQ, PCL-5, WHODAS, GPS, PSQI, Rosenberg, DERS-16 y LSAS. Puedes aplicarlos digitalmente o imprimir el formulario en blanco para que el consultante lo llene en papel. Los resultados incluyen puntaje, interpretación clínica detallada y resultados por dimensión. Las reaplicaciones permiten comparar la evolución pre-post.'
   },
   {
     icon:'💬',
@@ -633,7 +633,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
   const DIAG_CTX = [['duelo','Duelo'],['relacional','Dif. relacionales'],['laboral','Estrés laboral/académico'],['crisis','Crisis vital'],['familiar','Conflicto familiar'],['pareja','Problema de pareja'],['ninguno','Ninguno']]
   const MAINTAINING = [['evitacion_cond','Evitación conductual'],['evitacion_exp','Evitación experiencial'],['refuerzo_neg','Refuerzo negativo (escape)'],['ruminacion','Rumiación/preocupación'],['cond_seguridad','Conductas de seguridad'],['refuerzo_soc','Refuerzo social inadvertido'],['deficit','Déficit de habilidades'],['creencias','Creencias disfuncionales'],['fusion','Fusión cognitiva'],['valores','Falta contacto con valores'],['aislamiento','Aislamiento/falta apoyo']]
   const PROTECTIVE = [['red_apoyo','Red de apoyo activa'],['motivacion','Motivación al cambio'],['introspect','Buena introspección'],['terapia_prev','Experiencia en terapia'],['economico','Estabilidad económica'],['valores','Claridad de valores'],['afrontamiento','Habilidades afrontamiento'],['vinculo','Vínculo terapéutico']]
-  const INSTRUMENTS_ALL = [['PHQ-9','PHQ-9'],['GAD-7','GAD-7'],['DASS-21','DASS-21'],['CES-D','CES-D'],['AAQ-II','AAQ-II'],['CFQ-7','CFQ-7'],['VLQ','VLQ'],['PCL-5','PCL-5'],['DERS-16','DERS-16'],['Rosenberg','Rosenberg'],['PSQI','PSQI'],['STAI-E','STAI-E'],['STAI-R','STAI-R'],['WHODAS','WHODAS'],['GPS','GPS'],['LSAS','LSAS'],['NEO-FFI','NEO-FFI']]
+  const INSTRUMENTS_ALL = [['PHQ-9','PHQ-9'],['GAD-7','GAD-7'],['DASS-21','DASS-21'],['CES-D','CES-D'],['AAQ-II','AAQ-II'],['CFQ-7','CFQ-7'],['VLQ','VLQ'],['PCL-5','PCL-5'],['DERS-16','DERS-16'],['Rosenberg','Rosenberg'],['PSQI','PSQI'],['WHODAS','WHODAS'],['GPS','GPS'],['LSAS','LSAS']]
 
   const suggestedInstruments = (() => {
     const map = {}
@@ -651,10 +651,10 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
 
     // Ansiedad
     if (anx.some(s=>['preocupacion','tension','hipervigilancia'].includes(s))) hit(['GAD-7','DASS-21'])
-    if (anx.includes('panico')) hit(['GAD-7','STAI-E'])
+    if (anx.includes('panico')) hit(['GAD-7'])
     if (anx.includes('evitacion_social')) hit(['LSAS'])
-    if (anx.includes('hipervigilancia')) hit(['STAI-R'])
-    if (diag.includes('tag')) hit(['GAD-7','STAI-R'])
+    if (anx.includes('hipervigilancia')) hit(['GAD-7'])
+    if (diag.includes('tag')) hit(['GAD-7'])
 
     // Trauma
     if (beh.includes('flashbacks') || diag.includes('tept')) hit(['PCL-5'])
@@ -1385,7 +1385,7 @@ function Evaluations({ user, onPage }) {
               <p className="text-xs text-brand-500 font-medium">Disponible</p>
             </div>
           </div>
-          <p className="text-xs text-slate-500">17 instrumentos: PHQ-9, GAD-7, DASS-21, CES-D, AAQ-II, CFQ, VLQ, LSAS, STAI, PCL-5, WHODAS, GPS, NEO-FFI y más.</p>
+          <p className="text-xs text-slate-500">14 instrumentos: PHQ-9, GAD-7, DASS-21, CES-D, AAQ-II, CFQ, VLQ, LSAS, PCL-5, WHODAS, GPS, PSQI, Rosenberg, DERS-16.</p>
         </div>
         <div className="bg-white rounded-2xl border-2 border-brand-200 p-5 shadow-sm cursor-pointer hover:border-brand-400 transition-all" onClick={()=>onPage&&onPage('reportes')}>
           <div className="flex items-center gap-3 mb-2">
@@ -1744,7 +1744,7 @@ function HomeOverview({ user, role, planExpiry, onPage }) {
               <p className="text-white font-bold text-lg">$15<span className="text-brand-200 text-xs font-normal">/mes</span></p>
               <p className="text-white text-xs font-semibold mt-0.5">Plan Premium</p>
               <div className="mt-1.5 space-y-0.5">
-                {['Consultantes ilimitados','17 instrumentos (todos)','Todo lo del plan Básico','Acceso prioritario a novedades'].map(f=>(
+                {['Consultantes ilimitados','14 instrumentos (todos)','Todo lo del plan Básico','Acceso prioritario a novedades'].map(f=>(
                   <p key={f} className="text-brand-200 text-xs">✓ {f}</p>
                 ))}
               </div>
@@ -2446,7 +2446,7 @@ const PLAN_LIMITS = {
   basic: {
     label: 'Básico',
     maxPatients: 20,
-    instruments: ['phq9','gad7','dass21','rosenberg','aaqii','pcl5','psqi','staie','stair'],
+    instruments: ['phq9','gad7','dass21','rosenberg','aaqii','pcl5','psqi','cesd','ders16'],
     reports: true,
     ai: true,
     sessions: true,
@@ -2574,10 +2574,10 @@ const INSTRUMENTS = {
         clinical:'Puntuación 20-27. Cuadro depresivo mayor severo con alta interferencia funcional. El consultante puede presentar dificultades para llevar a cabo actividades básicas. Riesgo suicida elevado — aplicar protocolo de evaluación de riesgo. Acción: derivación urgente a psiquiatría, tratamiento combinado (psicoterapia + farmacoterapia), contacto frecuente y red de apoyo activa.'}
     },
     subscales:[
-      {name:'Ánimo/Afecto', items:[0,1,5], desc:'Ítems 1, 2, 6 — Estado de ánimo deprimido, anhedonia, autoestima'},
-      {name:'Somático/Vegetativo', items:[2,3,4,7], desc:'Ítems 3, 4, 5, 8 — Sueño, energía, apetito, psicomotricidad'},
-      {name:'Cognitivo', items:[6], desc:'Ítem 7 — Dificultad de concentración'},
-      {name:'Ideación suicida', items:[8], desc:'Ítem 9 — Pensamientos de muerte o autolesión (evaluar individualmente)'},
+      {name:'Afectivo (ánimo-anhedonia)', items:[0,1], desc:'Ítems 1-2 — Estado de ánimo deprimido y anhedonia (núcleo diagnóstico DSM-5)'},
+      {name:'Somático', items:[2,3,4,7], desc:'Ítems 3, 4, 5, 8 — Sueño, energía, apetito, agitación/enlentecimiento psicomotor'},
+      {name:'Cognitivo-conductual', items:[5,6], desc:'Ítems 6, 7 — Sentimientos de inutilidad/culpa y dificultad de concentración'},
+      {name:'Ideación suicida', items:[8], desc:'Ítem 9 — Evaluar individualmente. Cualquier puntaje > 0 requiere evaluación directa'},
     ],
     maxScore:27
   },
@@ -2674,7 +2674,7 @@ const INSTRUMENTS = {
     questions:['Siento que soy una persona digna de aprecio, al menos en igual medida que los demás','Estoy convencido/a de que tengo cualidades buenas','Soy capaz de hacer las cosas tan bien como la mayoría de la gente','Tengo una actitud positiva hacia mí mismo/a','En general estoy satisfecho/a de mí mismo/a','Siento que no tengo mucho de lo que estar orgulloso/a','En general me inclino a pensar que soy un fracasado/a','Me gustaría poder sentir más respeto por mí mismo/a','Hay veces que realmente pienso que soy un inútil','A veces creo que no soy buena persona'],
     score:(answers)=>{const rev=[5,6,7,8,9];return answers.reduce((s,v,i)=>s+(rev.includes(i)?5-v:v),0)},
     interpret:(score)=>{
-      if(score<=15) return {level:'Autoestima baja',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
+      if(score<15) return {level:'Autoestima baja',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
         desc:'Autoestima baja. El consultante presenta una valoración negativa de sí mismo de forma consistente. Intervención directa recomendada.',
         clinical:'Puntuación 10-15. Alta frecuencia de autocrítica, pensamientos de fracaso e ineficacia. Suele asociarse a depresión, vergüenza y relaciones interpersonales conflictivas. Acción: trabajo en autoconcepto y autocompasión, reestructuración de creencias centrales negativas (TCC), o trabajo desde la defusión y valores (ACT).'}
       if(score<=25) return {level:'Autoestima media',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
@@ -2810,50 +2810,6 @@ const INSTRUMENTS = {
       return {level:'Ansiedad social severa',color:'text-red-700',bg:'bg-red-100',border:'border-red-300',desc:'Ansiedad social severa. Intervención urgente necesaria.'}
     }, maxScore:144
   },
-  'staie': {
-    key:'staie', name:'STAI-E', fullName:'Inventario de Ansiedad Estado-Rasgo — Ansiedad Estado',
-    category:'Ansiedad estado', group:'Ansiedad específica', categoryColor:'bg-purple-100 text-purple-700',
-    description:'Evalúa la ansiedad como estado emocional transitorio: cómo se siente la persona en este momento.',
-    instructions:'A continuación encontrará unas frases que se utilizan corrientemente para describirse uno a sí mismo. Indique cómo se SIENTE AHORA MISMO, en este momento.',
-    options:['Nada (1)','Algo (2)','Bastante (3)','Mucho (4)'],
-    optionValues:[1,2,3,4],
-    reverseItems:[1,3,6,9,12,14,17],
-    questions:['Me siento calmado/a','Me siento seguro/a','Estoy tenso/a','Estoy contrariado/a','Me siento cómodo/a (estoy a gusto)','Me siento alterado/a','Estoy preocupado/a ahora por posibles desgracias futuras','Me siento descansado/a','Me siento angustiado/a','Me siento confortable','Tengo confianza en mí mismo/a','Me siento nervioso/a','Estoy desasosegado/a','Me siento muy "atado/a" (como oprimido/a)','Estoy relajado/a','Me siento satisfecho/a','Estoy preocupado/a','Me siento muy excitado/a y aturdido/a','Me siento alegre','En este momento me siento bien'],
-    score:(answers)=>{const rev=[1,3,6,9,12,14,17];return answers.reduce((s,v,i)=>s+(rev.includes(i)?5-v:v),0)},
-    interpret:(score)=>{
-      if(score<=29) return {level:'Ansiedad baja',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
-        desc:'Ansiedad estado baja. La persona se siente tranquila y sin tensión en este momento.',
-        clinical:'Puntuación 20-29. Estado emocional calmado en el momento de aplicación. Acción: sin indicación de intervención por ansiedad estado; útil como línea base.'}
-      if(score<=44) return {level:'Ansiedad moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
-        desc:'Ansiedad estado moderada. El consultante experimenta tensión o preocupación notable en este momento.',
-        clinical:'Puntuación 30-44. Activación ansiosa presente en el momento actual. Puede relacionarse con el contexto de la consulta o con factores situacionales. Acción: explorar el contexto, técnicas de regulación inmediata, comparar con STAI-R.'}
-      return {level:'Ansiedad alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
-        desc:'Ansiedad estado alta. Activación ansiosa intensa en el momento presente. Interfiere con el funcionamiento inmediato.',
-        clinical:'Puntuación 45-80. Ansiedad estado severa. Comparar con STAI-R para determinar si es situacional (estado > rasgo) o constitutiva (estado ≈ rasgo). Acción: intervención de regulación inmediata, evaluar si hay detonante reciente.'}
-    }, maxScore:80
-  },
-  'stair': {
-    key:'stair', name:'STAI-R', fullName:'Inventario de Ansiedad Estado-Rasgo — Ansiedad Rasgo',
-    category:'Ansiedad rasgo', group:'Ansiedad específica', categoryColor:'bg-purple-100 text-purple-700',
-    description:'Evalúa la ansiedad como rasgo de personalidad estable: la tendencia general de la persona a percibir situaciones como amenazantes.',
-    instructions:'A continuación encontrará unas frases que se utilizan corrientemente para describirse uno a sí mismo. Indique cómo se siente la persona EN GENERAL, en la mayoría de las ocasiones.',
-    options:['Casi nunca (1)','A veces (2)','A menudo (3)','Casi siempre (4)'],
-    optionValues:[1,2,3,4],
-    reverseItems:[0,2,9,12,13,15,18],
-    questions:['Me siento bien','Me canso rápidamente','Siento ganas de llorar','Me gustaría ser tan feliz como otros','Pierdo oportunidades por no decidirme pronto','Me siento descansado/a','Soy una persona tranquila, serena y sosegada','Veo que las dificultades se amontonan y no puedo con ellas','Me preocupo demasiado por cosas sin importancia','Soy feliz','Suelo tomar las cosas demasiado seriamente','Me falta confianza en mí mismo/a','Me siento seguro/a','No suelo afrontar las crisis o dificultades','Me siento triste (melancólico/a)','Estoy satisfecho/a','Me rondan y molestan pensamientos sin importancia','Me afectan tanto los desengaños que no me los puedo quitar de la cabeza','Soy una persona estable','Cuando pienso sobre asuntos y preocupaciones actuales, me pongo tenso/a y agitado/a'],
-    score:(answers)=>{const rev=[0,2,9,12,13,15,18];return answers.reduce((s,v,i)=>s+(rev.includes(i)?5-v:v),0)},
-    interpret:(score)=>{
-      if(score<=29) return {level:'Ansiedad rasgo baja',color:'text-green-600',bg:'bg-green-50',border:'border-green-200',
-        desc:'Baja tendencia a experimentar ansiedad como rasgo estable. La persona no percibe habitualmente las situaciones como amenazantes.',
-        clinical:'Puntuación 20-29. Factor protector significativo. La ansiedad no es un patrón de respuesta habitual. Acción: sin indicación específica.'}
-      if(score<=44) return {level:'Ansiedad rasgo moderada',color:'text-yellow-600',bg:'bg-yellow-50',border:'border-yellow-200',
-        desc:'Tendencia moderada a percibir situaciones como amenazantes. Puede generar vulnerabilidad ante estresores sostenidos.',
-        clinical:'Puntuación 30-44. Predisposición ansiosa presente pero no dominante. En situaciones de estrés el consultante tiende a experimentar más ansiedad que el promedio. Acción: psicoeducación sobre ansiedad rasgo, estrategias de regulación anticipatoria.'}
-      return {level:'Ansiedad rasgo alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',
-        desc:'Alta tendencia estable a percibir situaciones como amenazantes. Factor predisponente central para trastornos ansiosos y depresivos.',
-        clinical:'Puntuación 45-80. La ansiedad es un patrón de respuesta habitual y generalizado. El consultante interpreta crónicamente los estímulos neutrales como peligrosos. Asociado a TAG, trastorno de pánico y depresión. Acción: trabajo en creencias de amenaza, tolerancia a la incertidumbre, regulación emocional a largo plazo.'}
-    }, maxScore:80
-  },
 
   // ═══════════════════════════════════════════════
   // SUEÑO
@@ -2861,7 +2817,7 @@ const INSTRUMENTS = {
   'psqi': {
     key:'psqi', name:'PSQI', fullName:'Pittsburgh Sleep Quality Index (versión clínica simplificada)',
     category:'Calidad del sueño', group:'Sueño', categoryColor:'bg-sky-100 text-sky-700',
-    description:'Evalúa la calidad subjetiva del sueño durante el último mes en 7 componentes: calidad subjetiva, latencia, duración, eficiencia, perturbaciones, uso de medicación y disfunción diurna.',
+    description:'Evalúa la calidad subjetiva del sueño durante el último mes en 7 componentes: calidad subjetiva, latencia, duración, eficiencia, perturbaciones, uso de medicación y disfunción diurna. Versión clínica simplificada para uso interno.',
     instructions:'Las siguientes preguntas hacen referencia a los hábitos de sueño del último mes. Considera la mayoría de los días y noches de ese período.',
     options:['Muy buena / Ninguna vez (0)','Bastante buena / Menos de 1 vez por semana (1)','Bastante mala / 1 o 2 veces por semana (2)','Muy mala / 3 o más veces por semana (3)'],
     optionValues:[0,1,2,3],
@@ -2962,51 +2918,6 @@ const INSTRUMENTS = {
       return {level:'Procrastinación alta',color:'text-red-600',bg:'bg-red-50',border:'border-red-200',desc:'Alta tendencia a la procrastinación. Se recomienda intervención específica en gestión del tiempo y motivación.'}
     }, maxScore:100
   },
-
-  // ═══════════════════════════════════════════════
-  // PERSONALIDAD (BIG FIVE)
-  // ═══════════════════════════════════════════════
-  'neoffi': {
-    key:'neoffi', name:'NEO-FFI', fullName:'NEO Five-Factor Inventory — Big Five',
-    category:'Personalidad (Big Five)', group:'Personalidad', categoryColor:'bg-slate-100 text-slate-700',
-    description:'Evalúa los cinco grandes factores de personalidad: Neuroticismo (N), Extraversión (E), Apertura a la experiencia (O), Amabilidad (A) y Responsabilidad (C). 60 ítems, 12 por factor.',
-    instructions:'A continuación encontrará una serie de afirmaciones. Indique en qué medida está de acuerdo o en desacuerdo con cada una de ellas.',
-    options:['Totalmente en desacuerdo (1)','En desacuerdo (2)','Neutral (3)','De acuerdo (4)','Totalmente de acuerdo (5)'],
-    optionValues:[1,2,3,4,5],
-    reverseItems:[1,6,11,16,21,26,31,36,41,46,51,56,3,8,13,18,23,28,33,38,43,48,53,58],
-    questions:[
-      // N - Neuroticismo (1-12)
-      'Con frecuencia me siento inferior a los demás','Soy una persona muy alegre y animada','Cuando estoy bajo mucha tensión, a veces siento que me voy a desmoronar','Rara vez me siento solo o triste','Con frecuencia me siento tenso o inquieto','A veces me siento totalmente inútil','Rara vez estoy triste o deprimido','Cuando algo sale mal, suelo culparme a mí mismo','Con frecuencia me siento tenso e intranquilo','A veces me ha resultado difícil mantener el equilibrio en situaciones extremas','Rara vez me molesto por las cosas','Con frecuencia me preocupo por lo que podría ir mal',
-      // E - Extraversión (13-24)
-      'Suelo ser el alma de las fiestas','No suelo iniciar conversaciones','Me gusta socializar con los demás','Prefiero pasar el tiempo a solas','Soy el primero en participar en actividades de grupo','La gente me ve como una persona que no le gusta mucho hablar','Me llevo bien con casi todo el mundo','Hablo muy poco','Realmente disfruto de las grandes multitudes y de los eventos con mucha gente','Necesito privacidad y tiempo para mí mismo/a','Soy activo/a y tengo energía para hacer varias cosas a la vez','Prefiero un estilo de vida más pausado',
-      // O - Apertura (25-36)
-      'Tengo mucha imaginación','Me interesan poco las especulaciones o discusiones abstractas','Estoy abierto/a a nuevas experiencias','No me gusta cambiar la forma en que hago las cosas','Tengo mucha curiosidad intelectual','Tiendo a no explorar ideas nuevas','Disfruto de la poesía y del arte','Prefiero lo que es familiar y conocido a lo que es raro y diferente','Estoy abierto/a a aprender de nuevas perspectivas','No me gusta tener que adaptarme a nuevas situaciones','Tengo una gran variedad de intereses','Me aburre la filosofía y la teoría',
-      // A - Amabilidad (37-48)
-      'Comprendo los problemas de los demás','No me interesa especialmente la vida de los demás','Siento compasión por las personas menos afortunadas que yo','No me molesta especialmente si alguien es tratado injustamente','Pongo los intereses de los demás antes que los míos propios','Rara vez me preocupo por el bienestar de los demás','Soy una persona con mucho amor y sentimientos','No soy muy empático/a','Me preocupa el sufrimiento de los demás','Rara vez dono para causas benéficas','Trato de pensar en los sentimientos de los demás','Doy prioridad a mis propias necesidades por encima de las de los demás',
-      // C - Responsabilidad (49-60)
-      'Suelo ser organizado/a y metódico/a en mi trabajo','Soy bastante descuidado/a','Soy una persona que cumple siempre con lo que promete','Con frecuencia dejo las cosas a medias','Soy puntual y cumplo con mis obligaciones','Hago lo que me propongo sin distraerme fácilmente','Me cuesta mucho disciplinarme para cumplir mis objetivos','Trabajo con mucho empeño en todo lo que hago','Hago las cosas de forma planificada y ordenada','No me entusiasma trabajar duro','Suelo terminar las tareas mucho antes de que venzan los plazos','No tengo mucho autocontrol'
-    ],
-    score:(answers)=>{
-      const rev=[1,6,11,16,21,26,31,36,41,46,51,56,3,8,13,18,23,28,33,38,43,48,53,58]
-      const fixed = answers.map((v,i)=>rev.includes(i)?6-v:v)
-      const N=fixed.slice(0,12).reduce((a,b)=>a+b,0)
-      const E=fixed.slice(12,24).reduce((a,b)=>a+b,0)
-      const O=fixed.slice(24,36).reduce((a,b)=>a+b,0)
-      const A=fixed.slice(36,48).reduce((a,b)=>a+b,0)
-      const C=fixed.slice(48,60).reduce((a,b)=>a+b,0)
-      return {N,E,O,A,C}
-    },
-    interpret:(sc)=>({
-      N: sc.N<=24?'Neuroticismo bajo (estabilidad emocional)':sc.N<=36?'Neuroticismo medio':'Neuroticismo alto (inestabilidad emocional)',
-      E: sc.E<=24?'Introversión':sc.E<=36?'Ambivertido':'Extraversión marcada',
-      O: sc.O<=24?'Cerrado a experiencias':sc.O<=36?'Moderadamente abierto':'Alta apertura a la experiencia',
-      A: sc.A<=24?'Antagonismo':sc.A<=36?'Amabilidad moderada':'Alta amabilidad',
-      C: sc.C<=24?'Baja responsabilidad':sc.C<=36?'Responsabilidad media':'Alta responsabilidad / escrupulosidad'
-    }),
-    multiScore:true, neoType:true, maxScore:60
-  }
-}
-
 
 const INSTRUMENT_CATEGORIES = [
   { label:'Todos', value:'all' },
@@ -3163,7 +3074,7 @@ function InstrumentApply({ instrument, patient, onSave, onClose, busy }) {
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Resultado</p>
 
-            {/* NEO-FFI Big Five */}
+            {/* Big Five renderer — reserved for future instrument */}
             {instrument.neoType && scores && (
               <div className="space-y-3">
                 {[['N','Neuroticismo',scores.N,60,'#ef4444'],['E','Extraversión',scores.E,60,'#3b82f6'],['O','Apertura',scores.O,60,'#8b5cf6'],['A','Amabilidad',scores.A,60,'#10b981'],['C','Responsabilidad',scores.C,60,'#f59e0b']].map(([k,name,val,max,color])=>(
@@ -5129,7 +5040,7 @@ function AdminPanel() {
           {msg && <Alert msg={msg} type={msg.includes('✓')?'success':'error'} />}
           <div className="space-y-3 mb-6">
             <p className="text-sm font-medium text-slate-700 mb-3">Seleccionar nuevo plan:</p>
-            {[{value:'free',label:'Gratis',desc:'Hasta 3 consultantes · PHQ-9, GAD-7, DASS-21',color:'bg-slate-100 border-slate-300'},{value:'basic',label:'Básico',desc:'Hasta 20 consultantes · 9 instrumentos · IA y sesiones',color:'bg-brand-50 border-brand-300'},{value:'premium',label:'Premium',desc:'Ilimitado · 17 instrumentos · todas las funciones',color:'bg-purple-50 border-purple-300'},{value:'admin',label:'Admin',desc:'Acceso total al sistema',color:'bg-yellow-50 border-yellow-300'}].map(opt=>(
+            {[{value:'free',label:'Gratis',desc:'Hasta 3 consultantes · PHQ-9, GAD-7, DASS-21',color:'bg-slate-100 border-slate-300'},{value:'basic',label:'Básico',desc:'Hasta 20 consultantes · 9 instrumentos · IA y sesiones',color:'bg-brand-50 border-brand-300'},{value:'premium',label:'Premium',desc:'Ilimitado · 14 instrumentos · todas las funciones',color:'bg-purple-50 border-purple-300'},{value:'admin',label:'Admin',desc:'Acceso total al sistema',color:'bg-yellow-50 border-yellow-300'}].map(opt=>(
               <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${newRole===opt.value?opt.color:'border-transparent bg-slate-50 hover:bg-slate-100'}`}>
                 <input type="radio" name="role" value={opt.value} checked={newRole===opt.value} onChange={()=>setNewRole(opt.value)} className="mt-0.5 accent-brand-500" />
                 <div><p className="text-sm font-semibold text-slate-800">{opt.label}</p><p className="text-xs text-slate-500">{opt.desc}</p></div>
@@ -5580,7 +5491,7 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
       applied_at: new Date().toISOString().split('T')[0]
     })
     if (error) {
-      console.error('Error saving instrument:', error)
+      console.error('Error saving instrument:', error?.code, error?.message)
       alert('Error al guardar: ' + error.message)
     } else {
       setModal(null); setSelInstrument(null); load()
@@ -5917,7 +5828,7 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
     let { error } = await attemptSave(payload)
 
     if (error) {
-      console.error('Save error (full payload):', JSON.stringify(error))
+      console.error('Save error (full payload) code:', error?.code, error?.message)
 
       // Try 2: strip new columns that might not exist yet, keep original + v4 base
       const v4Payload = {
@@ -5932,7 +5843,7 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
         evaluator_notes: payload.evaluator_notes||null,
       }
       let res2 = await attemptSave(v4Payload)
-      console.error('Save error (v4 payload):', JSON.stringify(res2.error))
+      console.error('Save error (v4 payload) code:', res2.error?.code, res2.error?.message)
 
       // Try 3: absolute minimum - user_id, patient_id, status only
       if (res2.error) {
@@ -5944,7 +5855,7 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
           problem_description: payload.consultation_reason||null,
         })
         if (res3.error) {
-          console.error('Save error (minimum):', JSON.stringify(res3.error))
+          console.error('Save error (minimum) code:', res3.error?.code, res3.error?.message)
           setErr('Error al guardar (código ' + (error.code||'400') + '): ' + (error.message||'columna no existe') + '. Ejecuta el SQL de migración completo en Supabase y recarga la página.')
         } else {
           setModal(null); setSelected(null); load()
@@ -8287,7 +8198,7 @@ function ResetPassword({ onDone }) {
               <p className="text-slate-500 text-sm mb-6">Elige una contraseña segura para tu cuenta.</p>
               <Alert msg={err} />
               <form onSubmit={submit} className="space-y-4">
-                <Input label="Nueva contraseña" type="password" placeholder="Mínimo 6 caracteres"
+                <Input label="Nueva contraseña" type="password" placeholder="Mínimo 10 caracteres con mayúsculas y números"
                   value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required />
                 <Input label="Confirmar contraseña" type="password" placeholder="Repite la contraseña"
                   value={form.confirm} onChange={e=>setForm({...form,confirm:e.target.value})} required />
@@ -8323,7 +8234,7 @@ function Login({ onGo }) {
           {[
             {icon:'📝', text:'Entrevista clínica inicial estructurada'},
             {icon:'🎯', text:'Plan terapéutico generado con IA'},
-            {icon:'📊', text:'17 instrumentos psicométricos validados'},
+            {icon:'📊', text:'14 instrumentos psicométricos validados'},
             {icon:'💬', text:'Registro de sesiones con historial'},
             {icon:'⚠️', text:'Protocolo de evaluación de riesgo'},
             {icon:'🖨️', text:'Documentos clínicos imprimibles'},
@@ -8358,7 +8269,8 @@ function Register({ onGo }) {
   const [busy, setBusy] = useState(false)
   const submit = async e => {
     e.preventDefault()
-    if (f.password.length < 6) return setErr('La contraseña debe tener al menos 6 caracteres')
+    if (f.password.length < 10) return setErr('La contraseña debe tener al menos 10 caracteres')
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(f.password)) return setErr('La contraseña debe incluir mayúsculas, minúsculas y números')
     setBusy(true); setErr('')
     const { error } = await signUp(f.email, f.password, f.name)
     if (error) setErr(error.message)
@@ -8379,7 +8291,7 @@ function Register({ onGo }) {
           <form onSubmit={submit} className="space-y-4">
             <Input label="Nombre completo" type="text" placeholder="Tu nombre" value={f.name} onChange={e=>setF({...f,name:e.target.value})} required />
             <Input label="Email" type="email" placeholder="tu@email.com" value={f.email} onChange={e=>setF({...f,email:e.target.value})} required />
-            <Input label="Contraseña" type="password" placeholder="Mínimo 6 caracteres" value={f.password} onChange={e=>setF({...f,password:e.target.value})} required />
+            <Input label="Contraseña" type="password" placeholder="Mínimo 10 caracteres con mayúsculas y números" value={f.password} onChange={e=>setF({...f,password:e.target.value})} required />
             <button disabled={busy} className="w-full bg-brand-500 hover:bg-brand-600 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50">{busy?'Creando cuenta...':'Crear cuenta gratis'}</button>
           </form>
           <p className="text-center text-sm text-slate-500 mt-4">
