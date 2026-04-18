@@ -156,17 +156,66 @@ function Modal({ title, onClose, children, wide }) {
 
 // ── Tutorial ──────────────────────────────────────────────
 const TUTORIAL_STEPS = [
-  { icon:'👋', title:'Bienvenido a Psicoval', body:'Psicoval es la plataforma clínica digital para psicólogos de cualquier enfoque. Centraliza todo el proceso terapéutico: expediente del consultante, plan terapéutico, sesiones, instrumentos y documentos clínicos.' },
-  { icon:'👤', title:'Paso 1 — Tu perfil profesional', body:'Comienza por completar tu perfil: nombre completo, especialidad, número de registro y ciudad. Esta información aparece automáticamente en todos los documentos y reportes que generes. Es el primer paso antes de registrar consultantes.' },
-  { icon:'🧑‍⚕️', title:'Paso 2 — Registra al consultante', body:'En "Consultantes" crea la ficha con datos personales (teléfono, estado civil, nivel educativo, red de apoyo, contacto de emergencia) y datos clínicos (motivo de consulta, antecedentes, diagnóstico, enfoque terapéutico).' },
-  { icon:'🖨️', title:'Paso 3 — Prepara la primera cita', body:'Desde la ficha del consultante, usa el botón "Primera cita" para generar e imprimir: la entrevista inicial en blanco con espacios para escribir, el protocolo de riesgo suicida para el profesional y el plan de seguridad para entregar al consultante.' },
-  { icon:'🎯', title:'Paso 4 — Plan terapéutico', body:'Después de la primera cita, ingresa los datos de la entrevista en la ficha del consultante. Desde la pestaña "Plan" la IA sugiere objetivos terapéuticos, estructura de sesiones y estrategias según el enfoque del profesional. Todo es editable e imprimible.' },
-  { icon:'💬', title:'Paso 5 — Registro de sesiones', body:'En la pestaña "Sesiones" del expediente registra cada encuentro: contenido trabajado, intervenciones aplicadas, respuesta del consultante, tareas asignadas y estado emocional al inicio y cierre. El historial queda organizado cronológicamente.' },
-  { icon:'📊', title:'Paso 6 — Instrumentos psicométricos', body:'En la pestaña "Instrumentos" aplica cualquiera de los 17 disponibles directamente desde el expediente del consultante. Los resultados muestran puntaje total, puntuaciones por dimensiones cuando el instrumento las tiene, puntos de corte y gráfico comparativo entre aplicaciones.' },
-  { icon:'⚠️', title:'Protocolo de riesgo suicida', body:'En la pestaña "Riesgo" del expediente evalúa el riesgo suicida en 6 dimensiones. Puedes aplicarlo cuantas veces sea necesario — el historial queda guardado para comparar. Cada evaluación es imprimible.' },
-  { icon:'🗓️', title:'Agenda de citas', body:'En "Agenda" programa y visualiza citas en lista o calendario mensual. Haz clic en cualquier día del calendario para crear una cita con la fecha prellenada automáticamente.' },
-  { icon:'❓', title:'Íconos de ayuda', body:'Los íconos ? junto a los campos explican qué información ingresar. Puedes volver a este tutorial en cualquier momento desde el menú lateral.' },
-  { icon:'🚀', title:'El flujo completo', body:'Perfil → Nuevo consultante → Primera cita (imprimir documentos) → Ingresar entrevista → Plan terapéutico → Sesiones → Instrumentos → Riesgo. Todo desde el expediente del consultante.' },
+  {
+    icon:'👋',
+    title:'Bienvenido a Psicoval',
+    body:'Psicoval es la plataforma clínica digital diseñada para psicólogos independientes. Centraliza en un solo lugar todo el ciclo de atención: desde el primer contacto hasta el seguimiento del proceso terapéutico. Funciona en cualquier dispositivo con internet, sin instalar nada.'
+  },
+  {
+    icon:'👤',
+    title:'Paso 1 — Configura tu perfil profesional',
+    body:'Ve a «Mi perfil» en el menú lateral. Completa: nombre completo, especialidad, número de colegiado, ciudad y — muy importante — tu enfoque terapéutico principal (ACT, TCC, DBT, etc.). La IA usará ese enfoque para personalizar los planes terapéuticos. Tu perfil aparece automáticamente en todos los documentos que imprimas.'
+  },
+  {
+    icon:'🧑‍⚕️',
+    title:'Paso 2 — Registra a tu primer consultante',
+    body:'Ve a «Consultantes» y haz clic en «Nuevo consultante». Registra los datos que puedes tomar en la llamada inicial: nombre, edad, teléfono y ocupación. La información clínica (motivo de consulta, antecedentes, diagnóstico) se completa después en la entrevista inicial — no en la ficha.'
+  },
+  {
+    icon:'🖨️',
+    title:'Paso 3 — Prepara el paquete de primera cita',
+    body:'Abre el expediente del consultante y ve a la pestaña «Primera cita». Genera e imprime el paquete completo: entrevista clínica inicial (6 bloques con preguntas guía), evaluación de riesgo suicida, plan de seguridad personal y consentimiento informado con 12 puntos. Lleva estos documentos impresos a la primera sesión.'
+  },
+  {
+    icon:'📝',
+    title:'Paso 4 — Registra la entrevista inicial',
+    body:'Después de la primera cita, ve a la pestaña «Entrevista» del expediente. Ingresa los datos que recopilaste: motivo de consulta, historia del problema, eje funcional A-B-C, contexto vital, historia clínica, evaluación clínica, formulación y objetivos. Al terminar, genera el resumen clínico con IA.'
+  },
+  {
+    icon:'🎯',
+    title:'Paso 5 — Genera el plan terapéutico',
+    body:'Ve a la pestaña «Plan» del expediente. Define primero los parámetros: número de sesiones disponibles (adapta a la realidad del consultante — 4 a 6 es frecuente), frecuencia, modalidad y enfoque. La IA integrará los datos de la entrevista y generará objetivos, estructura de sesiones y estrategias. Todo es editable e imprimible.'
+  },
+  {
+    icon:'📊',
+    title:'Paso 6 — Aplica instrumentos psicométricos',
+    body:'En la pestaña «Instrumentos» tienes 17 instrumentos validados: PHQ-9, GAD-7, DASS-21, AAQ-II, DERS-16, PCL-5, Rosenberg, VLQ y más. Puedes aplicarlos digitalmente o imprimir el formulario en blanco para que el consultante lo llene en papel. Los resultados incluyen puntaje, interpretación clínica detallada y resultados por dimensión. Las reaplicaciones permiten comparar la evolución pre-post.'
+  },
+  {
+    icon:'💬',
+    title:'Paso 7 — Registra cada sesión',
+    body:'En «Sesiones» documenta cada encuentro: estado emocional inicial y final (escala), contenido trabajado, intervenciones aplicadas, respuesta del consultante, tarea asignada para casa y notas clínicas. El historial queda organizado cronológicamente y sirve como evidencia del proceso.'
+  },
+  {
+    icon:'⚠️',
+    title:'Protocolo de riesgo suicida',
+    body:'En «Riesgo» evalúa el riesgo en cualquier momento del proceso — no solo en la primera cita. El protocolo evalúa 6 dimensiones: ideación, plan, acceso a medios, intención inmediata, red de apoyo y capacidad de estar solo. Los resultados determinan el nivel de riesgo y las acciones recomendadas. Cada evaluación queda guardada con fecha para comparar.'
+  },
+  {
+    icon:'🗓️',
+    title:'Agenda de citas',
+    body:'En «Agenda» programa las citas de todos tus consultantes. Visualiza en formato lista o calendario mensual. Para crear una cita, haz clic directamente en el día del calendario — la fecha se pre-llena automáticamente. Las citas se pueden marcar como realizadas, canceladas o reprogramadas.'
+  },
+  {
+    icon:'🔒',
+    title:'Planes y acceso',
+    body:'El plan gratuito incluye hasta 3 consultantes, entrevista inicial, primera cita, consentimiento y 3 instrumentos (PHQ-9, GAD-7, DASS-21). El plan Básico ($10/mes) suma 20 consultantes, 9 instrumentos, plan terapéutico con IA, sesiones y protocolo de riesgo. El plan Premium ($15/mes) desbloquea todo sin límites.'
+  },
+  {
+    icon:'🚀',
+    title:'Flujo completo del proceso',
+    body:'El orden recomendado es: 1) Completa tu perfil con enfoque terapéutico → 2) Registra el consultante (datos básicos) → 3) Imprime el paquete de primera cita → 4) Realiza la sesión con los documentos impresos → 5) Registra la entrevista digital → 6) Genera el plan terapéutico → 7) Aplica instrumentos → 8) Registra sesiones periódicas → 9) Evalúa riesgo cuando sea necesario.'
+  },
 ]
 function TutorialModal({ onClose }) {
   const [step, setStep] = useState(0)
@@ -3547,7 +3596,7 @@ function generateReportHTML(type, data) {
     <div style="border-bottom:2px solid #4361ee;padding-bottom:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start">
       <div>
         <h1 style="margin:0;font-size:22px;color:#1a2460;font-family:Georgia,serif">Psicoval</h1>
-        <p style="margin:2px 0;font-size:12px;color:#64748b">Plataforma de evaluación psicológica</p>
+        <p style="margin:2px 0;font-size:12px;color:#64748b">Plataforma clínica digital para psicólogos</p>
       </div>
       <div style="text-align:right;font-size:11px;color:#64748b">
         <p style="margin:0;font-weight:600;color:#1e293b">${profName}</p>
@@ -6317,19 +6366,19 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
               </div>
             )}
 
-            {/* Grid clínico */}
-            {(p.consultation_reason||p.presumptive_diagnosis||p.therapeutic_approach||p.referral_source) && (
+            {/* Grid proceso */}
+            {(p.referral_source || p.session_frequency || p.process_start_date) && (
               <div className="grid grid-cols-2 gap-3">
-                {p.presumptive_diagnosis && (
-                  <div className="bg-white border border-slate-200 rounded-xl p-3">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Diagnóstico presuntivo</p>
-                    <p className="text-sm text-slate-700">{p.presumptive_diagnosis}</p>
-                  </div>
-                )}
                 {p.referral_source && (
                   <div className="bg-white border border-slate-200 rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Fuente de derivación</p>
                     <p className="text-sm text-slate-700">{p.referral_source}</p>
+                  </div>
+                )}
+                {p.session_frequency && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Frecuencia de sesión</p>
+                    <p className="text-sm text-slate-700">{p.session_frequency}</p>
                   </div>
                 )}
               </div>
@@ -6474,11 +6523,10 @@ const STATUS_COLORS = { activo:'bg-green-100 text-green-700', en_pausa:'bg-yello
 
 function PatientForm({ initial, onSave, onClose, busy, err }) {
   const [form, setForm] = useState(initial || EMPTY_PATIENT)
-  const [tab, setTab] = useState('basic')
   const f = (k,v) => setForm(p=>({...p,[k]:v}))
   const isNew = !initial
 
-  // For new patients: only show minimal fields (phone call info)
+  // Para nuevos consultantes: solo campos básicos de la llamada inicial
   if (isNew) {
     return (
       <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="space-y-4">
@@ -6506,15 +6554,11 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
     )
   }
 
-  // For editing: show full form with tabs
-  const tabs = [{id:'basic',label:'Datos básicos'},{id:'clinical',label:'Ficha clínica'},{id:'context',label:'Proceso'}]
+  // Edición: formulario completo de datos personales
   return (
     <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="space-y-4">
       <Alert msg={err} />
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-        {tabs.map(t=><button key={t.id} type="button" onClick={()=>setTab(t.id)} className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${tab===t.id?'bg-white text-slate-800 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>{t.label}</button>)}
-      </div>
-      {tab==='basic' && <div className="space-y-4">
+      <div className="space-y-4">
         <Input label="Nombre completo *" placeholder="Nombre del consultante" value={form.name} onChange={e=>f('name',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
           <Input label="Edad" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
@@ -6539,35 +6583,9 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
           <Input label="Contacto de emergencia" placeholder="Nombre del contacto" value={form.emergency_contact_name} onChange={e=>f('emergency_contact_name',e.target.value)} />
           <Input label="Teléfono de emergencia" placeholder="Teléfono del contacto" value={form.emergency_contact_phone} onChange={e=>f('emergency_contact_phone',e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <Select label="Fuente de derivación" value={form.referral_source} onChange={e=>f('referral_source',e.target.value)}>
-            <option value="">Seleccionar</option><option>Autorreferido</option><option>Médico</option><option>Familiar</option><option>Otro profesional</option><option>Online</option><option>Institución</option>
-          </Select>
-          <Select label="Frecuencia de sesión" value={form.session_frequency} onChange={e=>f('session_frequency',e.target.value)}>
-            <option value="">Seleccionar</option><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>A demanda</option>
-          </Select>
-        </div>
-      </div>}
-      {tab==='clinical' && <div className="space-y-4">
-        <Textarea label="Motivo de consulta" rows={3} placeholder="¿Qué trae al consultante a consulta?" value={form.consultation_reason} onChange={e=>f('consultation_reason',e.target.value)} />
-        <Textarea label="Antecedentes personales" rows={3} placeholder="Tratamientos anteriores, eventos relevantes..." value={form.background_personal} onChange={e=>f('background_personal',e.target.value)} />
-        <Textarea label="Antecedentes familiares" rows={3} placeholder="Dinámica y estructura familiar..." value={form.background_family} onChange={e=>f('background_family',e.target.value)} />
-        <Textarea label="Antecedentes médicos" rows={2} placeholder="Enfermedades, medicación, cirugías..." value={form.background_medical} onChange={e=>f('background_medical',e.target.value)} />
-      </div>}
-      {tab==='context' && <div className="space-y-4">
-        <Textarea label="Diagnóstico presuntivo" rows={2} placeholder="Ej: Trastorno de ansiedad generalizada..." value={form.presumptive_diagnosis} onChange={e=>f('presumptive_diagnosis',e.target.value)} />
-        <Textarea label="Formulación del caso" rows={3} placeholder="Factores predisponentes, precipitantes y mantenedores..." value={form.diagnostic_axes} onChange={e=>f('diagnostic_axes',e.target.value)} />
-        <Input label="Enfoque terapéutico" placeholder="Ej: TCC, ACT, Humanista, Sistémico..." value={form.therapeutic_approach} onChange={e=>f('therapeutic_approach',e.target.value)} />
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Fecha de inicio" type="date" value={form.process_start_date} onChange={e=>f('process_start_date',e.target.value)} />
-          <Select label="Estado del proceso" value={form.process_status} onChange={e=>f('process_status',e.target.value)}>
-            <option value="activo">Activo</option><option value="en_pausa">En pausa</option><option value="alta">Alta terapéutica</option><option value="derivado">Derivado</option><option value="cerrado">Cerrado</option>
-          </Select>
-        </div>
-        <Textarea label="Notas clínicas" rows={3} placeholder="Observaciones libres..." value={form.notes} onChange={e=>f('notes',e.target.value)} />
-      </div>}
+      </div>
       <div className="flex justify-between items-center pt-2">
-        <div className="flex gap-1">{tabs.map(t=><div key={t.id} className={`w-2 h-2 rounded-full ${tab===t.id?'bg-brand-500':'bg-slate-200'}`}/>)}</div>
+        <div/>
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
           <button type="submit" disabled={busy} className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium disabled:opacity-50">{busy?'Guardando...':'Guardar cambios'}</button>
@@ -6612,7 +6630,7 @@ function exportPatientPDF(patient, profile, interviews, sessions, instrResults) 
     @media print{body{padding:0}}
   </style></head><body>
   <div class="header">
-    <div><div class="logo">Psicoval</div><div style="font-size:11px;color:#64748b">Plataforma de evaluación psicológica</div></div>
+    <div><div class="logo">Psicoval</div><div style="font-size:11px;color:#64748b">Plataforma clínica digital para psicólogos</div></div>
     <div class="prof-info">
       <div style="font-weight:bold;color:#1e293b">${prof.full_name||'Profesional'}</div>
       <div>${prof.specialty||''} ${prof.license_number?'· Reg. '+prof.license_number:''}</div>
@@ -7489,7 +7507,7 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
     sessions: '6',
     frequency: 'semanal',
     modality: 'presencial',
-    approach: patient?.therapeutic_approach || '',
+    approach: profile?.therapeutic_approach || '',  // from psychologist profile
     focus: '',
     priority: '',
   })
@@ -7995,13 +8013,13 @@ function Patients({ user, role, planExpiry }) {
 
 // ── Perfil ────────────────────────────────────────────────
 function Profile({ user }) {
-  const [form, setForm] = useState({ full_name:'',specialty:'',license_number:'',city:'',phone:'',bio:'' })
+  const [form, setForm] = useState({ full_name:'',specialty:'',license_number:'',city:'',phone:'',bio:'',therapeutic_approach:'' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState({ text:'', type:'' })
   useEffect(() => {
     sb.from('psychologist_profiles').select('*').eq('user_id', user.id).single()
-      .then(({ data }) => { if (data) setForm({ full_name:data.full_name||'',specialty:data.specialty||'',license_number:data.license_number||'',city:data.city||'',phone:data.phone||'',bio:data.bio||'' }); setLoading(false) })
+      .then(({ data }) => { if (data) setForm({ full_name:data.full_name||'',specialty:data.specialty||'',license_number:data.license_number||'',city:data.city||'',phone:data.phone||'',bio:data.bio||'',therapeutic_approach:data.therapeutic_approach||'' }); setLoading(false) })
   }, [user.id])
   const save = async e => {
     e.preventDefault(); setSaving(true); setMsg({text:'',type:''})
@@ -8036,8 +8054,38 @@ function Profile({ user }) {
             </div>
           </div>
           <hr className="border-slate-100"/>
-          <div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Presentación profesional</p>
-            <Textarea label="Descripción profesional" tip="Breve descripción de tu enfoque y experiencia. Se incluye en reportes." rows={4} placeholder="Ej: Psicólogo clínico especializado en terapia cognitivo-conductual..." value={form.bio} onChange={e=>f('bio',e.target.value)} />
+          <div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Enfoque clínico</p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block font-medium">Enfoque terapéutico principal</label>
+                <p className="text-xs text-slate-400 mb-2">La IA usará este enfoque para generar planes terapéuticos personalizados</p>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  value={form.therapeutic_approach||''} onChange={e=>f('therapeutic_approach',e.target.value)}>
+                  <option value="">Sin especificar</option>
+                  <optgroup label="Terapias contextuales (3ª generación)">
+                    <option value="ACT">ACT — Terapia de Aceptación y Compromiso</option>
+                    <option value="DBT">DBT — Terapia Dialéctico Conductual</option>
+                    <option value="FAP">FAP — Psicoterapia Analítica Funcional</option>
+                    <option value="Contextual">Contextual (integración de 3ª generación)</option>
+                    <option value="Mindfulness">Mindfulness / MBCT</option>
+                  </optgroup>
+                  <optgroup label="Cognitivo conductual">
+                    <option value="TCC">TCC — Cognitivo Conductual clásica</option>
+                    <option value="TCC-Beck">TCC — Modelo de Beck</option>
+                    <option value="REBT">REBT — Terapia Racional Emotiva Conductual</option>
+                  </optgroup>
+                  <optgroup label="Otros enfoques">
+                    <option value="EMDR">EMDR — Desensibilización por Movimiento Ocular</option>
+                    <option value="Humanista">Humanista / Centrado en la persona (Rogers)</option>
+                    <option value="Sistémico">Sistémico / Familiar</option>
+                    <option value="Psicodinámico">Psicodinámico / Psicoanalítico</option>
+                    <option value="Ecléctico">Ecléctico / Integrador</option>
+                    <option value="Basado en evidencia">Basado en evidencia general</option>
+                  </optgroup>
+                </select>
+              </div>
+              <Textarea label="Descripción profesional" tip="Breve descripción de tu enfoque y experiencia. Se incluye en reportes." rows={3} placeholder="Ej: Psicólogo especializado en terapias contextuales con adultos..." value={form.bio} onChange={e=>f('bio',e.target.value)} />
+            </div>
           </div>
           <div className="flex justify-end"><button type="submit" disabled={saving} className="bg-brand-500 hover:bg-brand-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 text-sm">{saving?'Guardando...':'Guardar perfil'}</button></div>
         </form>
@@ -8165,7 +8213,7 @@ function ForgotPassword({ onBack }) {
       <div className="w-full max-w-md fade-in">
         <div className="text-center mb-8">
           <h1 className="font-display text-4xl text-white font-bold">Psicoval</h1>
-          <p className="text-brand-200 mt-1 text-sm">Plataforma de evaluación psicológica</p>
+          <p className="text-brand-200 mt-1 text-sm">Plataforma clínica digital para psicólogos</p>
         </div>
         <div className="bg-white rounded-2xl p-8 shadow-xl">
           {sent ? (
@@ -8269,7 +8317,23 @@ function Login({ onGo }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 flex items-center justify-center p-4">
       <div className="w-full max-w-md fade-in">
-        <div className="text-center mb-8"><h1 className="font-display text-4xl text-white font-bold">Psicoval</h1><p className="text-brand-200 mt-1 text-sm">Plataforma de evaluación psicológica</p></div>
+        <div className="text-center mb-8"><h1 className="font-display text-4xl text-white font-bold">Psicoval</h1><p className="text-brand-200 mt-1 text-sm">La plataforma clínica digital para psicólogos</p></div>
+        {/* Feature highlights */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {[
+            {icon:'📝', text:'Entrevista clínica inicial estructurada'},
+            {icon:'🎯', text:'Plan terapéutico generado con IA'},
+            {icon:'📊', text:'17 instrumentos psicométricos validados'},
+            {icon:'💬', text:'Registro de sesiones con historial'},
+            {icon:'⚠️', text:'Protocolo de evaluación de riesgo'},
+            {icon:'🖨️', text:'Documentos clínicos imprimibles'},
+          ].map(({icon,text})=>(
+            <div key={text} className="bg-white/10 rounded-xl px-3 py-2 flex items-center gap-2">
+              <span className="text-lg">{icon}</span>
+              <span className="text-brand-100 text-xs leading-tight">{text}</span>
+            </div>
+          ))}
+        </div>
         <div className="bg-white rounded-2xl p-8 shadow-xl">
           <h2 className="text-xl font-semibold mb-6">Iniciar sesión</h2>
           <Alert msg={err} />
@@ -8303,9 +8367,14 @@ function Register({ onGo }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 flex items-center justify-center p-4">
       <div className="w-full max-w-md fade-in">
-        <div className="text-center mb-8"><h1 className="font-display text-4xl text-white font-bold">Psicoval</h1><p className="text-brand-200 mt-1 text-sm">Plataforma de evaluación psicológica</p></div>
+        <div className="text-center mb-5">
+          <h1 className="font-display text-4xl text-white font-bold">Psicoval</h1>
+          <p className="text-brand-200 mt-1 text-sm">La plataforma clínica digital para psicólogos</p>
+          <p className="text-brand-300 text-xs mt-2 max-w-sm mx-auto leading-relaxed">Gestiona todo el proceso terapéutico desde un solo lugar — entrevista, plan, sesiones, instrumentos y documentos clínicos</p>
+        </div>
         <div className="bg-white rounded-2xl p-8 shadow-xl">
-          <h2 className="text-xl font-semibold mb-6">Crear cuenta</h2>
+          <h2 className="text-xl font-semibold mb-1">Crea tu cuenta gratis</h2>
+          <p className="text-sm text-slate-500 mb-5">Incluye 3 consultantes, entrevista clínica inicial, primera cita y 3 instrumentos psicométricos</p>
           <Alert msg={err} />
           <form onSubmit={submit} className="space-y-4">
             <Input label="Nombre completo" type="text" placeholder="Tu nombre" value={f.name} onChange={e=>setF({...f,name:e.target.value})} required />
