@@ -7250,9 +7250,11 @@ function TherapeuticPlan({ patient, profile, supabaseUrl }) {
   const generatePlan = async () => {
     const p = patient
     const iv = interview
-    if (!p.consultation_reason && !p.presumptive_diagnosis && !iv?.consultation_reason) {
+    // Only block if there is truly no interview AND no basic patient data
+    if (!iv && !p.consultation_reason && !p.presumptive_diagnosis) {
       setError('Registra primero la entrevista inicial del consultante para generar el plan terapéutico.'); return
     }
+    setError('')
     setLoading(true); setError('')
     const approach = planParams.approach || p.therapeutic_approach || 'basado en evidencia general'
     const aiSummary = (() => { try { return iv?.ai_summary ? JSON.parse(iv.ai_summary) : null } catch(e){return null} })()
