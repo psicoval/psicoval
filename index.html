@@ -4954,9 +4954,12 @@ function AdminPanel() {
       d.setMonth(d.getMonth() + months)
       expiresAt = d.toISOString()
     }
-    const payload = { id: editUser.id, role: newRole, expires_at: expiresAt }
-    const { error } = await sb.from('profiles').upsert(payload, { onConflict:'id' })
-    if (error) setMsg('Error al actualizar.')
+    const { error } = await sb.rpc('admin_update_user_plan', {
+      target_user_id: editUser.id,
+      new_role: newRole,
+      new_expires_at: expiresAt
+    })
+    if (error) setMsg('Error al actualizar: ' + error.message)
     else { setMsg('Plan actualizado ✓'); load(); setTimeout(closeEdit, 1000) }
     setSaving(false)
   }
