@@ -331,6 +331,10 @@ Historia del problema: ${form.problem_history || 'No especificado'}
 
 Responde de forma estructurada, clara y concisa. Usa viñetas donde sea apropiado.`
 
+    // Rate limit: 1 llamada IA por consultante por día
+    const limited1 = await checkAIRateLimit(user.id, patientId, 'interview_summary')
+    if (limited1) { setAiLoading(false); setAiSummary('Ya generaste el análisis IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
+
     try {
       const response = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
         method: 'POST',
@@ -341,6 +345,7 @@ Responde de forma estructurada, clara y concisa. Usa viñetas donde sea apropiad
         },
         body: JSON.stringify({ prompt })
       })
+      await logAICall(user.id, patientId, 'interview_summary')
       const data = await response.json()
       const text = data.result || ''
       if (!text) throw new Error('Sin respuesta')
@@ -600,12 +605,17 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
   "sesion2": "Sugerencias concretas y accionables para la sesión 2: qué trabajar primero, qué técnica o estrategia usar, qué instrumentos priorizar y en qué orden aplicarlos, considerando el enfoque terapéutico y el objetivo conductual observable. 3-5 líneas."
 }`
 
+    // Rate limit: 1 llamada IA por consultante por día
+    const limited2 = await checkAIRateLimit(user.id, form.patient_id, 'interview_analysis')
+    if (limited2) { setAiLoading(false); setErr('Ya generaste el análisis IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
+
     try {
       const res = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM'},
         body: JSON.stringify({prompt})
       })
+      await logAICall(user.id, form.patient_id, 'interview_analysis')
       const data = await res.json()
       const raw = (data.result||data.text||'')
         .replace(/```json/gi,'').replace(/```/g,'').trim()
@@ -2431,6 +2441,24 @@ function Appointments({ user }) {
 // ── INSTRUMENTOS ──────────────────────────────────────────
 
 // ── Configuración de planes ───────────────────────────────
+// ── Rate limiting IA: 1 llamada por consultante por día ────────────────
+async function checkAIRateLimit(userId, patientId, callType) {
+  const today = new Date().toISOString().split('T')[0]
+  const { data, error } = await sb.from('ai_calls')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('patient_id', patientId)
+    .eq('call_type', callType)
+    .gte('called_at', today + 'T00:00:00')
+    .lte('called_at', today + 'T23:59:59')
+    .limit(1)
+  if (error) return false // si falla la verificación, permite continuar
+  return data && data.length > 0
+}
+async function logAICall(userId, patientId, callType) {
+  await sb.from('ai_calls').insert({ user_id: userId, patient_id: patientId, call_type: callType, called_at: new Date().toISOString() })
+}
+
 const PLAN_LIMITS = {
   free: {
     label: 'Gratis',
@@ -4966,6 +4994,49 @@ function AdminPanel() {
     else { setMsg('Plan actualizado ✓'); load(); setTimeout(closeEdit, 1000) }
     setSaving(false)
   }
+  const [deleteUser, setDeleteUser] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [exportingId, setExportingId] = useState(null)
+
+  const handleDelete = async () => {
+    if (!deleteUser) return
+    setDeleting(true)
+    const uid = deleteUser.id
+    // Delete in order (child to parent)
+    const tables = ['instrument_results','initial_interviews','sessions','appointments','suicide_risk_assessments','patients','psychologist_profiles']
+    for (const table of tables) {
+      await sb.from(table).delete().eq('user_id', uid)
+    }
+    await sb.from('profiles').delete().eq('id', uid)
+    // Delete from auth via admin RPC
+    const { error } = await sb.rpc('admin_delete_user', { target_user_id: uid })
+    if (error) { setMsg('Error al eliminar: ' + error.message); setDeleting(false); return }
+    setMsg('Usuario eliminado ✓')
+    setDeleteUser(null)
+    setDeleting(false)
+    load()
+  }
+
+  const handleExport = async (u) => {
+    setExportingId(u.id)
+    const uid = u.id
+    const results = {}
+    const tables = ['profiles','psychologist_profiles','patients','initial_interviews','sessions','instrument_results','appointments','suicide_risk_assessments']
+    for (const table of tables) {
+      const col = table === 'profiles' ? 'id' : 'user_id'
+      const { data } = await sb.from(table).select('*').eq(col, uid)
+      results[table] = data || []
+    }
+    const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `psicoval_datos_${(u.email||uid).replace('@','_')}_${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExportingId(null)
+  }
+
   const filtered = users.filter(u=>(u.name||'').toLowerCase().includes(search.toLowerCase())||(u.email||'').toLowerCase().includes(search.toLowerCase()))
   const formatDate = d => d ? new Date(d).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'
   return (
@@ -5030,13 +5101,42 @@ function AdminPanel() {
                       </div>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-right"><button onClick={()=>openEdit(u)} className="text-brand-500 hover:text-brand-700 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">Cambiar plan</button></td>
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button onClick={()=>openEdit(u)} className="text-brand-500 hover:text-brand-700 text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">Plan</button>
+                      <button onClick={()=>handleExport(u)} disabled={exportingId===u.id} className="text-slate-500 hover:text-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50">{exportingId===u.id?'…':'⬇ Datos'}</button>
+                      <button onClick={()=>setDeleteUser(u)} className="text-red-500 hover:text-red-700 text-xs font-medium px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors">Eliminar</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+      {deleteUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl fade-in">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 text-center mb-2">Eliminar terapeuta</h3>
+            <p className="text-sm text-slate-500 text-center mb-1">Vas a eliminar permanentemente a:</p>
+            <p className="text-sm font-semibold text-slate-800 text-center mb-1">{deleteUser.name || 'Sin nombre'}</p>
+            <p className="text-xs text-slate-400 text-center mb-4">{deleteUser.email}</p>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-5">
+              <p className="text-xs text-red-700 font-medium">⚠️ Esta acción eliminará en cascada:</p>
+              <p className="text-xs text-red-600 mt-1">Todos sus consultantes, entrevistas, sesiones, instrumentos aplicados, evaluaciones de riesgo, citas y perfil profesional. <strong>No se puede deshacer.</strong></p>
+            </div>
+            {msg && <Alert msg={msg} type="error" />}
+            <div className="flex gap-3">
+              <button onClick={()=>setDeleteUser(null)} className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-50">{deleting?'Eliminando...':'Eliminar todo'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editUser && (
         <Modal title="Cambiar plan de usuario" onClose={closeEdit}>
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-5">
@@ -7304,6 +7404,10 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
   "observaciones": "consideraciones clínicas y contextuales relevantes"
 }`
 
+    // Rate limit: 1 llamada IA por consultante por día
+    const limited3 = await checkAIRateLimit(user.id, patient.id, 'therapeutic_plan')
+    if (limited3) { setLoading(false); setError('Ya generaste el plan terapéutico con IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
+
     try {
       const res = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
         method:'POST',
@@ -7314,8 +7418,8 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
         },
         body: JSON.stringify({prompt})
       })
+      await logAICall(user.id, patient.id, 'therapeutic_plan')
       const data = await res.json()
-      console.log('AI plan raw response:', JSON.stringify(data).slice(0,500))
       const raw = (data.result||data.text||'')
         .replace(/```json/gi,'').replace(/```/g,'').trim()
       // Extract JSON object if wrapped in extra text
