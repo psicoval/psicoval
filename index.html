@@ -5019,19 +5019,13 @@ function AdminPanel() {
 
   const handleExport = async (u) => {
     setExportingId(u.id)
-    const uid = u.id
-    const results = {}
-    const tables = ['profiles','psychologist_profiles','patients','initial_interviews','sessions','instrument_results','appointments','suicide_risk_assessments']
-    for (const table of tables) {
-      const col = table === 'profiles' ? 'id' : 'user_id'
-      const { data } = await sb.from(table).select('*').eq(col, uid)
-      results[table] = data || []
-    }
-    const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' })
+    const { data, error } = await sb.rpc('admin_export_user_data', { target_user_id: u.id })
+    if (error) { setMsg('Error al exportar: ' + error.message); setExportingId(null); return }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `psicoval_datos_${(u.email||uid).replace('@','_')}_${new Date().toISOString().split('T')[0]}.json`
+    a.download = `psicoval_datos_${(u.email||u.id).replace('@','_')}_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
     setExportingId(null)
