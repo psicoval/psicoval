@@ -2441,6 +2441,15 @@ function Appointments({ user }) {
 // ── INSTRUMENTOS ──────────────────────────────────────────
 
 // ── Configuración de planes ───────────────────────────────
+const ENFOQUES_DATA = {
+  'Cognitivo Conductual': ['TCC — Terapia Cognitivo Conductual clásica','TCC-Beck — Modelo de Beck','REBT — Terapia Racional Emotiva Conductual','Terapia de Procesamiento Cognitivo (CPT)','Activación Conductual'],
+  'Contextual — Tercera Generación': ['ACT — Terapia de Aceptación y Compromiso','DBT — Terapia Dialéctico Conductual','FAP — Psicoterapia Analítica Funcional','MBCT — Mindfulness Cognitivo','Autocompasión (CFT)','Terapia de Activación Conductual (BA)'],
+  'Conductual': ['Terapia de Exposición','Desensibilización Sistemática','Manejo de Contingencias','Modelado','Entrenamiento en Habilidades Sociales'],
+  'Humanista / Experiencial': ['Centrado en la Persona (Rogers)','Gestalt','Focusing','Terapia Existencial','Terapia Narrativa'],
+  'Sistémico / Familiar': ['Terapia Familiar Estructural','Terapia Breve Estratégica','Terapia Narrativa Sistémica','EMDR — Desensibilización por Movimiento Ocular'],
+  'Integrativo basado en evidencia': ['Terapia Metacognitiva (MCT)','Terapia de Esquemas','EMDR','Terapia Sensoriomotriz','Terapia Basada en Mentalización (MBT)']
+}
+
 // ── Rate limiting IA: 1 llamada por consultante por día ────────────────
 async function checkAIRateLimit(userId, patientId, callType) {
   const today = new Date().toISOString().split('T')[0]
@@ -5175,7 +5184,7 @@ function AdminPanel() {
 }
 
 // ── Sidebar ───────────────────────────────────────────────
-function Sidebar({ page, onPage, user, role, onLogout, onTutorial }) {
+function Sidebar({ page, onPage, user, role, onLogout, onTutorial, onTour }) {
   const name = user?.user_metadata?.name || user?.email || 'Usuario'
   const navItem = (id, label, icon, adminOnly=false) => {
     if (adminOnly && role !== 'admin') return null
@@ -5209,6 +5218,10 @@ function Sidebar({ page, onPage, user, role, onLogout, onTutorial }) {
         <button onClick={onTutorial} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-100 hover:bg-brand-700 hover:text-white transition-colors text-left">
           <Icon d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           Tutorial
+        </button>
+        <button onClick={onTour} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all text-sm">
+          <span className="text-lg">🎯</span>
+          <span className="font-medium">Tour visual</span>
         </button>
       </nav>
       <div className="px-4 py-4 border-t border-brand-700">
@@ -7351,7 +7364,19 @@ function TherapeuticPlan({ patient, profile, supabaseUrl }) {
     }
     setError('')
     setLoading(true); setError('')
-    const approach = planParams.approach || p.therapeutic_approach || 'basado en evidencia general'
+    // Parse profile approach (stored as JSON {enfoque, terapias})
+    const profileApproach = (() => {
+      if (!profile?.therapeutic_approach) return null
+      try {
+        const parsed = JSON.parse(profile.therapeutic_approach)
+        if (parsed.enfoque) {
+          const terapias = parsed.terapias?.length > 0 ? ` con énfasis en: ${parsed.terapias.join(', ')}` : ''
+          return parsed.enfoque + terapias
+        }
+        return null
+      } catch(e) { return profile.therapeutic_approach }
+    })()
+    const approach = planParams.approach || profileApproach || 'basado en evidencia general'
     const aiSummary = (() => { try { return iv?.ai_summary ? JSON.parse(iv.ai_summary) : null } catch(e){return null} })()
 
     const prompt = `Eres un asistente clínico de apoyo para psicólogos de América Latina. Tu función es proponer un plan terapéutico REALISTA adaptado a los parámetros definidos por el profesional.
@@ -7361,6 +7386,7 @@ PARÁMETROS DEFINIDOS POR EL PROFESIONAL (OBLIGATORIOS — no los cambies):
 - Frecuencia: ${planParams.frequency}
 - Modalidad: ${planParams.modality}
 - Enfoque terapéutico: ${approach}
+IMPORTANTE: El plan DEBE estar completamente basado en el enfoque indicado arriba. Si el enfoque es Contextual o ACT, usa terminología y técnicas de ACT (hexaflex, defusión, aceptación, valores, acción comprometida). Si es TCC, usa reestructuración cognitiva, registro de pensamientos, etc. NO uses TCC por defecto si el enfoque es diferente.
 ${planParams.focus ? '- Objetivo principal del proceso: ' + planParams.focus : ''}
 ${planParams.priority ? '- Consideraciones específicas: ' + planParams.priority : ''}
 
@@ -7583,16 +7609,10 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
               <label className="text-xs text-slate-500 mb-1 block">Enfoque terapéutico</label>
               <select className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                 value={planParams.approach} onChange={e=>pp('approach',e.target.value)}>
-                <option value="">Sin enfoque específico (basado en evidencia)</option>
-                <option value="ACT">ACT — Terapia de Aceptación y Compromiso</option>
-                <option value="TCC">TCC — Cognitivo Conductual</option>
-                <option value="DBT">DBT — Dialéctico Conductual</option>
-                <option value="FAP">FAP — Psicoterapia Analítica Funcional</option>
-                <option value="EMDR">EMDR</option>
-                <option value="Humanista">Humanista / Centrado en la persona</option>
-                <option value="Sistémico">Sistémico</option>
-                <option value="Psicodinámico">Psicodinámico</option>
-                <option value="Ecléctico">Ecléctico / integrador</option>
+                <option value="">Sin enfoque específico</option>
+                {Object.keys(ENFOQUES_DATA).map(e=>(
+                  <option key={e} value={e}>{e}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -7669,7 +7689,17 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
             className="text-xs font-medium px-3 py-1.5 rounded-lg border border-brand-200 text-brand-600 hover:bg-brand-50 disabled:opacity-40">
             {saving?'Guardando...':'💾 Guardar'}
           </button>
-          <button onClick={()=>setEditing(true)} className="text-xs text-slate-500 hover:text-slate-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100">Editar</button>
+          <button onClick={()=>{
+            setEditData({
+              objetivos: (plan.objetivos||[]).join('\n'),
+              sesiones_estimadas: plan.sesiones_estimadas||'',
+              estructura_sesiones: plan.estructura_sesiones||'',
+              estrategias: (plan.estrategias||[]).join('\n'),
+              instrumentos_sugeridos: (plan.instrumentos_sugeridos||[]).join('\n'),
+              observaciones: plan.observaciones||''
+            })
+            setEditing(true)
+          }} className="text-xs text-slate-500 hover:text-slate-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100">Editar</button>
           <button onClick={generatePlan} className="text-xs text-slate-500 hover:text-slate-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100">Regenerar</button>
           <button onClick={printPlan} className="text-xs text-green-600 hover:text-green-800 font-medium px-3 py-1.5 rounded-lg hover:bg-green-50 flex items-center gap-1">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -8070,32 +8100,44 @@ function Profile({ user }) {
           <div><p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Enfoque clínico</p>
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-slate-500 mb-1 block font-medium">Enfoque terapéutico principal</label>
-                <p className="text-xs text-slate-400 mb-2">La IA usará este enfoque para generar planes terapéuticos personalizados</p>
-                <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
-                  value={form.therapeutic_approach||''} onChange={e=>f('therapeutic_approach',e.target.value)}>
-                  <option value="">Sin especificar</option>
-                  <optgroup label="Terapias contextuales (3ª generación)">
-                    <option value="ACT">ACT — Terapia de Aceptación y Compromiso</option>
-                    <option value="DBT">DBT — Terapia Dialéctico Conductual</option>
-                    <option value="FAP">FAP — Psicoterapia Analítica Funcional</option>
-                    <option value="Contextual">Contextual (integración de 3ª generación)</option>
-                    <option value="Mindfulness">Mindfulness / MBCT</option>
-                  </optgroup>
-                  <optgroup label="Cognitivo conductual">
-                    <option value="TCC">TCC — Cognitivo Conductual clásica</option>
-                    <option value="TCC-Beck">TCC — Modelo de Beck</option>
-                    <option value="REBT">REBT — Terapia Racional Emotiva Conductual</option>
-                  </optgroup>
-                  <optgroup label="Otros enfoques">
-                    <option value="EMDR">EMDR — Desensibilización por Movimiento Ocular</option>
-                    <option value="Humanista">Humanista / Centrado en la persona (Rogers)</option>
-                    <option value="Sistémico">Sistémico / Familiar</option>
-                    <option value="Psicodinámico">Psicodinámico / Psicoanalítico</option>
-                    <option value="Ecléctico">Ecléctico / Integrador</option>
-                    <option value="Basado en evidencia">Basado en evidencia general</option>
-                  </optgroup>
-                </select>
+                <label className="text-xs text-slate-500 mb-1 block font-medium">Enfoque terapéutico</label>
+                <p className="text-xs text-slate-400 mb-2">Selecciona tu enfoque principal y las terapias que utilizas. La IA generará planes acordes a tu práctica.</p>
+                {(() => {
+                  const parsed = (() => { try { return JSON.parse(form.therapeutic_approach||'{}') } catch(e){ return {enfoque:'',terapias:[]} } })()
+                  const enfoque = parsed.enfoque||''
+                  const terapias = parsed.terapias||[]
+                  const setEnfoque = (v) => f('therapeutic_approach', JSON.stringify({enfoque:v,terapias:[]}))
+                  const toggleTerapia = (t) => {
+                    const arr = terapias.includes(t) ? terapias.filter(x=>x!==t) : [...terapias,t]
+                    f('therapeutic_approach', JSON.stringify({enfoque, terapias:arr}))
+                  }
+                  return (
+                    <div className="space-y-3">
+                      <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                        value={enfoque} onChange={e=>setEnfoque(e.target.value)}>
+                        <option value="">Selecciona tu enfoque principal</option>
+                        {Object.keys(ENFOQUES_DATA).map(e=>(
+                          <option key={e} value={e}>{e}</option>
+                        ))}
+                      </select>
+                      {enfoque && (
+                        <div className="bg-slate-50 rounded-xl p-3">
+                          <p className="text-xs font-semibold text-slate-500 mb-2">Terapias que utilizas en tu práctica:</p>
+                          <div className="space-y-1.5">
+                            {ENFOQUES_DATA[enfoque].map(t=>(
+                              <label key={t} className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={terapias.includes(t)}
+                                  onChange={()=>toggleTerapia(t)}
+                                  className="rounded accent-brand-500"/>
+                                <span className="text-xs text-slate-700">{t}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
               <Textarea label="Descripción profesional" tip="Breve descripción de tu enfoque y experiencia. Se incluye en reportes." rows={3} placeholder="Ej: Psicólogo especializado en terapias contextuales con adultos..." value={form.bio} onChange={e=>f('bio',e.target.value)} />
             </div>
@@ -8107,10 +8149,88 @@ function Profile({ user }) {
   )
 }
 
+
+// ── Tour interactivo ──────────────────────────────────────────────────────────
+const TOUR_STEPS = [
+  { id:'tour-welcome', title:'Bienvenido a Psicoval', text:'Tu plataforma clínica digital. En 10 pasos te mostramos todo lo que puedes hacer. Usa las flechas para navegar.', target:null, pos:'center' },
+  { id:'tour-perfil', title:'1 — Tu perfil profesional', text:'Comienza aquí. Configura tu nombre, especialidad y — muy importante — tu enfoque terapéutico con las terapias que usas. La IA generará planes acordes a tu práctica.', target:'nav-perfil', pos:'right' },
+  { id:'tour-consultantes', title:'2 — Consultantes', text:'Registra a tus consultantes con los datos básicos de la llamada inicial: nombre, edad, teléfono y ocupación. Los datos clínicos se completan después en la entrevista.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-primera-cita', title:'3 — Paquete de primera cita', text:'Desde el expediente del consultante, genera e imprime el paquete completo: entrevista clínica en 6 bloques, evaluación de riesgo, plan de seguridad y consentimiento informado.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-entrevista', title:'4 — Entrevista inicial', text:'Después de la primera sesión, registra digitalmente la entrevista: motivo de consulta, historia del problema, eje funcional ABC, formulación y objetivos. La IA genera un resumen clínico al terminar.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-plan', title:'5 — Plan terapéutico con IA', text:'Define las sesiones disponibles, frecuencia y modalidad. La IA integra los datos de la entrevista y genera objetivos, estructura de sesiones y estrategias según tu enfoque terapéutico.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-instrumentos', title:'6 — Instrumentos psicométricos', text:'14 instrumentos validados: PHQ-9, GAD-7, DASS-21, PCL-5, AAQ-II, VLQ y más. Aplícalos digitalmente o imprime en blanco. Los resultados muestran puntaje, interpretación clínica y evolución pre-post.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-sesiones', title:'7 — Registro de sesiones', text:'Documenta cada sesión: intervenciones aplicadas, estado emocional del consultante, tareas asignadas y notas clínicas. El historial queda organizado cronológicamente.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-riesgo', title:'8 — Protocolo de riesgo suicida', text:'Evalúa el riesgo en 6 dimensiones: ideación, plan, acceso a medios, intención, red de apoyo y capacidad de estar solo. Úsalo en cualquier momento del proceso — cada evaluación queda guardada con fecha.', target:'nav-consultantes', pos:'right' },
+  { id:'tour-agenda', title:'9 — Agenda de citas', text:'Programa y visualiza todas tus citas en lista o calendario mensual. Haz clic en cualquier día del calendario para crear una cita con la fecha prellenada.', target:'nav-agenda', pos:'right' },
+  { id:'tour-fin', title:'¡Listo!', text:'Ya conoces Psicoval. Puedes relanzar este tour en cualquier momento desde el botón ❓ en el menú lateral. ¡Comienza registrando tu perfil y tu primer consultante!', target:null, pos:'center' },
+]
+
+function TourOverlay({ onClose }) {
+  const [step, setStep] = useState(0)
+  const s = TOUR_STEPS[step]
+  const isLast = step === TOUR_STEPS.length - 1
+  const isCenter = s.pos === 'center'
+
+  return (
+    <div className="fixed inset-0 z-50" style={{background:'rgba(0,0,0,0.55)'}}>
+      {/* Central card for welcome/end steps */}
+      {isCenter ? (
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-7 fade-in">
+            <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 text-center mb-2">{s.title}</h3>
+            <p className="text-sm text-slate-500 text-center leading-relaxed mb-6">{s.text}</p>
+            <div className="flex gap-3">
+              {step > 0 && <button onClick={()=>setStep(s=>s-1)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50">← Anterior</button>}
+              {isLast
+                ? <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold">Comenzar →</button>
+                : <button onClick={()=>setStep(s=>s+1)} className="flex-1 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold">Siguiente →</button>
+              }
+            </div>
+            <div className="flex justify-center gap-1 mt-4">
+              {TOUR_STEPS.map((_,i)=>(
+                <div key={i} className={`rounded-full transition-all ${i===step?'w-5 h-1.5 bg-brand-500':'w-1.5 h-1.5 bg-slate-200'}`}/>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Sidebar-anchored tooltip for nav steps */
+        <div className="absolute inset-0 flex items-center justify-start pl-72">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-5 fade-in relative">
+            <div className="absolute -left-3 top-6 w-0 h-0" style={{borderTop:'8px solid transparent',borderBottom:'8px solid transparent',borderRight:'12px solid white'}}/>
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-sm font-bold text-slate-800 leading-tight pr-2">{s.title}</h3>
+              <button onClick={onClose} className="text-slate-300 hover:text-slate-500 flex-shrink-0 text-lg leading-none">×</button>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed mb-4">{s.text}</p>
+            <div className="flex gap-2">
+              {step > 0 && <button onClick={()=>setStep(s=>s-1)} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50">← Atrás</button>}
+              <button onClick={()=>setStep(s=>s+1)} className="flex-1 px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold text-center">
+                {step === TOUR_STEPS.length-2 ? 'Finalizar ✓' : 'Siguiente →'}
+              </button>
+            </div>
+            <div className="flex justify-center gap-1 mt-3">
+              {TOUR_STEPS.map((_,i)=>(
+                <div key={i} className={`rounded-full transition-all ${i===step?'w-4 h-1.5 bg-brand-500':'w-1.5 h-1.5 bg-slate-200'}`}/>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Dashboard ─────────────────────────────────────────────
 function Dashboard({ user, role, planExpiry, onLogout }) {
   const [page, setPage] = useState('inicio')
   const [showTutorial, setShowTutorial] = useState(false)
+  const [showTour, setShowTour] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
@@ -8143,17 +8263,18 @@ function Dashboard({ user, role, planExpiry, onLogout }) {
 
   return (
     <div style={{display:'flex', minHeight:'100vh', background:'#f8fafc'}}>
+      {showTour && <TourOverlay onClose={()=>setShowTour(false)} />}
       {/* Overlay móvil */}
       <div id="mob-overlay" className="mob-overlay" onClick={()=>setDrawerOpen(false)} />
 
       {/* Drawer móvil */}
       <div id="mob-drawer" className="sidebar-drawer">
-        <Sidebar page={page} onPage={go} user={user} role={role} onLogout={onLogout} onTutorial={()=>{setShowTutorial(true);setDrawerOpen(false)}} />
+        <Sidebar page={page} onPage={go} user={user} role={role} onLogout={onLogout} onTutorial={()=>{setShowTutorial(true);setDrawerOpen(false)}} onTour={()=>{setShowTour(true);setDrawerOpen(false)}} />
       </div>
 
       {/* Sidebar desktop */}
       <div className="desk-sidebar" style={{width:'256px', flexShrink:0}}>
-        <Sidebar page={page} onPage={go} user={user} role={role} onLogout={onLogout} onTutorial={()=>setShowTutorial(true)} />
+        <Sidebar page={page} onPage={go} user={user} role={role} onLogout={onLogout} onTutorial={()=>setShowTutorial(true)} onTour={()=>setShowTour(true)} />
       </div>
 
       {/* Contenido */}
