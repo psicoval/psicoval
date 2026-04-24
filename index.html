@@ -8513,7 +8513,7 @@ function TourOverlay({ onClose }) {
     setTxt('')
     let i = 0
     twRef.current = setInterval(() => {
-      if (i < fullText.length) { setTxt(t => t + fullText[i]); i++ }
+      if (i < fullText.length) { setTxt(t => t + (fullText[i]||'')); i++ }
       else clearInterval(twRef.current)
     }, speed)
   }, [])
@@ -8672,7 +8672,7 @@ function TourOverlay({ onClose }) {
           <button onClick={onClose} style={{background:'rgba(255,255,255,0.2)',border:'none',color:'white',width:'30px',height:'30px',borderRadius:'8px',cursor:'pointer',fontSize:'16px'}}>×</button>
         </div>
         <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-          <div style={{width:'260px',flexShrink:0,display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0'}}>
+          <div style={{width:'420px',flexShrink:0,display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0'}}>
             <div style={{background:'#f1f5f9',padding:'7px 12px',display:'flex',alignItems:'center',gap:'5px',borderBottom:'1px solid #e2e8f0'}}>
               {['#f87171','#fbbf24','#4ade80'].map(col=><span key={col} style={{width:'8px',height:'8px',borderRadius:'50%',background:col,display:'inline-block'}}/>)}
               <span style={{marginLeft:'8px',background:'#e2e8f0',borderRadius:'4px',padding:'2px 8px',fontSize:'10px',color:'#64748b',flex:1,textAlign:'center'}}>psicoval.app</span>
