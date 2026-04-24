@@ -8510,10 +8510,13 @@ function TourOverlay({ onClose }) {
 
   const runTW = React.useCallback((fullText, speed) => {
     if (twRef.current) clearInterval(twRef.current)
-    setTxt(fullText[0] || '')
-    let i = 1
+    setTxt('')
+    let i = 0
+    if (fullText.length > 0) setTxt(fullText[0])
+    i = 1
     twRef.current = setInterval(() => {
-      if (i < fullText.length) { setTxt(t => t + (fullText[i]||'')); i++ }
+      i++
+      if (i < fullText.length) { setTxt(t => t + (fullText[i]||'')) }
       else clearInterval(twRef.current)
     }, speed)
   }, [])
