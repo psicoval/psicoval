@@ -8505,6 +8505,7 @@ function TourOverlay({ onClose }) {
   const [txt, setTxt] = useState('')
   const timerRef = React.useRef(null)
   const twRef = React.useRef(null)
+  const audioRef = React.useRef(null)
   const step = APP_TOUR_STEPS[idx]
   const total = APP_TOUR_STEPS.length
 
@@ -8531,7 +8532,30 @@ function TourOverlay({ onClose }) {
     }
   }, [runTW])
 
-  useEffect(() => { startStep(0, false); return () => { clearTimeout(timerRef.current); clearInterval(twRef.current) } }, [])
+  useEffect(() => {
+    // Start audio
+    if (audioRef.current) {
+      audioRef.current.volume = 0.4
+      audioRef.current.play().catch(()=>{})
+    }
+    startStep(0, false)
+    return () => {
+      clearTimeout(timerRef.current)
+      clearInterval(twRef.current)
+      // Fade out audio on unmount
+      if (audioRef.current) {
+        const audio = audioRef.current
+        const fade = setInterval(() => {
+          if (audio.volume > 0.03) {
+            audio.volume = Math.max(0, audio.volume - 0.03)
+          } else {
+            audio.pause()
+            clearInterval(fade)
+          }
+        }, 80)
+      }
+    }
+  }, [])
 
   const goTo = (i) => { clearTimeout(timerRef.current); clearInterval(twRef.current); setIdx(i); startStep(i, paused) }
   const togglePause = () => {
@@ -8670,7 +8694,16 @@ function TourOverlay({ onClose }) {
             <span style={{color:'white',fontWeight:700,fontSize:'14px'}}>Tour visual — Cómo funciona Psicoval</span>
             <span style={{background:'rgba(255,255,255,0.2)',color:'white',fontSize:'11px',padding:'2px 8px',borderRadius:'20px'}}>{idx+1} / {total}</span>
           </div>
-          <button onClick={onClose} style={{background:'rgba(255,255,255,0.2)',border:'none',color:'white',width:'30px',height:'30px',borderRadius:'8px',cursor:'pointer',fontSize:'16px'}}>×</button>
+          <button onClick={()=>{
+            if(audioRef.current){
+              const audio=audioRef.current
+              const fade=setInterval(()=>{
+                if(audio.volume>0.03){audio.volume=Math.max(0,audio.volume-0.05)}
+                else{audio.pause();clearInterval(fade)}
+              },80)
+            }
+            setTimeout(onClose,700)
+          }} style={{background:'rgba(255,255,255,0.2)',border:'none',color:'white',width:'30px',height:'30px',borderRadius:'8px',cursor:'pointer',fontSize:'16px'}}>×</button>
         </div>
         <div style={{flex:1,display:'flex',overflow:'hidden'}}>
           <div style={{width:'65%',flexShrink:0,display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0'}}>
@@ -8712,7 +8745,16 @@ function TourOverlay({ onClose }) {
                   <button onClick={()=>goTo(Math.max(0,idx-1))} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'4px 10px',fontSize:'12px',cursor:'pointer',color:'#475569'}}>← Ant</button>
                   {idx<total-1
                     ? <button onClick={()=>goTo(idx+1)} style={{background:'#4361ee',border:'none',borderRadius:'8px',padding:'4px 12px',fontSize:'12px',cursor:'pointer',color:'white',fontWeight:600}}>Sig →</button>
-                    : <button onClick={onClose} style={{background:'#16a34a',border:'none',borderRadius:'8px',padding:'4px 12px',fontSize:'12px',cursor:'pointer',color:'white',fontWeight:600}}>✓ Comenzar</button>}
+                    : <button onClick={()=>{
+                        if(audioRef.current){
+                          const audio=audioRef.current
+                          const fade=setInterval(()=>{
+                            if(audio.volume>0.03){audio.volume=Math.max(0,audio.volume-0.05)}
+                            else{audio.pause();clearInterval(fade)}
+                          },80)
+                        }
+                        setTimeout(onClose,700)
+                      }} style={{background:'#16a34a',border:'none',borderRadius:'8px',padding:'4px 12px',fontSize:'12px',cursor:'pointer',color:'white',fontWeight:600}}>✓ Comenzar</button>}
                 </div>
               </div>
             </div>
@@ -8720,6 +8762,7 @@ function TourOverlay({ onClose }) {
         </div>
       </div>
     </div>
+    <audio ref={audioRef} src="/tour-bg.mp3" loop preload="auto" style={{display:'none'}}/>
   )
 }
 
