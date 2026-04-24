@@ -1777,7 +1777,7 @@ function HomeOverview({ user, role, planExpiry, onPage }) {
 const SESSION_STATUS_COLORS = { realizada:'bg-green-100 text-green-700', cancelada:'bg-red-100 text-red-700', reprogramada:'bg-yellow-100 text-yellow-700', pendiente:'bg-slate-100 text-slate-600' }
 const SESSION_STATUS_LABELS = { realizada:'Realizada', cancelada:'Cancelada', reprogramada:'Reprogramada', pendiente:'Pendiente' }
 
-const EMPTY_SESSION = { patient_id:'', session_number:'', session_date:'', session_type:'individual', content:'', interventions:'', patient_response:'', homework:'', next_session_goals:'', mood_start:'', mood_end:'', status:'realizada' }
+const EMPTY_SESSION = { patient_id:'', session_number:'', session_date:'', session_type:'individual', content:'', interventions:'', patient_response:'', homework:'', next_session_goals:'', mood_start:'', mood_end:'', status:'realizada', cobro_monto:'', cobro_estado:'pendiente' }
 
 function MoodSelector({ label, tip, value, onChange }) {
   return (
@@ -1859,6 +1859,17 @@ function SessionForm({ initial, patients, onSave, onClose, busy, err, hidePatien
           </Select>
           <MoodSelector label="Estado emocional al inicio (1-10)" tip="Cómo llegó el consultante al inicio de la sesión. 1=muy mal, 10=muy bien." value={form.mood_start} onChange={v=>f('mood_start',v)} />
           <MoodSelector label="Estado emocional al cierre (1-10)" tip="Cómo se fue el consultante al finalizar la sesión." value={form.mood_end} onChange={v=>f('mood_end',v)} />
+          <div className="border-t border-slate-100 pt-3 col-span-2">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">💰 Cobro de la sesión</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Monto cobrado ($)" type="number" placeholder="0.00" value={form.cobro_monto||''} onChange={e=>f('cobro_monto',e.target.value)} />
+              <Select label="Estado del cobro" value={form.cobro_estado||'pendiente'} onChange={e=>f('cobro_estado',e.target.value)}>
+                <option value="pendiente">Pendiente</option>
+                <option value="cobrado">Cobrado ✓</option>
+                <option value="exonerado">Exonerado</option>
+              </Select>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2325,8 +2336,24 @@ function Appointments({ user }) {
     setBusy(true); setErr('')
     const payload = { user_id:user.id, patient_id:form.patient_id||selected?.patient_id, title:form.title||null, date:form.date, time:form.time||null, duration_min:form.duration_min||50, modality:form.modality||'presencial', status:form.status||'programada', notes:form.notes||null }
     let error
-    if (modal==='edit') { ;({ error } = await sb.from('appointments').update({ ...payload, updated_at:new Date().toISOString() }).eq('id', selected.id)) }
-    else { ;({ error } = await sb.from('appointments').insert(payload)) }
+    if (modal==='edit') {
+      ;({ error } = await sb.from('appointments').update({ ...payload, updated_at:new Date().toISOString() }).eq('id', selected.id))
+    } else {
+      // Check for time overlap before inserting
+      const { data: overlap } = await sb.from('appointments')
+        .select('id,patient_id')
+        .eq('user_id', user.id)
+        .eq('date', payload.date)
+        .eq('time', payload.time)
+        .eq('status', 'programada')
+        .limit(1)
+      if (overlap && overlap.length > 0) {
+        setErr('Ya tienes una cita programada en ese día y hora. Elige otro horario.')
+        setBusy(false)
+        return
+      }
+      ;({ error } = await sb.from('appointments').insert(payload))
+    }
     if (error) setErr('Error al guardar. Intenta de nuevo.')
     else { close(); load() }
     setBusy(false)
@@ -6223,6 +6250,7 @@ function PatientConsentPanel({ user, patient, profile }) {
 function PatientExpedient({ user, role, planExpiry, patient, profile, allSessions, allInstrResults, onBack, onEdit }) {
   const [tab, setTab] = useState('ficha')
   const [latestInterview, setLatestInterview] = useState(null)
+  const [patientAppointments, setPatientAppointments] = useState([])
   const p = patient
 
   const canFeat = (f) => canUseFeature(role, f, planExpiry)
@@ -6235,6 +6263,19 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
       .then(({ data }) => { if (data?.[0]) setLatestInterview(data[0]) })
   }, [patient?.id])
 
+  // Load patient appointments to check if cita exists before allowing interview/sessions
+  useEffect(() => {
+    if (!patient?.id || !user?.id) return
+    sb.from('appointments').select('id,date,time,status,type')
+      .eq('user_id', user.id)
+      .eq('patient_id', patient.id)
+      .order('date', {ascending: true})
+      .then(({ data }) => { setPatientAppointments(data || []) })
+  }, [patient?.id, user?.id])
+
+  const hasAnyAppointment = patientAppointments.length > 0
+  const hasConfirmedAppointment = patientAppointments.some(a => a.status === 'programada' || a.status === 'realizada')
+
   const tabs = [
     { id: 'ficha',          icon: '📋', label: 'Ficha',        show: true },
     { id: 'primera_cita',   icon: '🖨️', label: 'Primera cita', show: canFeat('primera_cita') },
@@ -6244,6 +6285,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
     { id: 'sesiones',       icon: '💬', label: 'Sesiones',     show: canFeat('sessions'), locked: !canFeat('sessions') },
     { id: 'riesgo',         icon: '⚠️', label: 'Riesgo',       show: canFeat('risk'),    locked: !canFeat('risk') },
     { id: 'consentimiento', icon: '📄', label: 'Consentimiento', show: canFeat('consent') },
+    { id: 'alta',           icon: '✅', label: 'Alta',           show: true },
   ].filter(t => t.show)
 
   const Field = ({ label, value }) => !value ? null : (
@@ -6493,7 +6535,18 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {/* SESIONES */}
         {tab === 'sesiones' && (
           <div className="max-w-2xl">
-            {!canFeat('sessions') ? <UpgradeBanner feature="Registro de sesiones" plan="Básico" /> : (
+            {!canFeat('sessions') ? <UpgradeBanner feature="Registro de sesiones" plan="Básico" /> :
+             !hasConfirmedAppointment ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
+                <div className="text-4xl mb-3">📅</div>
+                <h3 className="text-lg font-semibold text-amber-800 mb-2">Agenda una cita primero</h3>
+                <p className="text-sm text-amber-700 mb-4">Para registrar sesiones debes tener citas agendadas con este consultante. Ve a la <strong>Agenda</strong> y programa la próxima sesión.</p>
+                <button onClick={()=>window.dispatchEvent(new CustomEvent('psicoval-nav', {detail:'agenda'}))}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-5 py-2 rounded-xl text-sm transition-colors">
+                  Ir a la Agenda →
+                </button>
+              </div>
+            ) : (
               <PatientSessionsPanel user={user} patientId={p.id} patientName={p.name} role={role} />
             )}
           </div>
@@ -6520,7 +6573,19 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {/* ENTREVISTA INICIAL */}
         {tab === 'entrevista' && (
           <div className="max-w-2xl">
-            <PatientInterviewPanel user={user} patientId={p.id} patientName={p.name} canUseAI={canFeat('ai')} />
+            {!hasConfirmedAppointment ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center">
+                <div className="text-4xl mb-3">📅</div>
+                <h3 className="text-lg font-semibold text-amber-800 mb-2">Agenda una cita primero</h3>
+                <p className="text-sm text-amber-700 mb-4">Para registrar la entrevista inicial debes tener al menos una cita agendada con este consultante. Ve a la <strong>Agenda</strong> y programa la primera sesión.</p>
+                <button onClick={()=>{ /* navigate to agenda */ window.dispatchEvent(new CustomEvent('psicoval-nav', {detail:'agenda'})) }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-5 py-2 rounded-xl text-sm transition-colors">
+                  Ir a la Agenda →
+                </button>
+              </div>
+            ) : (
+              <PatientInterviewPanel user={user} patientId={p.id} patientName={p.name} canUseAI={canFeat('ai')} />
+            )}
           </div>
         )}
 
@@ -6531,6 +6596,183 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
           </div>
         )}
 
+        {/* ALTA TERAPÉUTICA */}
+        {tab === 'alta' && (
+          <AltaTerapeutica patient={p} user={user} allInstrResults={allInstrResults} allSessions={allSessions} profile={profile} />
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+// ── Alta Terapéutica ──────────────────────────────────────────
+function AltaTerapeutica({ patient: p, user, allInstrResults, allSessions, profile }) {
+  const [alta, setAlta] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [form, setForm] = useState({
+    discharge_date: new Date().toISOString().split('T')[0],
+    objectives_achieved: '',
+    clinical_summary: '',
+    recommendations: '',
+    return_criteria: ''
+  })
+  const f = (k,v) => setForm(prev=>({...prev,[k]:v}))
+
+  const patSessions = (allSessions||[]).filter(s=>s.patient_id===p.id)
+  const patInstr = (allInstrResults||[]).filter(r=>r.patient_id===p.id)
+
+  // Group instruments by key for pre-post comparison
+  const instrByKey = {}
+  patInstr.forEach(r => {
+    if (!instrByKey[r.instrument_key]) instrByKey[r.instrument_key] = []
+    instrByKey[r.instrument_key].push(r)
+  })
+  const instrWithMultiple = Object.entries(instrByKey).filter(([k,arr])=>arr.length >= 2)
+
+  useEffect(() => {
+    sb.from('alta_terapeutica').select('*').eq('patient_id',p.id).limit(1)
+      .then(({data})=>{ if(data?.[0]){ setAlta(data[0]); setSaved(true)
+        setForm({ discharge_date:data[0].discharge_date||'', objectives_achieved:data[0].objectives_achieved||'', clinical_summary:data[0].clinical_summary||'', recommendations:data[0].recommendations||'', return_criteria:data[0].return_criteria||'' }) }})
+  }, [p.id])
+
+  const save = async () => {
+    setSaving(true)
+    const payload = { ...form, patient_id:p.id, user_id:user.id, session_count:patSessions.length, updated_at:new Date().toISOString() }
+    let error
+    if (alta?.id) {
+      ;({error} = await sb.from('alta_terapeutica').update(payload).eq('id',alta.id))
+    } else {
+      const {data,error:e} = await sb.from('alta_terapeutica').insert(payload).select().single()
+      error = e; if(data) setAlta(data)
+    }
+    if (!error) setSaved(true)
+    setSaving(false)
+    // Update patient status to alta
+    await sb.from('patients').update({process_status:'alta'}).eq('id',p.id)
+  }
+
+  const printAlta = () => {
+    const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    const profName = profile?.full_name || 'Profesional'
+    const instrRows = instrWithMultiple.map(([key,arr])=>{
+      const sorted = [...arr].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
+      const first = sorted[0]; const last = sorted[sorted.length-1]
+      const diff = last.total_score - first.total_score
+      const pct = first.total_score > 0 ? Math.round(Math.abs(diff)/first.total_score*100) : 0
+      const trend = diff < 0 ? `↓ ${pct}% (mejoría)` : diff > 0 ? `↑ ${pct}% (incremento)` : 'Sin cambio'
+      return `<tr><td style="padding:6px 10px;border:1px solid #e2e8f0">${key.toUpperCase()}</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">${first.total_score}</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center">${last.total_score}</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:${diff<0?'#16a34a':'#ef4444'}">${trend}</td></tr>`
+    }).join('')
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Alta Terapéutica — ${p.name}</title>
+    <style>body{font-family:'Segoe UI',sans-serif;max-width:800px;margin:40px auto;color:#1e293b;line-height:1.7}h1{color:#1a2460;font-size:22px;margin-bottom:4px}h2{color:#4361ee;font-size:15px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin:24px 0 12px}.header{display:flex;justify-content:space-between;align-items:start;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #4361ee}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:20px}.info-item label{font-size:11px;color:#64748b;text-transform:uppercase;display:block}.info-item span{font-size:14px;font-weight:600;color:#1e293b}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:12px;color:#475569;border:1px solid #e2e8f0}p{margin-bottom:12px;font-size:14px}.disclaimer{background:#f0f4ff;border-left:4px solid #4361ee;padding:12px 16px;margin-top:32px;font-size:12px;color:#4361ee}@media print{body{margin:20px}}</style>
+    </head><body>
+    <div class="header"><div><h1>Alta Terapéutica</h1><p style="margin:0;color:#64748b;font-size:13px">Documento de cierre del proceso terapéutico</p></div><div style="text-align:right;font-size:12px;color:#64748b"><strong>${profName}</strong><br/>${profile?.specialty||''}<br/>${profile?.license_number||''}</div></div>
+    <div class="info-grid">
+      <div class="info-item"><label>Consultante</label><span>${p.name}</span></div>
+      <div class="info-item"><label>Fecha de alta</label><span>${form.discharge_date}</span></div>
+      <div class="info-item"><label>Sesiones realizadas</label><span>${patSessions.length}</span></div>
+      <div class="info-item"><label>Fecha de inicio</label><span>${p.process_start_date||'No registrada'}</span></div>
+    </div>
+    ${form.objectives_achieved?`<h2>Objetivos alcanzados</h2><p>${form.objectives_achieved}</p>`:''}
+    ${form.clinical_summary?`<h2>Resumen clínico del proceso</h2><p>${form.clinical_summary}</p>`:''}
+    ${instrWithMultiple.length>0?`<h2>Evolución — comparativa de instrumentos</h2><table><thead><tr><th>Instrumento</th><th>Evaluación inicial</th><th>Evaluación final</th><th>Evolución</th></tr></thead><tbody>${instrRows}</tbody></table>`:''}
+    ${form.recommendations?`<h2>Recomendaciones post-alta</h2><p>${form.recommendations}</p>`:''}
+    ${form.return_criteria?`<h2>Criterios de retorno a consulta</h2><p>${form.return_criteria}</p>`:''}
+    <div class="disclaimer">Este documento es de uso clínico interno. Generado por Psicoval — plataforma clínica digital.</div>
+    <p style="margin-top:32px;font-size:12px;color:#94a3b8;text-align:center">Generado el ${now}</p>
+    </body></html>`
+    const w = window.open('','_blank','width=900,height=700')
+    w.document.write(html); w.document.close(); setTimeout(()=>w.print(),500)
+  }
+
+  return (
+    <div className="max-w-2xl space-y-4 fade-in">
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-5 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold">Alta terapéutica</h3>
+            <p className="text-green-100 text-sm mt-0.5">Registro de cierre del proceso — {p.name}</p>
+          </div>
+          <div className="text-right text-green-100 text-sm">
+            <div className="text-2xl font-bold text-white">{patSessions.length}</div>
+            <div>sesiones</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Comparativa instrumentos si hay más de 1 aplicación */}
+      {instrWithMultiple.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Evolución — comparativa pre/post</p>
+          <table className="w-full text-sm">
+            <thead><tr className="bg-slate-50">
+              <th className="px-3 py-2 text-left text-xs text-slate-500 font-semibold">Instrumento</th>
+              <th className="px-3 py-2 text-center text-xs text-slate-500 font-semibold">Inicial</th>
+              <th className="px-3 py-2 text-center text-xs text-slate-500 font-semibold">Final</th>
+              <th className="px-3 py-2 text-center text-xs text-slate-500 font-semibold">Evolución</th>
+            </tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {instrWithMultiple.map(([key,arr])=>{
+                const sorted = [...arr].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
+                const first = sorted[0]; const last = sorted[sorted.length-1]
+                const diff = last.total_score - first.total_score
+                const pct = first.total_score > 0 ? Math.round(Math.abs(diff)/first.total_score*100) : 0
+                return (
+                  <tr key={key}>
+                    <td className="px-3 py-2 font-semibold text-slate-700">{key.toUpperCase()}</td>
+                    <td className="px-3 py-2 text-center text-slate-500">{first.total_score}</td>
+                    <td className="px-3 py-2 text-center font-bold text-slate-800">{last.total_score}</td>
+                    <td className={`px-3 py-2 text-center text-xs font-bold ${diff<0?'text-green-600':diff>0?'text-red-500':'text-slate-400'}`}>
+                      {diff<0?`↓ ${pct}% mejoría`:diff>0?`↑ ${pct}% incremento`:'Sin cambio'}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Formulario de alta */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Datos del alta</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="text-xs text-slate-500 mb-1 block">Fecha de alta</label>
+            <input type="date" value={form.discharge_date} onChange={e=>f('discharge_date',e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"/></div>
+          <div><label className="text-xs text-slate-500 mb-1 block">Sesiones realizadas</label>
+            <div className="w-full border border-slate-100 bg-slate-50 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700">{patSessions.length} sesiones</div>
+          </div>
+        </div>
+        <div><label className="text-xs text-slate-500 mb-1 block">Objetivos alcanzados</label>
+          <textarea rows={3} value={form.objectives_achieved} onChange={e=>f('objectives_achieved',e.target.value)}
+            placeholder="Describe los objetivos terapéuticos logrados durante el proceso..."
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"/></div>
+        <div><label className="text-xs text-slate-500 mb-1 block">Resumen clínico del proceso</label>
+          <textarea rows={4} value={form.clinical_summary} onChange={e=>f('clinical_summary',e.target.value)}
+            placeholder="Síntesis del proceso terapéutico, intervenciones utilizadas y respuesta del consultante..."
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"/></div>
+        <div><label className="text-xs text-slate-500 mb-1 block">Recomendaciones post-alta</label>
+          <textarea rows={2} value={form.recommendations} onChange={e=>f('recommendations',e.target.value)}
+            placeholder="Indicaciones para mantener los logros: estrategias, recursos, seguimiento recomendado..."
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"/></div>
+        <div><label className="text-xs text-slate-500 mb-1 block">Criterios de retorno a consulta</label>
+          <textarea rows={2} value={form.return_criteria} onChange={e=>f('return_criteria',e.target.value)}
+            placeholder="Señales o circunstancias que indicarían la necesidad de retomar el proceso terapéutico..."
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"/></div>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={save} disabled={saving}
+          className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50">
+          {saving?'Guardando...':saved?'✓ Guardado — Actualizar':'Registrar alta'}
+        </button>
+        <button onClick={printAlta}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          Imprimir alta
+        </button>
       </div>
     </div>
   )
@@ -8232,6 +8474,13 @@ function Dashboard({ user, role, planExpiry, onLogout }) {
   const [showTutorial, setShowTutorial] = useState(false)
   const [showTour, setShowTour] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Listen for navigation events from child components
+  useEffect(() => {
+    const handler = (e) => { if (e.detail) { setPage(e.detail) } }
+    window.addEventListener('psicoval-nav', handler)
+    return () => window.removeEventListener('psicoval-nav', handler)
+  }, [])
 
   useEffect(() => {
     // Check tutorial via profiles table instead of localStorage
