@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Psicoval — Plataforma Clínica Digital para Psicólogos</title>
   <meta name="description" content="Psicoval es la plataforma clínica digital para psicólogos independientes. Entrevista inicial estructurada, plan terapéutico con IA, 17 instrumentos psicométricos validados, registro de sesiones y documentos clínicos — todo desde el expediente del consultante."/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E %3Cdefs%3E %3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E %3Cstop offset='0%25' stop-color='%2367D8F0'/%3E %3Cstop offset='100%25' stop-color='%234A9FD4'/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width='32' height='32' rx='7' fill='url(%23bg)'/%3E %3Cg fill='%231D4ED8' opacity='0.88'%3E %3Cellipse cx='16' cy='19.5' rx='10.5' ry='7.5'/%3E %3Ccircle cx='16' cy='11' r='6'/%3E %3Ccircle cx='10' cy='13.5' r='5.5'/%3E %3Ccircle cx='22' cy='13.5' r='5.5'/%3E %3Ccircle cx='8.5' cy='21' r='3.8'/%3E %3C/g%3E %3Ccircle cx='16' cy='17' r='2.4' fill='white'/%3E %3Cline x1='16' y1='17' x2='10.5' y2='11' stroke='white' stroke-width='1.1'/%3E %3Cline x1='16' y1='17' x2='21.5' y2='11' stroke='white' stroke-width='1.1'/%3E %3Cline x1='16' y1='17' x2='9' y2='20.5' stroke='white' stroke-width='1.1'/%3E %3Cline x1='16' y1='17' x2='23.5' y2='20.5' stroke='white' stroke-width='1.1'/%3E %3Ccircle cx='10.5' cy='11' r='1.5' fill='white'/%3E %3Ccircle cx='21.5' cy='11' r='1.5' fill='white'/%3E %3Ccircle cx='9' cy='20.5' r='1.5' fill='white'/%3E %3Ccircle cx='23.5' cy='20.5' r='1.5' fill='white'/%3E %3C/svg%3E"/>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%234E72F0'/><stop offset='100%25' stop-color='%232457D4'/></linearGradient></defs><rect width='180' height='180' rx='40' fill='url(%23bg)'/><g fill='%2306B6D4' opacity='0.82'><ellipse cx='90' cy='110' rx='62' ry='44'/><circle cx='90' cy='62' r='34'/><circle cx='58' cy='77' r='31'/><circle cx='122' cy='77' r='31'/><circle cx='50' cy='120' r='22'/></g><circle cx='90' cy='92' r='13' fill='white'/><line x1='90' y1='92' x2='62' y2='63' stroke='white' stroke-width='5.5' stroke-linecap='round'/><line x1='90' y1='92' x2='120' y2='63' stroke='white' stroke-width='5.5' stroke-linecap='round'/><line x1='90' y1='92' x2='54' y2='117' stroke='white' stroke-width='5.5' stroke-linecap='round'/><line x1='90' y1='92' x2='132' y2='117' stroke='white' stroke-width='5.5' stroke-linecap='round'/><circle cx='62' cy='63' r='8' fill='white'/><circle cx='120' cy='63' r='8' fill='white'/><circle cx='54' cy='117' r='8' fill='white'/><circle cx='132' cy='117' r='8' fill='white'/></svg>"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -392,6 +394,44 @@
 .tour-btn-next:hover { background:#3451d1; }
 .tour-progress { height:4px; background:#f1f5f9; border-radius:2px; overflow:hidden; }
 .tour-progress-bar { height:100%; background:linear-gradient(90deg,#4361ee,#7c3aed); border-radius:2px; transition:width .3s ease; }
+
+/* Tour auto-play additions */
+.tour-agenda-new { background: #f0f9ff; border-radius: 6px; padding: 4px 6px; }
+.tour-conflict-msg { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; font-size: 10px; color: #c2410c; font-weight: 600; margin-top: 8px; }
+.tour-cobro-chip { display: inline-flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #86efac; color: #16a34a; border-radius: 20px; padding: 5px 12px; font-size: 10px; font-weight: 600; margin-top: 10px; }
+.tour-instr-compare { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px; }
+.tour-ic-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4px; font-weight: 700; color: #94a3b8; font-size: 9px; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid #f1f5f9; margin-bottom: 4px; }
+.tour-ic-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #f8fafc; font-size: 11px; font-weight: 600; color: #334155; }
+.tour-ic-row .red { color: #ef4444; }
+.tour-ic-row .amber { color: #f59e0b; }
+.tour-ic-row .green { color: #22c55e; }
+.tour-evolve-note { background: #f0f4ff; border-radius: 8px; padding: 6px 10px; font-size: 10px; color: #4361ee; font-weight: 600; }
+.tour-fin-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #334155; }
+.tour-fin-total { font-weight: 800; border-top: 2px solid #e2e8f0; border-bottom: none; margin-top: 4px; padding-top: 8px; font-size: 13px; }
+.tour-fin-label { color: #475569; font-size: 11px; }
+.tour-fin-val { font-weight: 700; }
+.tour-fin-val.green { color: #16a34a; }
+.tour-fin-val.red { color: #ef4444; }
+.tour-fin-compare { background: #f0fdf4; border-radius: 8px; padding: 6px 10px; font-size: 10px; color: #16a34a; font-weight: 600; margin-top: 8px; }
+.tour-alta-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.tour-alta-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; width: 130px; flex-shrink: 0; padding-top: 2px; }
+.tour-alta-val { font-size: 12px; color: #1e293b; font-weight: 600; }
+.tour-cancelled { opacity: 0.5; text-decoration: line-through; }
+.tour-controls { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tour-ctrl-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #475569; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.tour-ctrl-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.tour-ctrl-btn.primary { background: #4361ee; color: white; border-color: #4361ee; }
+.tour-ctrl-btn.primary:hover { background: #3451d1; }
+.tour-counter { margin-left: auto; font-size: 11px; color: #94a3b8; font-weight: 600; }
+.tour-progress-track { height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden; }
+.tour-progress-bar { height: 100%; background: linear-gradient(90deg, #4361ee, #7c3aed); border-radius: 2px; width: 0%; }
+.tour-step-detail { border-top: 1px solid #f1f5f9; padding: 14px 0; margin-bottom: 14px; min-height: 120px; }
+.tour-step-detail h4 { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+.tour-step-detail p { font-size: 12px; color: #64748b; line-height: 1.75; }
+/* Fullscreen mode */
+.tour-fullscreen { position: fixed !important; inset: 0 !important; z-index: 9999 !important; background: #f8fafc !important; padding: 24px !important; display: flex !important; flex-direction: column !important; }
+.tour-fullscreen .tour-wrapper { flex: 1; max-width: none; grid-template-columns: 1fr 420px; }
+.tour-fullscreen .tour-screen-body { min-height: calc(100vh - 200px); }
 </style>
 </head>
 <body>
@@ -679,13 +719,13 @@
 <!-- ── TOUR INTERACTIVO ── -->
 <section class="tour-section" id="tour">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header centered fade-up">
       <span class="badge">Tour visual</span>
-      <h2>Así funciona Psicoval paso a paso</h2>
-      <p>Navega por el tour y descubre cada función antes de registrarte</p>
+      <h2>Ve cómo funciona Psicoval antes de registrarte</h2>
+      <p>13 pasos que muestran el flujo completo de trabajo — desde el registro hasta el alta terapéutica</p>
     </div>
 
-    <div class="tour-wrapper">
+    <div id="tour-fullscreen-wrapper" class="tour-wrapper">
       <!-- Pantalla mockup izquierda -->
       <div class="tour-screen">
         <div class="tour-screen-bar">
@@ -693,17 +733,16 @@
           <span class="tour-screen-url">psicoval.app</span>
         </div>
         <div class="tour-screen-body">
-          <!-- Sidebar simulado -->
           <div class="tour-sidebar">
             <div class="tour-sidebar-logo">Psicoval</div>
-            <div class="tour-nav-item" id="tn-inicio">🏠 Inicio</div>
+            <div class="tour-nav-item active" id="tn-inicio">🏠 Inicio</div>
             <div class="tour-nav-item" id="tn-perfil">👤 Mi Perfil</div>
-            <div class="tour-nav-item active" id="tn-consultantes">👥 Consultantes</div>
+            <div class="tour-nav-item" id="tn-consultantes">👥 Consultantes</div>
             <div class="tour-nav-item" id="tn-agenda">📅 Agenda</div>
             <div class="tour-nav-item" id="tn-finanzas">💰 Finanzas</div>
           </div>
-          <!-- Contenido simulado -->
-          <div class="tour-content" id="tour-content-area">
+          <div class="tour-content">
+            <!-- 0: Bienvenida -->
             <div class="tour-content-inner" id="tour-step-0">
               <div class="tour-content-title">Panel de inicio</div>
               <div class="tour-stats-row">
@@ -712,95 +751,134 @@
                 <div class="tour-stat-card"><div class="tour-stat-num">87%</div><div class="tour-stat-label">Adherencia</div></div>
               </div>
               <div class="tour-mini-list">
-                <div class="tour-mini-item"><span class="tour-dot green"></span>Carlos M. — Sesión 5</div>
-                <div class="tour-mini-item"><span class="tour-dot blue"></span>Ana R. — Primera cita</div>
-                <div class="tour-mini-item"><span class="tour-dot amber"></span>Luis P. — Plan pendiente</div>
+                <div class="tour-mini-item"><span class="tour-dot green"></span>Carlos M. — Sesión 5 hoy 10:00</div>
+                <div class="tour-mini-item"><span class="tour-dot blue"></span>Ana R. — Primera cita 11:30</div>
+                <div class="tour-mini-item"><span class="tour-dot amber"></span>Luis P. — Plan terapéutico pendiente</div>
               </div>
             </div>
+            <!-- 1: Perfil -->
             <div class="tour-content-inner hidden" id="tour-step-1">
               <div class="tour-content-title">Mi Perfil profesional</div>
+              <div class="tour-profile-field"><div class="tour-field-label">Nombre</div><div class="tour-field-val">Dra. María González</div></div>
               <div class="tour-profile-field"><div class="tour-field-label">Especialidad</div><div class="tour-field-val">Psicología Clínica</div></div>
-              <div class="tour-profile-field"><div class="tour-field-label">Enfoque principal</div><div class="tour-field-val tour-highlight">Contextual — Tercera Generación</div></div>
-              <div class="tour-profile-field"><div class="tour-field-label">Terapias</div><div class="tour-field-val">ACT · DBT · Mindfulness · Autocompasión</div></div>
-              <div class="tour-profile-field"><div class="tour-field-label">N° de colegiado</div><div class="tour-field-val">PSI-2024-0872</div></div>
+              <div class="tour-profile-field"><div class="tour-field-label">Enfoque</div><div class="tour-field-val tour-highlight">Contextual — Tercera Generación</div></div>
+              <div class="tour-profile-field"><div class="tour-field-label">Terapias</div><div class="tour-field-val">✓ ACT &nbsp; ✓ DBT &nbsp; ✓ Mindfulness &nbsp; ✓ Autocompasión</div></div>
+              <div class="tour-profile-field"><div class="tour-field-label">N° Colegiado</div><div class="tour-field-val">PSI-2024-0872</div></div>
             </div>
+            <!-- 2: Consultante -->
             <div class="tour-content-inner hidden" id="tour-step-2">
-              <div class="tour-content-title">Consultantes</div>
-              <div class="tour-patient-card"><div class="tour-patient-avatar">C</div><div><div class="tour-patient-name">Carlos Méndez</div><div class="tour-patient-sub">28 años · Sesión 5 · ACT</div></div><span class="tour-badge-active">Activo</span></div>
-              <div class="tour-patient-card"><div class="tour-patient-avatar">A</div><div><div class="tour-patient-name">Ana Rodríguez</div><div class="tour-patient-sub">34 años · Primera cita pendiente</div></div><span class="tour-badge-new">Nuevo</span></div>
-              <div class="tour-patient-card"><div class="tour-patient-avatar">L</div><div><div class="tour-patient-name">Luis Paredes</div><div class="tour-patient-sub">41 años · Alta terapéutica</div></div><span class="tour-badge-alta">Alta</span></div>
+              <div class="tour-content-title">Nuevo consultante</div>
+              <div class="tour-patient-card"><div class="tour-patient-avatar">C</div><div><div class="tour-patient-name">Carlos Méndez Torres</div><div class="tour-patient-sub">28 años · Masculino · Docente</div></div><span class="tour-badge-active">Activo</span></div>
+              <div class="tour-patient-card"><div class="tour-patient-avatar">A</div><div><div class="tour-patient-name">Ana Rodríguez Silva</div><div class="tour-patient-sub">34 años · Femenino · Contadora</div></div><span class="tour-badge-new">Nueva</span></div>
+              <div class="tour-patient-card"><div class="tour-patient-avatar">L</div><div><div class="tour-patient-name">Luis Paredes</div><div class="tour-patient-sub">41 años · Masculino · Ingeniero</div></div><span class="tour-badge-alta">Alta</span></div>
             </div>
+            <!-- 3: Agendar -->
             <div class="tour-content-inner hidden" id="tour-step-3">
-              <div class="tour-content-title">Paquete de primera cita</div>
+              <div class="tour-content-title">Agenda — Mayo 2026</div>
+              <div class="tour-agenda-day tour-agenda-new"><div class="tour-agenda-time">09:00</div><div class="tour-agenda-event">✦ Ana R. — Primera cita <span class="tour-badge-new">Nueva</span></div></div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">10:30</div><div class="tour-agenda-event">Carlos M. — Sesión 5</div></div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">16:00</div><div class="tour-agenda-event">Luis P. — Sesión 8</div></div>
+              <div class="tour-conflict-msg">⚠️ Horario ocupado — elige otro</div>
+            </div>
+            <!-- 4: Primera cita docs -->
+            <div class="tour-content-inner hidden" id="tour-step-4">
+              <div class="tour-content-title">Paquete primera cita — Ana R.</div>
               <div class="tour-doc-list">
-                <div class="tour-doc-item">📋 Entrevista clínica inicial (6 bloques)</div>
-                <div class="tour-doc-item">⚠️ Evaluación de riesgo suicida</div>
+                <div class="tour-doc-item">📋 Entrevista clínica inicial — 6 bloques</div>
+                <div class="tour-doc-item">⚠️ Evaluación de riesgo suicida — 6 dimensiones</div>
                 <div class="tour-doc-item">🛡️ Plan de seguridad personal</div>
-                <div class="tour-doc-item">✍️ Consentimiento informado</div>
+                <div class="tour-doc-item">✍️ Consentimiento informado — incluye cláusula IA</div>
               </div>
               <div class="tour-print-btn">🖨️ Imprimir paquete completo</div>
             </div>
-            <div class="tour-content-inner hidden" id="tour-step-4">
-              <div class="tour-content-title">Entrevista inicial — Carlos M.</div>
-              <div class="tour-interview-row"><div class="tour-int-label">Motivo de consulta</div><div class="tour-int-val">Ansiedad social y evitación experiencial persistente desde hace 2 años...</div></div>
-              <div class="tour-interview-row"><div class="tour-int-label">Eje funcional (ABC)</div><div class="tour-int-val">A: situaciones sociales · B: evitación, fusión cognitiva · C: alivio temporal...</div></div>
-              <div class="tour-ai-chip">✨ Generar resumen clínico con IA</div>
-            </div>
+            <!-- 5: Entrevista -->
             <div class="tour-content-inner hidden" id="tour-step-5">
-              <div class="tour-content-title">Plan terapéutico — ACT</div>
-              <div class="tour-plan-obj">🎯 Objetivos</div>
-              <div class="tour-plan-item">• Reducir la evitación experiencial mediante defusión cognitiva</div>
-              <div class="tour-plan-item">• Clarificar valores personales en área social y laboral</div>
-              <div class="tour-plan-item">• Desarrollar acción comprometida hacia contacto social</div>
-              <div class="tour-plan-sessions">📅 8 sesiones · Semanal · Presencial</div>
-              <div class="tour-ai-chip">✨ Generado con IA según tu enfoque ACT</div>
+              <div class="tour-content-title">Entrevista inicial — Ana R.</div>
+              <div class="tour-interview-row"><div class="tour-int-label">Motivo de consulta</div><div class="tour-int-val">Ansiedad social persistente, evitación de situaciones laborales y sociales desde hace 18 meses...</div></div>
+              <div class="tour-interview-row"><div class="tour-int-label">Eje funcional ABC</div><div class="tour-int-val">A: reuniones laborales · B: evitación, fusión con pensamientos de evaluación · C: alivio inmediato, aislamiento creciente</div></div>
+              <div class="tour-ai-chip">✨ IA generó resumen clínico según enfoque ACT</div>
             </div>
+            <!-- 6: Plan -->
             <div class="tour-content-inner hidden" id="tour-step-6">
-              <div class="tour-content-title">Instrumentos psicométricos</div>
-              <div class="tour-instr-grid">
-                <div class="tour-instr-card applied">PHQ-9<div class="tour-instr-score">16/27</div></div>
-                <div class="tour-instr-card applied">AAQ-II<div class="tour-instr-score">38/70</div></div>
-                <div class="tour-instr-card applied">VLQ<div class="tour-instr-score">2.4/10</div></div>
-                <div class="tour-instr-card">GAD-7</div>
-                <div class="tour-instr-card">DASS-21</div>
-                <div class="tour-instr-card">PCL-5</div>
-              </div>
+              <div class="tour-content-title">Plan terapéutico — ACT · 10 sesiones</div>
+              <div class="tour-plan-obj">🎯 Objetivos terapéuticos</div>
+              <div class="tour-plan-item">1. Reducir evitación experiencial mediante defusión cognitiva</div>
+              <div class="tour-plan-item">2. Clarificar valores en área relacional y laboral</div>
+              <div class="tour-plan-item">3. Desarrollar acción comprometida hacia metas valiosas</div>
+              <div class="tour-plan-sessions">📅 10 sesiones · Semanal · Presencial · ACT + DBT</div>
+              <div class="tour-ai-chip">✨ Generado con IA — basado en tu enfoque y la entrevista</div>
             </div>
+            <!-- 7: Instrumentos -->
             <div class="tour-content-inner hidden" id="tour-step-7">
-              <div class="tour-content-title">Registro de sesiones</div>
-              <div class="tour-session-item"><div class="tour-session-date">15 abr 2026 · Sesión 5</div><div class="tour-session-text">Trabajamos defusión con técnica de las hojas en el río. Respuesta positiva. Tarea: registro de pensamientos con distancia.</div></div>
-              <div class="tour-session-item"><div class="tour-session-date">08 abr 2026 · Sesión 4</div><div class="tour-session-text">Revisión de valores. Identificó área relaciones como prioritaria. Planificamos acción comprometida.</div></div>
+              <div class="tour-content-title">Instrumentos — Ana R. (comparativa)</div>
+              <div class="tour-instr-compare">
+                <div class="tour-ic-header"><span>Instrumento</span><span>Inicial</span><span>Sesión 5</span><span>Alta</span></div>
+                <div class="tour-ic-row"><span>PHQ-9</span><span class="red">18</span><span class="amber">12</span><span class="green">5</span></div>
+                <div class="tour-ic-row"><span>AAQ-II</span><span class="red">42</span><span class="amber">31</span><span class="green">19</span></div>
+                <div class="tour-ic-row"><span>VLQ</span><span class="red">2.1</span><span class="amber">4.8</span><span class="green">7.4</span></div>
+              </div>
+              <div class="tour-evolve-note">📈 Gráfico comparativo generado automáticamente</div>
             </div>
+            <!-- 8: Sesiones -->
             <div class="tour-content-inner hidden" id="tour-step-8">
-              <div class="tour-content-title">Protocolo de riesgo suicida</div>
+              <div class="tour-content-title">Registro sesión 5 — Ana R.</div>
+              <div class="tour-session-item"><div class="tour-session-date">15 mayo 2026 · Sesión 5 · 50 min</div><div class="tour-session-text">Defusión con técnica hojas en el río. Respuesta positiva. Conectó con valor "presencia en relaciones". Tarea: registro de pensamientos con distancia cognitiva.</div></div>
+              <div class="tour-cobro-chip">💰 Cobro vinculado: $45 registrado</div>
+            </div>
+            <!-- 9: Riesgo -->
+            <div class="tour-content-inner hidden" id="tour-step-9">
+              <div class="tour-content-title">Protocolo de riesgo — Ana R.</div>
               <div class="tour-risk-row low"><span>Ideación activa</span><span class="tour-risk-val">Ausente</span></div>
               <div class="tour-risk-row low"><span>Plan estructurado</span><span class="tour-risk-val">No</span></div>
-              <div class="tour-risk-row low"><span>Red de apoyo</span><span class="tour-risk-val">Presente</span></div>
-              <div class="tour-risk-badge low">🟢 Riesgo bajo — Seguimiento rutinario</div>
+              <div class="tour-risk-row low"><span>Red de apoyo</span><span class="tour-risk-val">Presente y activa</span></div>
+              <div class="tour-risk-row low"><span>Capacidad de estar sola</span><span class="tour-risk-val">Preservada</span></div>
+              <div class="tour-risk-badge low">🟢 Riesgo bajo — Seguimiento rutinario cada 4 sesiones</div>
             </div>
-            <div class="tour-content-inner hidden" id="tour-step-9">
-              <div class="tour-content-title">Agenda</div>
-              <div class="tour-agenda-day"><div class="tour-agenda-time">09:00</div><div class="tour-agenda-event">Carlos M. — Sesión 6</div></div>
-              <div class="tour-agenda-day"><div class="tour-agenda-time">11:00</div><div class="tour-agenda-event">Ana R. — Primera cita</div></div>
-              <div class="tour-agenda-day"><div class="tour-agenda-time">16:30</div><div class="tour-agenda-event">Luis P. — Seguimiento</div></div>
+            <!-- 10: Finanzas -->
+            <div class="tour-content-inner hidden" id="tour-step-10">
+              <div class="tour-content-title">Finanzas — Mayo 2026</div>
+              <div class="tour-fin-row"><span class="tour-fin-label">Ingresos por sesiones</span><span class="tour-fin-val green">+$1,260</span></div>
+              <div class="tour-fin-row"><span class="tour-fin-label">Arriendo consultorio</span><span class="tour-fin-val red">-$280</span></div>
+              <div class="tour-fin-row"><span class="tour-fin-label">Plataformas digitales</span><span class="tour-fin-val red">-$45</span></div>
+              <div class="tour-fin-row tour-fin-total"><span>Resultado neto</span><span class="green">$935</span></div>
+              <div class="tour-fin-compare">↑ 18% vs abril 2026</div>
+            </div>
+            <!-- 11: Alta -->
+            <div class="tour-content-inner hidden" id="tour-step-11">
+              <div class="tour-content-title">Alta terapéutica — Ana R.</div>
+              <div class="tour-alta-row"><div class="tour-alta-label">Período</div><div class="tour-alta-val">12 ene → 15 jun 2026</div></div>
+              <div class="tour-alta-row"><div class="tour-alta-label">Sesiones realizadas</div><div class="tour-alta-val">10 de 10 planificadas</div></div>
+              <div class="tour-alta-row"><div class="tour-alta-label">Objetivos alcanzados</div><div class="tour-alta-val">3/3 ✓</div></div>
+              <div class="tour-alta-row"><div class="tour-alta-label">PHQ-9</div><div class="tour-alta-val">18 → 5 (↓ 72%)</div></div>
+              <div class="tour-print-btn">📄 Imprimir documento de alta</div>
+            </div>
+            <!-- 12: Agenda inteligente -->
+            <div class="tour-content-inner hidden" id="tour-step-12">
+              <div class="tour-content-title">Agenda — control de horarios</div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">09:00</div><div class="tour-agenda-event">Ana R. — Sesión 6 ✓</div></div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">10:30</div><div class="tour-agenda-event">Carlos M. — Sesión 7</div></div>
+              <div class="tour-agenda-day tour-cancelled"><div class="tour-agenda-time">12:00</div><div class="tour-agenda-event">Pedro G. — Cancelado 🗙</div></div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">16:00</div><div class="tour-agenda-event">Luis P. — Sesión 9</div></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Panel de pasos derecha -->
+      <!-- Panel derecho -->
       <div class="tour-panel">
-        <div class="tour-steps-nav" id="tour-steps-nav">
-          <!-- generado por JS -->
+        <div class="tour-steps-nav" id="tour-steps-nav"></div>
+        <div class="tour-step-detail">
+          <h4 id="tour-detail-title"></h4>
+          <p id="tour-detail-text"></p>
         </div>
-        <div class="tour-step-detail" id="tour-step-detail">
-          <!-- generado por JS -->
+        <div class="tour-controls">
+          <button class="tour-ctrl-btn" onclick="tourPrev()" title="Anterior">&#9664;</button>
+          <button class="tour-ctrl-btn primary" id="tour-play-btn" onclick="tourPauseToggle()" title="Pausa/Play">⏸</button>
+          <button class="tour-ctrl-btn" onclick="tourNext()" title="Siguiente">&#9654;</button>
+          <button class="tour-ctrl-btn" id="tour-fs-btn" onclick="tourToggleFullscreen()" title="Pantalla completa">⛶</button>
+          <span class="tour-counter" id="tour-counter">1 / 13</span>
         </div>
-        <div class="tour-nav-btns">
-          <button class="tour-btn-prev" id="tour-btn-prev" onclick="tourPrev()">← Anterior</button>
-          <button class="tour-btn-next" id="tour-btn-next" onclick="tourNext()">Siguiente →</button>
-        </div>
-        <div class="tour-progress" id="tour-progress"></div>
+        <div class="tour-progress-track"><div class="tour-progress-bar" id="tour-progress-bar"></div></div>
       </div>
     </div>
   </div>
@@ -994,101 +1072,285 @@
   }
 </script>
 <script>
-// ── Tour interactivo landing ──────────────────────────────────────────────────
-const LANDING_TOUR_STEPS = [
-  { label:'Panel de inicio',    title:'Panel de inicio',           text:'Al entrar verás un resumen de tu actividad: consultantes activos, citas del día y métricas clave de tu práctica.' },
-  { label:'Perfil profesional', title:'1 — Perfil profesional',   text:'Configura tu nombre, especialidad, número de colegiado y enfoque terapéutico. La IA usa tu enfoque para generar planes personalizados a tu práctica.' },
-  { label:'Consultantes',       title:'2 — Gestión de consultantes', text:'Registra los datos básicos de cada consultante. Desde aquí accedes al expediente completo con todas las pestañas clínicas.' },
-  { label:'Primera cita',       title:'3 — Paquete de primera cita', text:'Genera e imprime el paquete completo antes de la primera sesión: entrevista en 6 bloques, evaluación de riesgo, plan de seguridad y consentimiento informado.' },
-  { label:'Entrevista inicial', title:'4 — Entrevista inicial',   text:'Registra digitalmente la entrevista después de la sesión. Motivo de consulta, eje funcional ABC, historia y formulación. La IA genera el resumen clínico al terminar.' },
-  { label:'Plan terapéutico',   title:'5 — Plan terapéutico con IA', text:'Define las sesiones, frecuencia y modalidad. La IA integra los datos de la entrevista y genera el plan completo según tu enfoque terapéutico — no uno genérico.' },
-  { label:'Instrumentos',       title:'6 — Instrumentos psicométricos', text:'14 instrumentos validados. Aplícalos digitalmente o imprime en blanco. Los resultados muestran interpretación clínica detallada y comparación pre-post.' },
-  { label:'Sesiones',           title:'7 — Registro de sesiones', text:'Documenta cada encuentro: intervenciones, estado emocional del consultante, tareas asignadas y notas clínicas. Historial cronológico completo.' },
-  { label:'Protocolo de riesgo',title:'8 — Protocolo de riesgo suicida', text:'Evalúa el riesgo en 6 dimensiones en cualquier momento del proceso. Cada evaluación queda guardada con fecha para comparar evolución.' },
-  { label:'Agenda',             title:'9 — Agenda de citas',      text:'Programa y visualiza citas en lista o calendario mensual. Haz clic en cualquier día para crear una cita con la fecha prellenada.' },
+// ── Tour automático Psicoval ─────────────────────────────────────────────────
+const TOUR_STEPS_AUTO = [
+  {
+    label: 'Bienvenida',
+    nav: 'tn-inicio',
+    screen: 0,
+    duration: 4000,
+    title: 'Psicoval — Tu plataforma clínica digital',
+    text: 'Psicoval centraliza todo el ciclo de atención psicológica en un solo lugar. Desde el primer contacto con el consultante hasta el alta terapéutica, cada paso queda documentado, organizado y disponible desde cualquier dispositivo con internet.'
+  },
+  {
+    label: 'Perfil profesional',
+    nav: 'tn-perfil',
+    screen: 1,
+    duration: 5000,
+    title: 'Paso 1 — Configura tu perfil profesional',
+    text: 'Antes de comenzar, completa tu perfil: nombre, especialidad, número de colegiado, ciudad y enfoque terapéutico. Selecciona tu enfoque principal (Contextual, TCC, Humanista, Sistémico…) y las terapias que practicas dentro de él. La IA usará esta información para generar planes terapéuticos personalizados a tu práctica. Tus datos aparecen automáticamente en todos los documentos clínicos que imprimas.'
+  },
+  {
+    label: 'Crear consultante',
+    nav: 'tn-consultantes',
+    screen: 2,
+    duration: 4500,
+    title: 'Paso 2 — Registra a tu consultante',
+    text: 'Crea la ficha del consultante con los datos básicos que puedes tomar en la llamada inicial: nombre, edad, teléfono y ocupación. Los datos clínicos — motivo de consulta, antecedentes, diagnóstico — se completan después en la entrevista inicial. Psicoval controla que no puedas agendar dos consultantes en el mismo día y hora.'
+  },
+  {
+    label: 'Agendar primera cita',
+    nav: 'tn-agenda',
+    screen: 3,
+    duration: 5000,
+    title: 'Paso 3 — Agenda la primera cita',
+    text: 'Antes de iniciar cualquier proceso clínico, la cita debe estar agendada. Programa la primera sesión en el calendario — Psicoval valida que no exista otro consultante en ese mismo horario. Puedes agendar presencial o en línea. Las citas canceladas liberan el horario automáticamente y quedan registradas en el historial. Sin cita agendada no es posible abrir la entrevista inicial.'
+  },
+  {
+    label: 'Paquete primera cita',
+    nav: 'tn-consultantes',
+    screen: 4,
+    duration: 5500,
+    title: 'Paso 4 — Genera el paquete de primera cita',
+    text: 'Con la cita agendada, genera e imprime el paquete clínico completo para llevar a la sesión: entrevista clínica inicial estructurada en 6 bloques con preguntas guía, protocolo de evaluación de riesgo suicida en 6 dimensiones, plan de seguridad personal para entregar al consultante, y consentimiento informado con 12 puntos que incluye mención explícita del uso de IA. Todo listo para imprimir en un clic.'
+  },
+  {
+    label: 'Entrevista inicial',
+    nav: 'tn-consultantes',
+    screen: 5,
+    duration: 6000,
+    title: 'Paso 5 — Registra la entrevista inicial',
+    text: 'Después de realizar la primera sesión, ingresa los datos recopilados en la entrevista digital. El formulario tiene 6 bloques: motivo de consulta e historia del problema, evaluación del riesgo, contexto vital y red de apoyo, historia clínica y antecedentes, eje funcional ABC (antecedentes, conducta y consecuentes), y formulación clínica con hipótesis funcional. Al completarla, la IA genera automáticamente un resumen clínico estructurado según tu enfoque terapéutico.'
+  },
+  {
+    label: 'Plan terapéutico IA',
+    nav: 'tn-consultantes',
+    screen: 6,
+    duration: 5500,
+    title: 'Paso 6 — Genera el plan terapéutico con IA',
+    text: 'Desde la pestaña Plan, define los parámetros reales del proceso: número de sesiones disponibles, frecuencia, modalidad y enfoque. La IA integra todos los datos de la entrevista — motivo, formulación, eje funcional, riesgo — y genera un plan completo con objetivos terapéuticos, estructura de sesiones numeradas, estrategias de intervención y sugerencia de instrumentos. El plan es completamente editable e imprimible. Está basado en tu enfoque real, no en TCC genérico.'
+  },
+  {
+    label: 'Instrumentos',
+    nav: 'tn-consultantes',
+    screen: 7,
+    duration: 5500,
+    title: 'Paso 7 — Aplica instrumentos psicométricos',
+    text: '14 instrumentos validados disponibles: PHQ-9 y GAD-7 (depresión y ansiedad), DASS-21 (depresión, ansiedad y estrés), CES-D, PCL-5 (trauma), AAQ-II y VLQ (flexibilidad psicológica y valores), CFQ-7 (fusión cognitiva), DERS-16 (regulación emocional), Rosenberg (autoestima), LSAS (ansiedad social), PSQI (calidad del sueño), WHODAS y GPS. Aplícalos digitalmente — el sistema calcula puntajes, muestra interpretación clínica por dimensión y genera gráficos comparativos entre aplicaciones para ver la evolución del consultante.'
+  },
+  {
+    label: 'Registro de sesiones',
+    nav: 'tn-consultantes',
+    screen: 8,
+    duration: 5000,
+    title: 'Paso 8 — Registra cada sesión',
+    text: 'Cada nueva sesión debe tener una cita previa agendada. Al registrarla documentas: intervenciones aplicadas, estado emocional del consultante al inicio y al cierre (escala), contenido trabajado, tareas asignadas para casa, y notas clínicas libres. El historial de sesiones queda organizado cronológicamente y sirve como evidencia documentada del proceso terapéutico. Al registrar la sesión puedes vincular el cobro correspondiente directamente.'
+  },
+  {
+    label: 'Protocolo de riesgo',
+    nav: 'tn-consultantes',
+    screen: 9,
+    duration: 5000,
+    title: 'Paso 9 — Protocolo de riesgo suicida',
+    text: 'Disponible en cualquier momento del proceso, no solo en la primera cita. Evalúa 6 dimensiones: ideación activa, plan estructurado, acceso a medios letales, intención inmediata, red de apoyo disponible y capacidad de estar solo. El resultado determina el nivel de riesgo (bajo, moderado, alto) con acciones recomendadas. Cada evaluación queda guardada con fecha y puede compararse entre sesiones para monitorear la evolución.'
+  },
+  {
+    label: 'Módulo financiero',
+    nav: 'tn-finanzas',
+    screen: 10,
+    duration: 5500,
+    title: 'Paso 10 — Módulo financiero',
+    text: 'Lleva el control económico de tu práctica. Registra ingresos por cada sesión cobrada — vinculados directamente a la cita — y egresos por categoría: arriendo de consultorio, plataformas digitales, materiales, formación y otros. El módulo genera gráficos mensuales de ingresos vs egresos, comparativa con el mes anterior, y un resumen del estado financiero actual. Así tienes claridad sobre la rentabilidad de tu práctica mes a mes.'
+  },
+  {
+    label: 'Alta terapéutica',
+    nav: 'tn-consultantes',
+    screen: 11,
+    duration: 5000,
+    title: 'Paso 11 — Alta terapéutica',
+    text: 'Cuando el proceso concluye, registra el alta terapéutica. El sistema genera un documento con el resumen del proceso: fechas de inicio y cierre, número de sesiones realizadas, objetivos alcanzados y resultados comparativos pre-post de todos los instrumentos aplicados. El documento es imprimible y queda archivado en el expediente. Si el consultante regresa en el futuro, puedes iniciar un nuevo proceso desde el mismo expediente con una nueva entrevista inicial.'
+  },
+  {
+    label: 'Agenda y gestión',
+    nav: 'tn-agenda',
+    screen: 12,
+    duration: 4500,
+    title: 'Paso 12 — Agenda inteligente',
+    text: 'Visualiza todas tus citas en formato lista o calendario mensual. El sistema valida automáticamente que no haya solapamiento de horarios. Haz clic en cualquier día para crear una cita con la fecha prellenada. Las citas tienen estados: pendiente, realizada y cancelada. Las canceladas liberan el horario y quedan en el historial. Desde la agenda puedes acceder directamente al expediente del consultante de cada cita.'
+  }
 ]
 
-const TOUR_NAV_MAP = {
-  0:'tn-inicio', 1:'tn-perfil', 2:'tn-consultantes', 3:'tn-consultantes',
-  4:'tn-consultantes', 5:'tn-consultantes', 6:'tn-consultantes',
-  7:'tn-consultantes', 8:'tn-consultantes', 9:'tn-agenda'
+let tourIdx = 0
+let tourTimer = null
+let tourPaused = false
+let tourFullscreen = false
+let typewriterTimer = null
+
+function tourGetEl(id) { return document.getElementById(id) }
+
+function typewriter(el, text, speed, onDone) {
+  if (typewriterTimer) clearInterval(typewriterTimer)
+  el.textContent = ''
+  let i = 0
+  typewriterTimer = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i]
+      i++
+    } else {
+      clearInterval(typewriterTimer)
+      if (onDone) onDone()
+    }
+  }, speed)
 }
 
-let tourCurrent = 0
+function tourRenderStep() {
+  const step = TOUR_STEPS_AUTO[tourIdx]
+  const total = TOUR_STEPS_AUTO.length
 
-function tourRender() {
-  const step = tourCurrent
-  const total = LANDING_TOUR_STEPS.length
-
-  // Update mockup content
-  document.querySelectorAll('.tour-content-inner').forEach((el,i) => {
-    el.classList.toggle('hidden', i !== step)
+  // Update mockup screen
+  document.querySelectorAll('.tour-content-inner').forEach((el, i) => {
+    el.classList.toggle('hidden', i !== step.screen)
   })
 
-  // Update sidebar active
+  // Update sidebar
   document.querySelectorAll('.tour-nav-item').forEach(el => el.classList.remove('active'))
-  const activeNav = document.getElementById(TOUR_NAV_MAP[step])
-  if (activeNav) activeNav.classList.add('active')
+  const navEl = document.getElementById(step.nav)
+  if (navEl) navEl.classList.add('active')
 
   // Update step pills
-  const nav = document.getElementById('tour-steps-nav')
+  const nav = tourGetEl('tour-steps-nav')
   if (nav) {
-    nav.innerHTML = LANDING_TOUR_STEPS.map((s,i) => `
-      <div class="tour-step-pill ${i===step?'active':i<step?'done':''}" onclick="tourGoTo(${i})">
-        <div class="tour-step-num">${i < step ? '✓' : i+1}</div>
+    nav.innerHTML = TOUR_STEPS_AUTO.map((s, i) => `
+      <div class="tour-step-pill ${i===tourIdx?'active':i<tourIdx?'done':''}" onclick="tourGoTo(${i})">
+        <div class="tour-step-num">${i < tourIdx ? '✓' : i+1}</div>
         <div class="tour-step-text">${s.label}</div>
       </div>
     `).join('')
+    // Scroll active pill into view
+    const active = nav.querySelector('.active')
+    if (active) active.scrollIntoView({block:'nearest', behavior:'smooth'})
   }
 
-  // Update detail
-  const detail = document.getElementById('tour-step-detail')
-  if (detail) {
-    const s = LANDING_TOUR_STEPS[step]
-    detail.innerHTML = `<h4>${s.title}</h4><p>${s.text}</p>`
-  }
+  // Update title instantly
+  const titleEl = tourGetEl('tour-detail-title')
+  if (titleEl) titleEl.textContent = step.title
 
-  // Update buttons
-  const prev = document.getElementById('tour-btn-prev')
-  const next = document.getElementById('tour-btn-next')
-  if (prev) prev.style.visibility = step === 0 ? 'hidden' : 'visible'
-  if (next) next.textContent = step === total-1 ? '¡Comenzar gratis →' : 'Siguiente →'
-  if (next && step === total-1) {
-    next.onclick = () => window.location.href = 'https://psicoval.vercel.app'
-  } else if (next) {
-    next.onclick = tourNext
-  }
+  // Typewriter for description
+  const textEl = tourGetEl('tour-detail-text')
+  const charsPerMs = step.text.length / (step.duration * 0.7)
+  const speed = Math.max(10, Math.round(1 / charsPerMs))
+  if (textEl) typewriter(textEl, step.text, speed)
 
   // Progress bar
-  const progress = document.getElementById('tour-progress')
-  if (progress) {
-    progress.innerHTML = `<div class="tour-progress-bar" style="width:${((step+1)/total*100).toFixed(0)}%"></div>`
+  const bar = tourGetEl('tour-progress-bar')
+  if (bar) {
+    bar.style.transition = 'none'
+    bar.style.width = '0%'
+    setTimeout(() => {
+      bar.style.transition = `width ${step.duration}ms linear`
+      bar.style.width = '100%'
+    }, 50)
+  }
+
+  // Step counter
+  const counter = tourGetEl('tour-counter')
+  if (counter) counter.textContent = `${tourIdx + 1} / ${total}`
+
+  // Play/pause button
+  updatePlayBtn()
+}
+
+function updatePlayBtn() {
+  const btn = tourGetEl('tour-play-btn')
+  if (btn) btn.innerHTML = tourPaused ? '▶' : '⏸'
+}
+
+function tourScheduleNext() {
+  if (tourTimer) clearTimeout(tourTimer)
+  if (!tourPaused && tourIdx < TOUR_STEPS_AUTO.length - 1) {
+    tourTimer = setTimeout(() => {
+      tourIdx++
+      tourRenderStep()
+      tourScheduleNext()
+    }, TOUR_STEPS_AUTO[tourIdx].duration)
   }
 }
 
+function tourPlay() {
+  tourPaused = false
+  updatePlayBtn()
+  tourScheduleNext()
+}
+
+function tourPauseToggle() {
+  tourPaused = !tourPaused
+  if (!tourPaused) {
+    tourScheduleNext()
+  } else {
+    if (tourTimer) clearTimeout(tourTimer)
+    if (typewriterTimer) clearInterval(typewriterTimer)
+  }
+  updatePlayBtn()
+}
+
 function tourNext() {
-  if (tourCurrent < LANDING_TOUR_STEPS.length - 1) {
-    tourCurrent++
-    tourRender()
+  if (tourTimer) clearTimeout(tourTimer)
+  if (typewriterTimer) clearInterval(typewriterTimer)
+  if (tourIdx < TOUR_STEPS_AUTO.length - 1) {
+    tourIdx++
+    tourRenderStep()
+    if (!tourPaused) tourScheduleNext()
   }
 }
 
 function tourPrev() {
-  if (tourCurrent > 0) {
-    tourCurrent--
-    tourRender()
+  if (tourTimer) clearTimeout(tourTimer)
+  if (typewriterTimer) clearInterval(typewriterTimer)
+  if (tourIdx > 0) {
+    tourIdx--
+    tourRenderStep()
+    if (!tourPaused) tourScheduleNext()
   }
 }
 
 function tourGoTo(i) {
-  tourCurrent = i
-  tourRender()
+  if (tourTimer) clearTimeout(tourTimer)
+  if (typewriterTimer) clearInterval(typewriterTimer)
+  tourIdx = i
+  tourRenderStep()
+  if (!tourPaused) tourScheduleNext()
 }
 
-// Init when DOM ready
+function tourToggleFullscreen() {
+  const wrapper = tourGetEl('tour-fullscreen-wrapper')
+  if (!wrapper) return
+  tourFullscreen = !tourFullscreen
+  if (tourFullscreen) {
+    wrapper.classList.add('tour-fullscreen')
+    document.body.style.overflow = 'hidden'
+  } else {
+    wrapper.classList.remove('tour-fullscreen')
+    document.body.style.overflow = ''
+  }
+  const btn = tourGetEl('tour-fs-btn')
+  if (btn) btn.innerHTML = tourFullscreen ? '⊠' : '⛶'
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('tour-steps-nav')) {
-    tourRender()
+  if (tourGetEl('tour-steps-nav')) {
+    // Use IntersectionObserver to start tour when section is visible
+    const section = document.getElementById('tour')
+    if (section) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !tourTimer) {
+            tourRenderStep()
+            tourScheduleNext()
+          }
+        })
+      }, { threshold: 0.3 })
+      observer.observe(section)
+    }
   }
 })
 </script>
