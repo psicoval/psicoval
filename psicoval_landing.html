@@ -296,7 +296,103 @@
     .footer-col a:hover { color: #fff; }
     .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; flex-wrap: gap; }
     @media(max-width:768px){ .footer-inner { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 12px; text-align: center; } }
-  </style>
+  
+/* ── Tour section ─────────────────────────────────────────── */
+.tour-section { background: #f8fafc; padding: 96px 0; }
+.tour-wrapper { display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; margin-top: 48px; }
+@media(max-width:900px){ .tour-wrapper{ grid-template-columns:1fr; } }
+
+/* Browser mockup */
+.tour-screen { background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.12); overflow:hidden; border:1px solid #e2e8f0; }
+.tour-screen-bar { background:#f1f5f9; padding:10px 14px; display:flex; align-items:center; gap:6px; }
+.tour-screen-bar span { width:10px; height:10px; border-radius:50%; background:#cbd5e1; display:inline-block; }
+.tour-screen-bar span:nth-child(1){ background:#f87171; }
+.tour-screen-bar span:nth-child(2){ background:#fbbf24; }
+.tour-screen-bar span:nth-child(3){ background:#4ade80; }
+.tour-screen-url { margin-left:12px; background:#e2e8f0; border-radius:6px; padding:3px 12px; font-size:11px; color:#64748b; flex:1; text-align:center; }
+.tour-screen-body { display:flex; min-height:420px; }
+
+/* Sidebar simulado */
+.tour-sidebar { width:140px; background:#1a2460; flex-shrink:0; padding:16px 0; }
+.tour-sidebar-logo { color:white; font-weight:700; font-size:13px; padding:0 14px 16px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:8px; }
+.tour-nav-item { color:rgba(255,255,255,.55); font-size:11px; padding:8px 14px; cursor:pointer; border-radius:0 8px 8px 0; margin-right:8px; transition:all .2s; }
+.tour-nav-item.active, .tour-nav-item:hover { background:rgba(255,255,255,.15); color:white; }
+
+/* Content area */
+.tour-content { flex:1; padding:16px; overflow:hidden; }
+.tour-content-inner { display:block; }
+.tour-content-inner.hidden { display:none; }
+.tour-content-title { font-weight:700; color:#1e293b; font-size:13px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; }
+.tour-highlight { color:#4361ee; font-weight:600; }
+
+/* Step-specific content */
+.tour-stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.tour-stat-card { background:#f8fafc; border-radius:8px; padding:10px; text-align:center; border:1px solid #e2e8f0; }
+.tour-stat-num { font-size:20px; font-weight:700; color:#4361ee; }
+.tour-stat-label { font-size:10px; color:#64748b; margin-top:2px; }
+.tour-mini-list { space-y:4px; }
+.tour-mini-item { display:flex; align-items:center; gap:8px; font-size:11px; color:#475569; padding:5px 0; border-bottom:1px solid #f1f5f9; }
+.tour-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.tour-dot.green { background:#22c55e; }
+.tour-dot.blue { background:#4361ee; }
+.tour-dot.amber { background:#f59e0b; }
+.tour-profile-field { margin-bottom:10px; }
+.tour-field-label { font-size:9px; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; }
+.tour-field-val { font-size:12px; color:#1e293b; font-weight:500; margin-top:2px; }
+.tour-patient-card { display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; border:1px solid #f1f5f9; margin-bottom:6px; }
+.tour-patient-avatar { width:28px; height:28px; border-radius:50%; background:#4361ee; color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+.tour-patient-name { font-size:12px; font-weight:600; color:#1e293b; }
+.tour-patient-sub { font-size:10px; color:#94a3b8; }
+.tour-badge-active { margin-left:auto; background:#dcfce7; color:#16a34a; font-size:9px; font-weight:600; padding:2px 7px; border-radius:20px; }
+.tour-badge-new { margin-left:auto; background:#dbeafe; color:#2563eb; font-size:9px; font-weight:600; padding:2px 7px; border-radius:20px; }
+.tour-badge-alta { margin-left:auto; background:#f1f5f9; color:#64748b; font-size:9px; font-weight:600; padding:2px 7px; border-radius:20px; }
+.tour-doc-list { space-y:8px; margin-bottom:12px; }
+.tour-doc-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:11px; color:#475569; margin-bottom:6px; }
+.tour-print-btn { background:#4361ee; color:white; border-radius:8px; padding:8px 14px; font-size:11px; font-weight:600; text-align:center; cursor:pointer; }
+.tour-interview-row { margin-bottom:10px; }
+.tour-int-label { font-size:9px; color:#94a3b8; text-transform:uppercase; }
+.tour-int-val { font-size:11px; color:#334155; margin-top:2px; line-height:1.5; }
+.tour-ai-chip { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,#4361ee,#7c3aed); color:white; border-radius:20px; padding:5px 12px; font-size:10px; font-weight:600; margin-top:10px; }
+.tour-plan-obj { font-size:10px; font-weight:700; color:#4361ee; text-transform:uppercase; margin-bottom:6px; }
+.tour-plan-item { font-size:11px; color:#334155; margin-bottom:5px; padding-left:4px; }
+.tour-plan-sessions { background:#f0f4ff; border-radius:8px; padding:6px 10px; font-size:10px; color:#4361ee; font-weight:600; margin-top:8px; }
+.tour-instr-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.tour-instr-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; text-align:center; font-size:10px; font-weight:700; color:#64748b; }
+.tour-instr-card.applied { background:#f0f4ff; border-color:#c7d2fe; color:#4361ee; }
+.tour-instr-score { font-size:13px; font-weight:800; color:#4361ee; margin-top:2px; }
+.tour-session-item { border-left:3px solid #4361ee; padding:6px 10px; margin-bottom:10px; }
+.tour-session-date { font-size:10px; color:#94a3b8; font-weight:600; }
+.tour-session-text { font-size:11px; color:#334155; margin-top:2px; line-height:1.5; }
+.tour-risk-row { display:flex; justify-content:space-between; align-items:center; padding:7px 10px; border-radius:6px; margin-bottom:4px; font-size:11px; }
+.tour-risk-row.low { background:#f0fdf4; color:#166534; }
+.tour-risk-val { font-weight:700; }
+.tour-risk-badge { background:#dcfce7; color:#16a34a; border-radius:8px; padding:8px 12px; font-size:11px; font-weight:600; text-align:center; margin-top:10px; }
+.tour-agenda-day { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #f1f5f9; }
+.tour-agenda-time { font-size:11px; font-weight:700; color:#4361ee; width:36px; flex-shrink:0; }
+.tour-agenda-event { font-size:11px; color:#334155; }
+
+/* Tour panel right */
+.tour-panel { background:white; border-radius:16px; border:1px solid #e2e8f0; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,.06); }
+.tour-steps-nav { display:flex; flex-direction:column; gap:4px; margin-bottom:20px; max-height:200px; overflow-y:auto; }
+.tour-step-pill { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:10px; cursor:pointer; transition:all .2s; border:1px solid transparent; }
+.tour-step-pill:hover { background:#f8fafc; }
+.tour-step-pill.active { background:#f0f4ff; border-color:#c7d2fe; }
+.tour-step-num { width:22px; height:22px; border-radius:50%; background:#e2e8f0; color:#64748b; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tour-step-pill.active .tour-step-num { background:#4361ee; color:white; }
+.tour-step-pill.done .tour-step-num { background:#22c55e; color:white; }
+.tour-step-text { font-size:12px; color:#64748b; font-weight:500; }
+.tour-step-pill.active .tour-step-text { color:#4361ee; font-weight:600; }
+.tour-step-detail { border-top:1px solid #f1f5f9; padding-top:16px; margin-bottom:16px; }
+.tour-step-detail h4 { font-size:14px; font-weight:700; color:#1e293b; margin-bottom:6px; }
+.tour-step-detail p { font-size:12px; color:#64748b; line-height:1.7; }
+.tour-nav-btns { display:flex; gap:8px; margin-bottom:12px; }
+.tour-btn-prev { flex:1; padding:8px; border-radius:10px; border:1px solid #e2e8f0; background:white; color:#64748b; font-size:12px; font-weight:600; cursor:pointer; }
+.tour-btn-prev:hover { background:#f8fafc; }
+.tour-btn-next { flex:2; padding:8px; border-radius:10px; border:none; background:#4361ee; color:white; font-size:12px; font-weight:600; cursor:pointer; }
+.tour-btn-next:hover { background:#3451d1; }
+.tour-progress { height:4px; background:#f1f5f9; border-radius:2px; overflow:hidden; }
+.tour-progress-bar { height:100%; background:linear-gradient(90deg,#4361ee,#7c3aed); border-radius:2px; transition:width .3s ease; }
+</style>
 </head>
 <body>
 
@@ -307,6 +403,7 @@
     <div class="nav-links">
       <a href="#funciones">Funciones</a>
       <a href="#instrumentos">Instrumentos</a>
+      <a href="#tour">Tour visual</a>
       <a href="#planes">Planes</a>
       <a href="#faq">FAQ</a>
     </div>
@@ -578,6 +675,137 @@
   </div>
 </section>
 
+
+<!-- ── TOUR INTERACTIVO ── -->
+<section class="tour-section" id="tour">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">Tour visual</span>
+      <h2>Así funciona Psicoval paso a paso</h2>
+      <p>Navega por el tour y descubre cada función antes de registrarte</p>
+    </div>
+
+    <div class="tour-wrapper">
+      <!-- Pantalla mockup izquierda -->
+      <div class="tour-screen">
+        <div class="tour-screen-bar">
+          <span></span><span></span><span></span>
+          <span class="tour-screen-url">psicoval.app</span>
+        </div>
+        <div class="tour-screen-body">
+          <!-- Sidebar simulado -->
+          <div class="tour-sidebar">
+            <div class="tour-sidebar-logo">Psicoval</div>
+            <div class="tour-nav-item" id="tn-inicio">🏠 Inicio</div>
+            <div class="tour-nav-item" id="tn-perfil">👤 Mi Perfil</div>
+            <div class="tour-nav-item active" id="tn-consultantes">👥 Consultantes</div>
+            <div class="tour-nav-item" id="tn-agenda">📅 Agenda</div>
+            <div class="tour-nav-item" id="tn-finanzas">💰 Finanzas</div>
+          </div>
+          <!-- Contenido simulado -->
+          <div class="tour-content" id="tour-content-area">
+            <div class="tour-content-inner" id="tour-step-0">
+              <div class="tour-content-title">Panel de inicio</div>
+              <div class="tour-stats-row">
+                <div class="tour-stat-card"><div class="tour-stat-num">12</div><div class="tour-stat-label">Consultantes</div></div>
+                <div class="tour-stat-card"><div class="tour-stat-num">4</div><div class="tour-stat-label">Citas hoy</div></div>
+                <div class="tour-stat-card"><div class="tour-stat-num">87%</div><div class="tour-stat-label">Adherencia</div></div>
+              </div>
+              <div class="tour-mini-list">
+                <div class="tour-mini-item"><span class="tour-dot green"></span>Carlos M. — Sesión 5</div>
+                <div class="tour-mini-item"><span class="tour-dot blue"></span>Ana R. — Primera cita</div>
+                <div class="tour-mini-item"><span class="tour-dot amber"></span>Luis P. — Plan pendiente</div>
+              </div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-1">
+              <div class="tour-content-title">Mi Perfil profesional</div>
+              <div class="tour-profile-field"><div class="tour-field-label">Especialidad</div><div class="tour-field-val">Psicología Clínica</div></div>
+              <div class="tour-profile-field"><div class="tour-field-label">Enfoque principal</div><div class="tour-field-val tour-highlight">Contextual — Tercera Generación</div></div>
+              <div class="tour-profile-field"><div class="tour-field-label">Terapias</div><div class="tour-field-val">ACT · DBT · Mindfulness · Autocompasión</div></div>
+              <div class="tour-profile-field"><div class="tour-field-label">N° de colegiado</div><div class="tour-field-val">PSI-2024-0872</div></div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-2">
+              <div class="tour-content-title">Consultantes</div>
+              <div class="tour-patient-card"><div class="tour-patient-avatar">C</div><div><div class="tour-patient-name">Carlos Méndez</div><div class="tour-patient-sub">28 años · Sesión 5 · ACT</div></div><span class="tour-badge-active">Activo</span></div>
+              <div class="tour-patient-card"><div class="tour-patient-avatar">A</div><div><div class="tour-patient-name">Ana Rodríguez</div><div class="tour-patient-sub">34 años · Primera cita pendiente</div></div><span class="tour-badge-new">Nuevo</span></div>
+              <div class="tour-patient-card"><div class="tour-patient-avatar">L</div><div><div class="tour-patient-name">Luis Paredes</div><div class="tour-patient-sub">41 años · Alta terapéutica</div></div><span class="tour-badge-alta">Alta</span></div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-3">
+              <div class="tour-content-title">Paquete de primera cita</div>
+              <div class="tour-doc-list">
+                <div class="tour-doc-item">📋 Entrevista clínica inicial (6 bloques)</div>
+                <div class="tour-doc-item">⚠️ Evaluación de riesgo suicida</div>
+                <div class="tour-doc-item">🛡️ Plan de seguridad personal</div>
+                <div class="tour-doc-item">✍️ Consentimiento informado</div>
+              </div>
+              <div class="tour-print-btn">🖨️ Imprimir paquete completo</div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-4">
+              <div class="tour-content-title">Entrevista inicial — Carlos M.</div>
+              <div class="tour-interview-row"><div class="tour-int-label">Motivo de consulta</div><div class="tour-int-val">Ansiedad social y evitación experiencial persistente desde hace 2 años...</div></div>
+              <div class="tour-interview-row"><div class="tour-int-label">Eje funcional (ABC)</div><div class="tour-int-val">A: situaciones sociales · B: evitación, fusión cognitiva · C: alivio temporal...</div></div>
+              <div class="tour-ai-chip">✨ Generar resumen clínico con IA</div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-5">
+              <div class="tour-content-title">Plan terapéutico — ACT</div>
+              <div class="tour-plan-obj">🎯 Objetivos</div>
+              <div class="tour-plan-item">• Reducir la evitación experiencial mediante defusión cognitiva</div>
+              <div class="tour-plan-item">• Clarificar valores personales en área social y laboral</div>
+              <div class="tour-plan-item">• Desarrollar acción comprometida hacia contacto social</div>
+              <div class="tour-plan-sessions">📅 8 sesiones · Semanal · Presencial</div>
+              <div class="tour-ai-chip">✨ Generado con IA según tu enfoque ACT</div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-6">
+              <div class="tour-content-title">Instrumentos psicométricos</div>
+              <div class="tour-instr-grid">
+                <div class="tour-instr-card applied">PHQ-9<div class="tour-instr-score">16/27</div></div>
+                <div class="tour-instr-card applied">AAQ-II<div class="tour-instr-score">38/70</div></div>
+                <div class="tour-instr-card applied">VLQ<div class="tour-instr-score">2.4/10</div></div>
+                <div class="tour-instr-card">GAD-7</div>
+                <div class="tour-instr-card">DASS-21</div>
+                <div class="tour-instr-card">PCL-5</div>
+              </div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-7">
+              <div class="tour-content-title">Registro de sesiones</div>
+              <div class="tour-session-item"><div class="tour-session-date">15 abr 2026 · Sesión 5</div><div class="tour-session-text">Trabajamos defusión con técnica de las hojas en el río. Respuesta positiva. Tarea: registro de pensamientos con distancia.</div></div>
+              <div class="tour-session-item"><div class="tour-session-date">08 abr 2026 · Sesión 4</div><div class="tour-session-text">Revisión de valores. Identificó área relaciones como prioritaria. Planificamos acción comprometida.</div></div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-8">
+              <div class="tour-content-title">Protocolo de riesgo suicida</div>
+              <div class="tour-risk-row low"><span>Ideación activa</span><span class="tour-risk-val">Ausente</span></div>
+              <div class="tour-risk-row low"><span>Plan estructurado</span><span class="tour-risk-val">No</span></div>
+              <div class="tour-risk-row low"><span>Red de apoyo</span><span class="tour-risk-val">Presente</span></div>
+              <div class="tour-risk-badge low">🟢 Riesgo bajo — Seguimiento rutinario</div>
+            </div>
+            <div class="tour-content-inner hidden" id="tour-step-9">
+              <div class="tour-content-title">Agenda</div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">09:00</div><div class="tour-agenda-event">Carlos M. — Sesión 6</div></div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">11:00</div><div class="tour-agenda-event">Ana R. — Primera cita</div></div>
+              <div class="tour-agenda-day"><div class="tour-agenda-time">16:30</div><div class="tour-agenda-event">Luis P. — Seguimiento</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de pasos derecha -->
+      <div class="tour-panel">
+        <div class="tour-steps-nav" id="tour-steps-nav">
+          <!-- generado por JS -->
+        </div>
+        <div class="tour-step-detail" id="tour-step-detail">
+          <!-- generado por JS -->
+        </div>
+        <div class="tour-nav-btns">
+          <button class="tour-btn-prev" id="tour-btn-prev" onclick="tourPrev()">← Anterior</button>
+          <button class="tour-btn-next" id="tour-btn-next" onclick="tourNext()">Siguiente →</button>
+        </div>
+        <div class="tour-progress" id="tour-progress"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ── PLANES ── -->
 <section class="pricing" id="planes">
   <div class="container">
@@ -764,6 +992,105 @@
     document.querySelectorAll('.faq-q.open').forEach(q => q.classList.remove('open'))
     if (!isOpen) { answer.classList.add('open'); btn.classList.add('open') }
   }
+</script>
+<script>
+// ── Tour interactivo landing ──────────────────────────────────────────────────
+const LANDING_TOUR_STEPS = [
+  { label:'Panel de inicio',    title:'Panel de inicio',           text:'Al entrar verás un resumen de tu actividad: consultantes activos, citas del día y métricas clave de tu práctica.' },
+  { label:'Perfil profesional', title:'1 — Perfil profesional',   text:'Configura tu nombre, especialidad, número de colegiado y enfoque terapéutico. La IA usa tu enfoque para generar planes personalizados a tu práctica.' },
+  { label:'Consultantes',       title:'2 — Gestión de consultantes', text:'Registra los datos básicos de cada consultante. Desde aquí accedes al expediente completo con todas las pestañas clínicas.' },
+  { label:'Primera cita',       title:'3 — Paquete de primera cita', text:'Genera e imprime el paquete completo antes de la primera sesión: entrevista en 6 bloques, evaluación de riesgo, plan de seguridad y consentimiento informado.' },
+  { label:'Entrevista inicial', title:'4 — Entrevista inicial',   text:'Registra digitalmente la entrevista después de la sesión. Motivo de consulta, eje funcional ABC, historia y formulación. La IA genera el resumen clínico al terminar.' },
+  { label:'Plan terapéutico',   title:'5 — Plan terapéutico con IA', text:'Define las sesiones, frecuencia y modalidad. La IA integra los datos de la entrevista y genera el plan completo según tu enfoque terapéutico — no uno genérico.' },
+  { label:'Instrumentos',       title:'6 — Instrumentos psicométricos', text:'14 instrumentos validados. Aplícalos digitalmente o imprime en blanco. Los resultados muestran interpretación clínica detallada y comparación pre-post.' },
+  { label:'Sesiones',           title:'7 — Registro de sesiones', text:'Documenta cada encuentro: intervenciones, estado emocional del consultante, tareas asignadas y notas clínicas. Historial cronológico completo.' },
+  { label:'Protocolo de riesgo',title:'8 — Protocolo de riesgo suicida', text:'Evalúa el riesgo en 6 dimensiones en cualquier momento del proceso. Cada evaluación queda guardada con fecha para comparar evolución.' },
+  { label:'Agenda',             title:'9 — Agenda de citas',      text:'Programa y visualiza citas en lista o calendario mensual. Haz clic en cualquier día para crear una cita con la fecha prellenada.' },
+]
+
+const TOUR_NAV_MAP = {
+  0:'tn-inicio', 1:'tn-perfil', 2:'tn-consultantes', 3:'tn-consultantes',
+  4:'tn-consultantes', 5:'tn-consultantes', 6:'tn-consultantes',
+  7:'tn-consultantes', 8:'tn-consultantes', 9:'tn-agenda'
+}
+
+let tourCurrent = 0
+
+function tourRender() {
+  const step = tourCurrent
+  const total = LANDING_TOUR_STEPS.length
+
+  // Update mockup content
+  document.querySelectorAll('.tour-content-inner').forEach((el,i) => {
+    el.classList.toggle('hidden', i !== step)
+  })
+
+  // Update sidebar active
+  document.querySelectorAll('.tour-nav-item').forEach(el => el.classList.remove('active'))
+  const activeNav = document.getElementById(TOUR_NAV_MAP[step])
+  if (activeNav) activeNav.classList.add('active')
+
+  // Update step pills
+  const nav = document.getElementById('tour-steps-nav')
+  if (nav) {
+    nav.innerHTML = LANDING_TOUR_STEPS.map((s,i) => `
+      <div class="tour-step-pill ${i===step?'active':i<step?'done':''}" onclick="tourGoTo(${i})">
+        <div class="tour-step-num">${i < step ? '✓' : i+1}</div>
+        <div class="tour-step-text">${s.label}</div>
+      </div>
+    `).join('')
+  }
+
+  // Update detail
+  const detail = document.getElementById('tour-step-detail')
+  if (detail) {
+    const s = LANDING_TOUR_STEPS[step]
+    detail.innerHTML = `<h4>${s.title}</h4><p>${s.text}</p>`
+  }
+
+  // Update buttons
+  const prev = document.getElementById('tour-btn-prev')
+  const next = document.getElementById('tour-btn-next')
+  if (prev) prev.style.visibility = step === 0 ? 'hidden' : 'visible'
+  if (next) next.textContent = step === total-1 ? '¡Comenzar gratis →' : 'Siguiente →'
+  if (next && step === total-1) {
+    next.onclick = () => window.location.href = 'https://psicoval.vercel.app'
+  } else if (next) {
+    next.onclick = tourNext
+  }
+
+  // Progress bar
+  const progress = document.getElementById('tour-progress')
+  if (progress) {
+    progress.innerHTML = `<div class="tour-progress-bar" style="width:${((step+1)/total*100).toFixed(0)}%"></div>`
+  }
+}
+
+function tourNext() {
+  if (tourCurrent < LANDING_TOUR_STEPS.length - 1) {
+    tourCurrent++
+    tourRender()
+  }
+}
+
+function tourPrev() {
+  if (tourCurrent > 0) {
+    tourCurrent--
+    tourRender()
+  }
+}
+
+function tourGoTo(i) {
+  tourCurrent = i
+  tourRender()
+}
+
+// Init when DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('tour-steps-nav')) {
+    tourRender()
+  }
+})
 </script>
 </body>
 </html>
