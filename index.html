@@ -8392,53 +8392,332 @@ function Profile({ user }) {
 }
 
 
-// ── Tour visual (ventana flotante con tour de landing) ────────────────────────
+const APP_TOUR_STEPS = [
+  {
+    label: 'Bienvenida',
+    nav: 'tn-inicio',
+    screen: 0,
+    duration: 10000,
+    title: 'Psicoval — Tu plataforma clínica digital',
+    text: 'Psicoval centraliza todo el ciclo de atención psicológica en un solo lugar. Desde el primer contacto con el consultante hasta el alta terapéutica, cada paso queda documentado, organizado y disponible desde cualquier dispositivo con internet.'
+  },
+  {
+    label: 'Perfil profesional',
+    nav: 'tn-perfil',
+    screen: 1,
+    duration: 11000,
+    title: 'Paso 1 — Configura tu perfil profesional',
+    text: 'Antes de comenzar, completa tu perfil: nombre, especialidad, número de colegiado, ciudad y enfoque terapéutico. Selecciona tu enfoque principal (Contextual, TCC, Humanista, Sistémico…) y las terapias que practicas dentro de él. La IA usará esta información para generar planes terapéuticos personalizados a tu práctica. Tus datos aparecen automáticamente en todos los documentos clínicos que imprimas.'
+  },
+  {
+    label: 'Crear consultante',
+    nav: 'tn-consultantes',
+    screen: 2,
+    duration: 10500,
+    title: 'Paso 2 — Registra a tu consultante',
+    text: 'Crea la ficha del consultante con los datos básicos que puedes tomar en la llamada inicial: nombre, edad, teléfono y ocupación. Los datos clínicos — motivo de consulta, antecedentes, diagnóstico — se completan después en la entrevista inicial. Psicoval controla que no puedas agendar dos consultantes en el mismo día y hora.'
+  },
+  {
+    label: 'Agendar primera cita',
+    nav: 'tn-agenda',
+    screen: 3,
+    duration: 11000,
+    title: 'Paso 3 — Agenda la primera cita',
+    text: 'Antes de iniciar cualquier proceso clínico, la cita debe estar agendada. Programa la primera sesión en el calendario — Psicoval valida que no exista otro consultante en ese mismo horario. Puedes agendar presencial o en línea. Las citas canceladas liberan el horario automáticamente y quedan registradas en el historial. Sin cita agendada no es posible abrir la entrevista inicial.'
+  },
+  {
+    label: 'Paquete primera cita',
+    nav: 'tn-consultantes',
+    screen: 4,
+    duration: 11500,
+    title: 'Paso 4 — Genera el paquete de primera cita',
+    text: 'Con la cita agendada, genera e imprime el paquete clínico completo para llevar a la sesión: entrevista clínica inicial estructurada en 6 bloques con preguntas guía, protocolo de evaluación de riesgo suicida en 6 dimensiones, plan de seguridad personal para entregar al consultante, y consentimiento informado con 12 puntos que incluye mención explícita del uso de IA. Todo listo para imprimir en un clic.'
+  },
+  {
+    label: 'Entrevista inicial',
+    nav: 'tn-consultantes',
+    screen: 5,
+    duration: 12000,
+    title: 'Paso 5 — Registra la entrevista inicial',
+    text: 'Después de realizar la primera sesión, ingresa los datos recopilados en la entrevista digital. El formulario tiene 6 bloques: motivo de consulta e historia del problema, evaluación del riesgo, contexto vital y red de apoyo, historia clínica y antecedentes, eje funcional ABC (antecedentes, conducta y consecuentes), y formulación clínica con hipótesis funcional. Al completarla, la IA genera automáticamente un resumen clínico estructurado según tu enfoque terapéutico.'
+  },
+  {
+    label: 'Plan terapéutico IA',
+    nav: 'tn-consultantes',
+    screen: 6,
+    duration: 11500,
+    title: 'Paso 6 — Genera el plan terapéutico con IA',
+    text: 'Desde la pestaña Plan, define los parámetros reales del proceso: número de sesiones disponibles, frecuencia, modalidad y enfoque. La IA integra todos los datos de la entrevista — motivo, formulación, eje funcional, riesgo — y genera un plan completo con objetivos terapéuticos, estructura de sesiones numeradas, estrategias de intervención y sugerencia de instrumentos. El plan es completamente editable e imprimible. Está basado en tu enfoque real, no en TCC genérico.'
+  },
+  {
+    label: 'Instrumentos',
+    nav: 'tn-consultantes',
+    screen: 7,
+    duration: 11500,
+    title: 'Paso 7 — Aplica instrumentos psicométricos',
+    text: '14 instrumentos validados disponibles: PHQ-9 y GAD-7 (depresión y ansiedad), DASS-21 (depresión, ansiedad y estrés), CES-D, PCL-5 (trauma), AAQ-II y VLQ (flexibilidad psicológica y valores), CFQ-7 (fusión cognitiva), DERS-16 (regulación emocional), Rosenberg (autoestima), LSAS (ansiedad social), PSQI (calidad del sueño), WHODAS y GPS. Aplícalos digitalmente — el sistema calcula puntajes, muestra interpretación clínica por dimensión y genera gráficos comparativos entre aplicaciones para ver la evolución del consultante.'
+  },
+  {
+    label: 'Registro de sesiones',
+    nav: 'tn-consultantes',
+    screen: 8,
+    duration: 11000,
+    title: 'Paso 8 — Registra cada sesión',
+    text: 'Cada nueva sesión debe tener una cita previa agendada. Al registrarla documentas: intervenciones aplicadas, estado emocional del consultante al inicio y al cierre (escala), contenido trabajado, tareas asignadas para casa, y notas clínicas libres. El historial de sesiones queda organizado cronológicamente y sirve como evidencia documentada del proceso terapéutico. Al registrar la sesión puedes vincular el cobro correspondiente directamente.'
+  },
+  {
+    label: 'Protocolo de riesgo',
+    nav: 'tn-consultantes',
+    screen: 9,
+    duration: 11000,
+    title: 'Paso 9 — Protocolo de riesgo suicida',
+    text: 'Disponible en cualquier momento del proceso, no solo en la primera cita. Evalúa 6 dimensiones: ideación activa, plan estructurado, acceso a medios letales, intención inmediata, red de apoyo disponible y capacidad de estar solo. El resultado determina el nivel de riesgo (bajo, moderado, alto) con acciones recomendadas. Cada evaluación queda guardada con fecha y puede compararse entre sesiones para monitorear la evolución.'
+  },
+  {
+    label: 'Módulo financiero',
+    nav: 'tn-finanzas',
+    screen: 10,
+    duration: 11500,
+    title: 'Paso 10 — Módulo financiero',
+    text: 'Lleva el control económico de tu práctica. Registra ingresos por cada sesión cobrada — vinculados directamente a la cita — y egresos por categoría: arriendo de consultorio, plataformas digitales, materiales, formación y otros. El módulo genera gráficos mensuales de ingresos vs egresos, comparativa con el mes anterior, y un resumen del estado financiero actual. Así tienes claridad sobre la rentabilidad de tu práctica mes a mes.'
+  },
+  {
+    label: 'Alta terapéutica',
+    nav: 'tn-consultantes',
+    screen: 11,
+    duration: 11000,
+    title: 'Paso 11 — Alta terapéutica',
+    text: 'Cuando el proceso concluye, registra el alta terapéutica. El sistema genera un documento con el resumen del proceso: fechas de inicio y cierre, número de sesiones realizadas, objetivos alcanzados y resultados comparativos pre-post de todos los instrumentos aplicados. El documento es imprimible y queda archivado en el expediente. Si el consultante regresa en el futuro, puedes iniciar un nuevo proceso desde el mismo expediente con una nueva entrevista inicial.'
+  },
+  {
+    label: 'Agenda y gestión',
+    nav: 'tn-agenda',
+    screen: 12,
+    duration: 10500,
+    title: 'Paso 12 — Agenda inteligente',
+    text: 'Visualiza todas tus citas en formato lista o calendario mensual. El sistema valida automáticamente que no haya solapamiento de horarios. Haz clic en cualquier día para crear una cita con la fecha prellenada. Las citas tienen estados: pendiente, realizada y cancelada. Las canceladas liberan el horario y quedan en el historial. Desde la agenda puedes acceder directamente al expediente del consultante de cada cita.'
+  }
+]
+
 function TourOverlay({ onClose }) {
-  const [loaded, setLoaded] = useState(false)
+  const [idx, setIdx] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const [txt, setTxt] = useState('')
+  const timerRef = React.useRef(null)
+  const twRef = React.useRef(null)
+  const step = APP_TOUR_STEPS[idx]
+  const total = APP_TOUR_STEPS.length
+
+  const runTW = React.useCallback((fullText, speed) => {
+    if (twRef.current) clearInterval(twRef.current)
+    setTxt('')
+    let i = 0
+    twRef.current = setInterval(() => {
+      if (i < fullText.length) { setTxt(t => t + fullText[i]); i++ }
+      else clearInterval(twRef.current)
+    }, speed)
+  }, [])
+
+  const startStep = React.useCallback((i, isPaused) => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    const s = APP_TOUR_STEPS[i]
+    const speed = Math.max(8, Math.round(s.duration * 0.6 / s.text.length))
+    runTW(s.text, speed)
+    if (!isPaused && i < APP_TOUR_STEPS.length - 1) {
+      timerRef.current = setTimeout(() => {
+        setIdx(prev => { const next = prev + 1; startStep(next, false); return next })
+      }, s.duration)
+    }
+  }, [runTW])
+
+  useEffect(() => { startStep(0, false); return () => { clearTimeout(timerRef.current); clearInterval(twRef.current) } }, [])
+
+  const goTo = (i) => { clearTimeout(timerRef.current); clearInterval(twRef.current); setIdx(i); startStep(i, paused) }
+  const togglePause = () => {
+    const np = !paused; setPaused(np)
+    if (np) { clearTimeout(timerRef.current); clearInterval(twRef.current) }
+    else startStep(idx, false)
+  }
+
+  const s = (col, bg=null) => ({color:col, background:bg||'transparent'})
+  const screens = [
+    <div key={0} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'10px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Panel de inicio</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'6px',marginBottom:'10px'}}>
+        {[['12','Consultantes'],['4','Citas hoy'],['87%','Adherencia']].map(([n,l])=>(
+          <div key={l} style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'8px',textAlign:'center'}}>
+            <div style={{fontSize:'18px',fontWeight:800,color:'#4361ee'}}>{n}</div>
+            <div style={{fontSize:'10px',color:'#64748b'}}>{l}</div>
+          </div>))}
+      </div>
+      {[['🟢','Carlos M. — Sesión 5 hoy 10:00'],['🔵','Ana R. — Primera cita 11:30'],['🟡','Luis P. — Plan pendiente']].map(([d,t])=>(
+        <div key={t} style={{display:'flex',gap:'8px',padding:'5px 0',borderBottom:'1px solid #f8fafc',fontSize:'11px',color:'#475569'}}><span>{d}</span>{t}</div>))}
+    </div>,
+    <div key={1} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'10px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Mi Perfil profesional</div>
+      {[['Nombre','Dra. María González',false],['Especialidad','Psicología Clínica',false],['Enfoque','Contextual — Tercera Generación',true],['Terapias','✓ ACT  ✓ DBT  ✓ Mindfulness  ✓ Autocompasión',false],['N° Colegiado','PSI-2024-0872',false]].map(([l,v,hi])=>(
+        <div key={l} style={{marginBottom:'8px'}}><div style={{fontSize:'9px',color:'#94a3b8',textTransform:'uppercase'}}>{l}</div><div style={{fontSize:'12px',color:hi?'#4361ee':'#1e293b',fontWeight:hi?700:500}}>{v}</div></div>))}
+    </div>,
+    <div key={2} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'10px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Consultantes</div>
+      {[['C','Carlos Méndez','28 años · Docente','#dcfce7','#16a34a','Activo'],['A','Ana Rodríguez','34 años · Contadora','#dbeafe','#2563eb','Nueva'],['L','Luis Paredes','41 años · Ingeniero','#f1f5f9','#64748b','Alta']].map(([i,n,sub,bg,col,badge])=>(
+        <div key={n} style={{display:'flex',alignItems:'center',gap:'8px',padding:'7px',border:'1px solid #f1f5f9',borderRadius:'8px',marginBottom:'5px'}}>
+          <div style={{width:'26px',height:'26px',borderRadius:'50%',background:'#4361ee',color:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:700,flexShrink:0}}>{i}</div>
+          <div style={{flex:1}}><div style={{fontSize:'12px',fontWeight:600,color:'#1e293b'}}>{n}</div><div style={{fontSize:'10px',color:'#94a3b8'}}>{sub}</div></div>
+          <span style={{background:bg,color:col,fontSize:'9px',fontWeight:700,padding:'2px 7px',borderRadius:'20px'}}>{badge}</span>
+        </div>))}
+    </div>,
+    <div key={3} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'10px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Agenda — Mayo 2026</div>
+      <div style={{background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:'8px',padding:'7px 10px',marginBottom:'5px',display:'flex',gap:'10px',alignItems:'center'}}>
+        <span style={{fontSize:'11px',fontWeight:700,color:'#4361ee',width:'36px'}}>09:00</span>
+        <span style={{fontSize:'11px',color:'#0369a1'}}>✦ Ana R. — Primera cita</span>
+      </div>
+      {[['10:30','Carlos M. — Sesión 5'],['16:00','Luis P. — Sesión 8']].map(([t,ev])=>(
+        <div key={t} style={{display:'flex',gap:'10px',padding:'7px 0',borderBottom:'1px solid #f8fafc'}}>
+          <span style={{fontSize:'11px',fontWeight:700,color:'#4361ee',width:'36px'}}>{t}</span>
+          <span style={{fontSize:'11px',color:'#334155'}}>{ev}</span>
+        </div>))}
+      <div style={{background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:'8px',padding:'6px 10px',marginTop:'8px',fontSize:'10px',color:'#c2410c',fontWeight:600}}>⚠️ Horario 11:00 ocupado — elige otro</div>
+    </div>,
+    <div key={4} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'10px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Paquete primera cita — Ana R.</div>
+      {['📋 Entrevista clínica — 6 bloques','⚠️ Evaluación de riesgo suicida','🛡️ Plan de seguridad personal','✍️ Consentimiento informado'].map(d=>(
+        <div key={d} style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'8px 12px',marginBottom:'5px',fontSize:'11px',color:'#475569'}}>{d}</div>))}
+      <div style={{background:'#4361ee',color:'white',borderRadius:'8px',padding:'8px',fontSize:'11px',fontWeight:600,textAlign:'center',marginTop:'8px'}}>🖨️ Imprimir paquete completo</div>
+    </div>,
+    <div key={5} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'10px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Entrevista inicial — Ana R.</div>
+      {[['Motivo de consulta','Ansiedad social persistente, evitación laboral desde 18 meses...'],['Eje funcional ABC','A: reuniones · B: evitación, fusión · C: alivio inmediato, aislamiento']].map(([l,v])=>(
+        <div key={l} style={{marginBottom:'10px'}}><div style={{fontSize:'9px',color:'#94a3b8',textTransform:'uppercase'}}>{l}</div><div style={{fontSize:'11px',color:'#334155',lineHeight:1.5,marginTop:'2px'}}>{v}</div></div>))}
+      <div style={{display:'inline-flex',gap:'6px',background:'linear-gradient(135deg,#4361ee,#7c3aed)',color:'white',borderRadius:'20px',padding:'5px 12px',fontSize:'10px',fontWeight:600}}>✨ IA generó resumen clínico ACT</div>
+    </div>,
+    <div key={6} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Plan terapéutico — ACT · 10 sesiones</div>
+      <div style={{fontSize:'10px',fontWeight:700,color:'#4361ee',textTransform:'uppercase',marginBottom:'6px'}}>🎯 Objetivos</div>
+      {['1. Reducir evitación experiencial mediante defusión','2. Clarificar valores en área relacional y laboral','3. Desarrollar acción comprometida'].map(o=>(
+        <div key={o} style={{fontSize:'11px',color:'#334155',marginBottom:'4px'}}>{o}</div>))}
+      <div style={{background:'#f0f4ff',borderRadius:'8px',padding:'6px 10px',fontSize:'10px',color:'#4361ee',fontWeight:600,marginTop:'8px'}}>📅 10 sesiones · Semanal · Presencial</div>
+      <div style={{display:'inline-flex',gap:'6px',background:'linear-gradient(135deg,#4361ee,#7c3aed)',color:'white',borderRadius:'20px',padding:'5px 12px',fontSize:'10px',fontWeight:600,marginTop:'8px'}}>✨ Generado con IA según tu enfoque</div>
+    </div>,
+    <div key={7} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Instrumentos — comparativa pre/post</div>
+      <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:'4px',fontSize:'9px',fontWeight:700,color:'#94a3b8',textTransform:'uppercase',marginBottom:'4px'}}>
+        {['Instrumento','Inicial','Ses. 5','Alta'].map(h=><span key={h}>{h}</span>)}
+      </div>
+      {[['PHQ-9','18','12','5'],['AAQ-II','42','31','19'],['VLQ','2.1','4.8','7.4']].map(([k,a,b,cv])=>(
+        <div key={k} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:'4px',padding:'5px 0',borderBottom:'1px solid #f8fafc',fontSize:'11px',fontWeight:600}}>
+          <span style={{color:'#334155'}}>{k}</span>
+          <span style={{color:'#ef4444',textAlign:'center'}}>{a}</span>
+          <span style={{color:'#f59e0b',textAlign:'center'}}>{b}</span>
+          <span style={{color:'#16a34a',textAlign:'center'}}>{cv}</span>
+        </div>))}
+      <div style={{background:'#f0fdf4',borderRadius:'8px',padding:'6px 10px',fontSize:'10px',color:'#16a34a',fontWeight:600,marginTop:'8px'}}>📈 Gráfico comparativo automático</div>
+    </div>,
+    <div key={8} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Registro sesión 5 — Ana R.</div>
+      <div style={{borderLeft:'3px solid #4361ee',padding:'6px 10px',marginBottom:'10px'}}>
+        <div style={{fontSize:'10px',color:'#94a3b8',fontWeight:600}}>15 mayo 2026 · Sesión 5 · 50 min</div>
+        <div style={{fontSize:'11px',color:'#334155',marginTop:'2px',lineHeight:1.5}}>Defusión con hojas en el río. Respuesta positiva. Conectó con valor "presencia en relaciones".</div>
+      </div>
+      <div style={{display:'inline-flex',gap:'6px',background:'#f0fdf4',border:'1px solid #86efac',color:'#16a34a',borderRadius:'20px',padding:'5px 12px',fontSize:'10px',fontWeight:600}}>💰 Cobro: $45 — Registrado</div>
+    </div>,
+    <div key={9} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Protocolo de riesgo — Ana R.</div>
+      {[['Ideación activa','Ausente'],['Plan estructurado','No'],['Red de apoyo','Presente'],['Capacidad de estar sola','Preservada']].map(([l,v])=>(
+        <div key={l} style={{display:'flex',justifyContent:'space-between',background:'#f0fdf4',borderRadius:'6px',padding:'6px 10px',marginBottom:'4px',fontSize:'11px',color:'#166534'}}>
+          <span>{l}</span><span style={{fontWeight:700}}>{v}</span>
+        </div>))}
+      <div style={{background:'#dcfce7',borderRadius:'8px',padding:'8px',fontSize:'11px',fontWeight:600,textAlign:'center',color:'#16a34a',marginTop:'8px'}}>🟢 Riesgo bajo — Seguimiento rutinario</div>
+    </div>,
+    <div key={10} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Finanzas — Mayo 2026</div>
+      {[['Ingresos por sesiones','+$1,260','#16a34a'],['Arriendo consultorio','-$280','#ef4444'],['Plataformas digitales','-$45','#ef4444']].map(([l,v,col])=>(
+        <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #f8fafc',fontSize:'11px'}}>
+          <span style={{color:'#475569'}}>{l}</span><span style={{fontWeight:700,color:col}}>{v}</span>
+        </div>))}
+      <div style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontWeight:800,fontSize:'13px',borderTop:'2px solid #e2e8f0',marginTop:'4px'}}>
+        <span>Resultado neto</span><span style={{color:'#16a34a'}}>$935</span>
+      </div>
+      <div style={{background:'#f0fdf4',borderRadius:'8px',padding:'6px 10px',fontSize:'10px',color:'#16a34a',fontWeight:600,marginTop:'4px'}}>↑ 18% vs abril 2026</div>
+    </div>,
+    <div key={11} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Alta terapéutica — Ana R.</div>
+      {[['Período','12 ene → 15 jun 2026'],['Sesiones','10 de 10 planificadas'],['Objetivos','3/3 ✓ Alcanzados'],['PHQ-9','18 → 5 (↓ 72% mejoría)'],['AAQ-II','42 → 19 (↓ 55% mejoría)']].map(([l,v])=>(
+        <div key={l} style={{display:'flex',gap:'8px',marginBottom:'7px'}}>
+          <div style={{fontSize:'9px',color:'#94a3b8',textTransform:'uppercase',width:'80px',flexShrink:0,paddingTop:'2px'}}>{l}</div>
+          <div style={{fontSize:'12px',color:'#1e293b',fontWeight:600}}>{v}</div>
+        </div>))}
+      <div style={{background:'#4361ee',color:'white',borderRadius:'8px',padding:'8px',fontSize:'11px',fontWeight:600,textAlign:'center'}}>📄 Imprimir documento de alta</div>
+    </div>,
+    <div key={12} style={{padding:'12px'}}>
+      <div style={{fontWeight:700,fontSize:'12px',marginBottom:'8px',borderBottom:'1px solid #f1f5f9',paddingBottom:'6px'}}>Agenda — control inteligente</div>
+      {[['09:00','Ana R. — Sesión 6 ✓',false],['10:30','Carlos M. — Sesión 7',false],['12:00','Pedro G. — Cancelado 🗙',true],['16:00','Luis P. — Sesión 9',false]].map(([t,ev,cancelled])=>(
+        <div key={t} style={{display:'flex',gap:'10px',alignItems:'center',padding:'6px 0',borderBottom:'1px solid #f8fafc',opacity:cancelled?0.4:1,textDecoration:cancelled?'line-through':'none'}}>
+          <span style={{fontSize:'11px',fontWeight:700,color:'#4361ee',width:'36px'}}>{t}</span>
+          <span style={{fontSize:'11px',color:'#334155'}}>{ev}</span>
+        </div>))}
+    </div>
+  ]
 
   return (
-    <div style={{
-      position:'fixed', inset:0, zIndex:9999,
-      background:'rgba(0,0,0,0.7)',
-      display:'flex', alignItems:'center', justifyContent:'center',
-      padding:'20px'
-    }}>
-      <div style={{
-        background:'white', borderRadius:'20px', overflow:'hidden',
-        width:'min(1100px, 95vw)', height:'min(700px, 90vh)',
-        display:'flex', flexDirection:'column', boxShadow:'0 25px 80px rgba(0,0,0,0.4)'
-      }}>
-        {/* Header */}
-        <div style={{
-          background:'linear-gradient(135deg,#1a2460,#4361ee)',
-          padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between',
-          flexShrink:0
-        }}>
+    <div style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,0.72)',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}}>
+      <div style={{background:'white',borderRadius:'20px',overflow:'hidden',width:'min(960px,96vw)',height:'min(640px,92vh)',display:'flex',flexDirection:'column',boxShadow:'0 30px 80px rgba(0,0,0,0.45)'}}>
+        <div style={{background:'linear-gradient(135deg,#1a2460,#4361ee)',padding:'12px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-            <span style={{fontSize:'20px'}}>🎯</span>
-            <span style={{color:'white',fontWeight:'700',fontSize:'15px'}}>Tour visual — Cómo funciona Psicoval</span>
+            <span style={{fontSize:'18px'}}>🎯</span>
+            <span style={{color:'white',fontWeight:700,fontSize:'14px'}}>Tour visual — Cómo funciona Psicoval</span>
+            <span style={{background:'rgba(255,255,255,0.2)',color:'white',fontSize:'11px',padding:'2px 8px',borderRadius:'20px'}}>{idx+1} / {total}</span>
           </div>
-          <button onClick={onClose} style={{
-            background:'rgba(255,255,255,0.2)', border:'none', color:'white',
-            width:'32px', height:'32px', borderRadius:'8px', cursor:'pointer',
-            fontSize:'18px', display:'flex', alignItems:'center', justifyContent:'center'
-          }}>×</button>
+          <button onClick={onClose} style={{background:'rgba(255,255,255,0.2)',border:'none',color:'white',width:'30px',height:'30px',borderRadius:'8px',cursor:'pointer',fontSize:'16px'}}>×</button>
         </div>
-        {/* Tour iframe */}
-        {!loaded && (
-          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'12px'}}>
-            <div style={{width:'40px',height:'40px',border:'3px solid #e2e8f0',borderTop:'3px solid #4361ee',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
-            <p style={{color:'#64748b',fontSize:'13px'}}>Cargando tour...</p>
+        <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+          <div style={{width:'260px',flexShrink:0,display:'flex',flexDirection:'column',borderRight:'1px solid #e2e8f0'}}>
+            <div style={{background:'#f1f5f9',padding:'7px 12px',display:'flex',alignItems:'center',gap:'5px',borderBottom:'1px solid #e2e8f0'}}>
+              {['#f87171','#fbbf24','#4ade80'].map(col=><span key={col} style={{width:'8px',height:'8px',borderRadius:'50%',background:col,display:'inline-block'}}/>)}
+              <span style={{marginLeft:'8px',background:'#e2e8f0',borderRadius:'4px',padding:'2px 8px',fontSize:'10px',color:'#64748b',flex:1,textAlign:'center'}}>psicoval.app</span>
+            </div>
+            <div style={{display:'flex',flex:1,overflow:'hidden'}}>
+              <div style={{width:'80px',background:'#1a2460',padding:'8px 0',flexShrink:0}}>
+                <div style={{color:'white',fontWeight:700,fontSize:'9px',padding:'0 6px 8px',borderBottom:'1px solid rgba(255,255,255,.1)',marginBottom:'4px'}}>Psicoval</div>
+                {[['a-inicio','🏠','Inicio'],['a-perfil','👤','Perfil'],['a-consultantes','👥','Consult.'],['a-agenda','📅','Agenda'],['a-finanzas','💰','Finanzas']].map(([id,icon,label])=>(
+                  <div key={id} style={{color:step.nav===id?'white':'rgba(255,255,255,.5)',background:step.nav===id?'rgba(255,255,255,.15)':'transparent',fontSize:'9px',padding:'6px 6px',borderRadius:'0 5px 5px 0',marginRight:'4px',display:'flex',flexDirection:'column',alignItems:'center',gap:'2px'}}>
+                    <span style={{fontSize:'12px'}}>{icon}</span><span>{label}</span>
+                  </div>))}
+              </div>
+              <div style={{flex:1,overflow:'auto',background:'white'}}>{screens[step.screen]}</div>
+            </div>
           </div>
-        )}
-        <iframe
-          src="/psicoval_landing.html#tour"
-          style={{flex:1,border:'none',display:loaded?'block':'none'}}
-          onLoad={()=>setLoaded(true)}
-          title="Tour visual Psicoval"
-        />
+          <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+            <div style={{padding:'8px 12px',borderBottom:'1px solid #f1f5f9',overflowX:'auto',display:'flex',gap:'5px',flexShrink:0}}>
+              {APP_TOUR_STEPS.map((s,i)=>(
+                <button key={i} onClick={()=>goTo(i)} style={{flexShrink:0,padding:'3px 8px',borderRadius:'20px',border:'1px solid',cursor:'pointer',fontSize:'10px',fontWeight:600,background:i===idx?'#4361ee':i<idx?'#f0fdf4':'white',color:i===idx?'white':i<idx?'#16a34a':'#64748b',borderColor:i===idx?'#4361ee':i<idx?'#86efac':'#e2e8f0'}}>
+                  {i<idx?'✓ ':''}{i+1}. {s.label}
+                </button>))}
+            </div>
+            <div style={{flex:1,padding:'18px 22px',overflow:'auto'}}>
+              <h3 style={{fontSize:'15px',fontWeight:700,color:'#1e293b',marginBottom:'10px'}}>{step.title}</h3>
+              <p style={{fontSize:'13px',color:'#64748b',lineHeight:1.8,minHeight:'80px'}}>{txt}</p>
+            </div>
+            <div style={{padding:'0 22px 14px',flexShrink:0}}>
+              <div style={{height:'4px',background:'#f1f5f9',borderRadius:'2px',overflow:'hidden',marginBottom:'10px'}}>
+                <div style={{height:'100%',background:'linear-gradient(90deg,#4361ee,#7c3aed)',borderRadius:'2px',width:`${((idx+1)/total*100).toFixed(0)}%`,transition:'width .3s ease'}}/>
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <button onClick={togglePause} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'4px 12px',fontSize:'12px',cursor:'pointer',color:'#475569'}}>
+                  {paused?'▶ Continuar':'⏸ Pausar'}
+                </button>
+                <div style={{display:'flex',gap:'6px'}}>
+                  <button onClick={()=>goTo(Math.max(0,idx-1))} style={{background:'none',border:'1px solid #e2e8f0',borderRadius:'8px',padding:'4px 10px',fontSize:'12px',cursor:'pointer',color:'#475569'}}>← Ant</button>
+                  {idx<total-1
+                    ? <button onClick={()=>goTo(idx+1)} style={{background:'#4361ee',border:'none',borderRadius:'8px',padding:'4px 12px',fontSize:'12px',cursor:'pointer',color:'white',fontWeight:600}}>Sig →</button>
+                    : <button onClick={onClose} style={{background:'#16a34a',border:'none',borderRadius:'8px',padding:'4px 12px',fontSize:'12px',cursor:'pointer',color:'white',fontWeight:600}}>✓ Comenzar</button>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
