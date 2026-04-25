@@ -8361,10 +8361,10 @@ function Patients({ user, role, planExpiry }) {
               {/* Paso 2 */}
               <div className="border border-brand-200 rounded-xl p-3 bg-brand-50">
                 <p className="text-xs font-bold text-brand-700 mb-2">Paso 2 — Agenda la primera cita</p>
-                <button onClick={()=>{ setModal(null); setSelectedExpedient(newPatientCreated) }}
+                <button onClick={()=>{ setModal(null); setNewPatientCreated(null); window.dispatchEvent(new CustomEvent('psicoval-nav', {detail:'agenda'})) }}
                   className="w-full py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  Ir al expediente y agendar
+                  Ir a la Agenda a programar cita
                 </button>
               </div>
               <button onClick={()=>setModal(null)}
