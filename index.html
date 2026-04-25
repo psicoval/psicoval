@@ -92,6 +92,7 @@ function AuthProvider({ children }) {
     const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
       const u = session?.user ?? null; setUser(u)
       if (u) loadRole(u.id)
+      else { setRole('free'); setPlanExpiry(null) }  // reset on logout
     })
     return () => subscription.unsubscribe()
   }, [])
