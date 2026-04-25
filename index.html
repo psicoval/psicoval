@@ -92,7 +92,6 @@ function AuthProvider({ children }) {
     const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
       const u = session?.user ?? null; setUser(u)
       if (u) loadRole(u.id)
-      else { setRole('free'); setPlanExpiry(null) }  // reset on logout
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -533,6 +532,21 @@ function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, er
   ]
   const cur = BLOCKS[block]
 
+  // Interview progress: count blocks with any data filled
+  const blockProgress = (() => {
+    const filled = []
+    if (form.consultation_reason || form.problem_description || form.symptoms_mood) filled.push('b1')
+    if (form.suicide_risk_level || form.risk_ideation) filled.push('risk')
+    if (form.life_context || form.family_structure || form.support_network_iv) filled.push('b2')
+    if (form.personal_history || form.medical_history || form.previous_treatment) filled.push('b3')
+    if (form.diag_clinical || form.global_severity || form.problem_intensity) filled.push('b4')
+    if (form.case_formulation || form.diag_hypothesis || form.strengths) filled.push('b5')
+    if (form.therapeutic_goals || form.initial_objectives) filled.push('b6')
+    if (form.observations || form.next_steps) filled.push('cierre')
+    return filled
+  })()
+  const interviewPct = Math.round(blockProgress.length / BLOCKS.length * 100)
+
   const generateAI = async () => {
     setAiLoading(true)
     const pName = patients?.find(p=>p.id===form.patient_id)?.name || 'el consultante'
@@ -717,12 +731,25 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         </div>
       )}
 
+      {/* Progress bar entrevista */}
+      <div className="bg-slate-50 rounded-xl px-4 py-3 mb-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-semibold text-slate-500">Progreso de la entrevista</span>
+          <span className="text-xs font-bold text-brand-600">{interviewPct}%</span>
+        </div>
+        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{width:`${interviewPct}%`, background: interviewPct===100?'#22c55e':'#4361ee'}}/>
+        </div>
+        <p className="text-xs text-slate-400 mt-1">{blockProgress.length} de {BLOCKS.length} bloques con información registrada</p>
+      </div>
+
       {/* Nav bloques */}
       <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
         {BLOCKS.map((b,i)=>(
           <button key={b.id} type="button" onClick={e=>{e.stopPropagation();setBlock(i)}}
-            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl text-xs font-medium transition-all border ${block===i?b.color+' border-current':'border-transparent text-slate-500 hover:bg-slate-100'}`}>
-            <span style={{fontSize:'14px'}}>{b.icon}</span>
+            className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl text-xs font-medium transition-all border ${block===i?b.color+' border-current':'border-transparent text-slate-500 hover:bg-slate-100'} ${blockProgress.includes(b.id)?'ring-1 ring-green-300':''}`}>
+            <span style={{fontSize:'14px'}}>{blockProgress.includes(b.id)?'✓':b.icon}</span>
             <span style={{fontSize:'10px',whiteSpace:'nowrap'}}>{b.label}</span>
           </button>
         ))}
@@ -734,7 +761,7 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
         {block===0 && (
           <div className="space-y-3">
             <Sec title="¿Qué te trae hoy a consulta? (Motivo de consulta)">
-              <Textarea label="Respuesta del consultante — registrar textualmente" rows={4}
+              <Textarea label={<span>Respuesta del consultante — registrar textualmente <Req/></span>} rows={4}
                 placeholder="«Si tuvieras que resumir el problema principal, ¿cómo lo describirías con tus propias palabras?»"
                 value={form.consultation_reason||''} onChange={e=>f('consultation_reason',e.target.value)} />
             </Sec>
@@ -2592,6 +2619,10 @@ function canUseReports(role, planExpiry) {
 }
 
 // ── Banner de upgrade ─────────────────────────────────────
+// ── Field badges ─────────────────────────────────────────────
+const Req = () => <span className="ml-1.5 text-xs font-semibold text-white bg-red-400 px-1.5 py-0.5 rounded-full align-middle">Necesario</span>
+const Opt = () => <span className="ml-1.5 text-xs font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full align-middle">Opcional</span>
+
 function UpgradeBanner({ message, feature, plan='Básico' }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
@@ -6798,16 +6829,31 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
           <p className="text-xs text-brand-700 font-medium">📞 Registro desde llamada</p>
           <p className="text-xs text-brand-500 mt-0.5">Ingresa los datos que puedes tomar en la llamada inicial. El resto se completa en la primera cita.</p>
         </div>
-        <Input label="Nombre completo *" placeholder="Nombre del consultante" value={form.name} onChange={e=>f('name',e.target.value)} />
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Edad" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
-          <Input label="Teléfono" placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
+        <div>
+          <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Nombre completo <Req/></label>
+          <Input placeholder="Nombre del consultante" value={form.name} onChange={e=>f('name',e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Estado civil" value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
-            <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
-          </Select>
-          <Input label="Ocupación" placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Edad <Req/></label>
+            <Input type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Teléfono <Req/></label>
+            <Input placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Estado civil <Opt/></label>
+            <Select value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
+              <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Ocupación <Opt/></label>
+            <Input placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
+          </div>
         </div>
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium">Cancelar</button>
@@ -6818,33 +6864,82 @@ function PatientForm({ initial, onSave, onClose, busy, err }) {
   }
 
   // Edición: formulario completo de datos personales
+  // Progress calculation
+  const requiredFields = [form.name, form.age, form.phone]
+  const optionalFields = [form.sex, form.marital_status, form.education_level, form.occupation, form.support_network, form.emergency_contact_name]
+  const reqDone = requiredFields.filter(Boolean).length
+  const optDone = optionalFields.filter(Boolean).length
+  const totalPct = Math.round((reqDone * 2 + optDone) / (requiredFields.length * 2 + optionalFields.length) * 100)
+
   return (
     <form onSubmit={e=>{e.preventDefault();onSave(form)}} className="space-y-4">
       <Alert msg={err} />
+      {/* Progress bar */}
+      <div className="bg-slate-50 rounded-xl p-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-semibold text-slate-500">Completitud de la ficha</span>
+          <span className="text-xs font-bold text-brand-600">{totalPct}%</span>
+        </div>
+        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{width:`${totalPct}%`, background: totalPct===100?'#22c55e':'#4361ee'}}/>
+        </div>
+        <p className="text-xs text-slate-400 mt-1">{reqDone}/{requiredFields.length} campos necesarios · {optDone}/{optionalFields.length} opcionales</p>
+      </div>
       <div className="space-y-4">
-        <Input label="Nombre completo *" placeholder="Nombre del consultante" value={form.name} onChange={e=>f('name',e.target.value)} />
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Edad" type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
-          <Select label="Sexo" value={form.sex} onChange={e=>f('sex',e.target.value)}>
-            <option value="">Seleccionar</option><option value="masculino">Masculino</option><option value="femenino">Femenino</option><option value="otro">Otro</option>
-          </Select>
+        <div>
+          <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Nombre completo <Req/></label>
+          <Input placeholder="Nombre del consultante" value={form.name} onChange={e=>f('name',e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Teléfono" placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
-          <Select label="Estado civil" value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
-            <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
-          </Select>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Edad <Req/></label>
+            <Input type="number" min="1" max="119" placeholder="Ej: 32" value={form.age} onChange={e=>f('age',e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Sexo <Opt/></label>
+            <Select value={form.sex} onChange={e=>f('sex',e.target.value)}>
+              <option value="">Seleccionar</option><option value="masculino">Masculino</option><option value="femenino">Femenino</option><option value="otro">Otro</option>
+            </Select>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Select label="Nivel educativo" value={form.education_level} onChange={e=>f('education_level',e.target.value)}>
-            <option value="">Seleccionar</option><option>Sin escolaridad</option><option>Primaria</option><option>Secundaria</option><option>Bachillerato</option><option>Técnico/Tecnológico</option><option>Universidad</option><option>Posgrado</option>
-          </Select>
-          <Input label="Ocupación" placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Teléfono <Req/></label>
+            <Input placeholder="Ej: +593 99 123 4567" value={form.phone} onChange={e=>f('phone',e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Estado civil <Opt/></label>
+            <Select value={form.marital_status} onChange={e=>f('marital_status',e.target.value)}>
+              <option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
+            </Select>
+          </div>
         </div>
-        <Textarea label="Red de apoyo" rows={2} placeholder="Ej: Vive con su pareja e hijos..." value={form.support_network} onChange={e=>f('support_network',e.target.value)} />
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Contacto de emergencia" placeholder="Nombre del contacto" value={form.emergency_contact_name} onChange={e=>f('emergency_contact_name',e.target.value)} />
-          <Input label="Teléfono de emergencia" placeholder="Teléfono del contacto" value={form.emergency_contact_phone} onChange={e=>f('emergency_contact_phone',e.target.value)} />
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Nivel educativo <Opt/></label>
+            <Select value={form.education_level} onChange={e=>f('education_level',e.target.value)}>
+              <option value="">Seleccionar</option><option>Sin escolaridad</option><option>Primaria</option><option>Secundaria</option><option>Bachillerato</option><option>Técnico/Tecnológico</option><option>Universidad</option><option>Posgrado</option>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Ocupación <Opt/></label>
+            <Input placeholder="Ej: Docente, Estudiante..." value={form.occupation} onChange={e=>f('occupation',e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Red de apoyo <Opt/></label>
+          <Textarea rows={2} placeholder="Ej: Vive con su pareja e hijos..." value={form.support_network} onChange={e=>f('support_network',e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Contacto de emergencia <Opt/></label>
+            <Input placeholder="Nombre del contacto" value={form.emergency_contact_name} onChange={e=>f('emergency_contact_name',e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 flex items-center mb-1">Teléfono de emergencia <Opt/></label>
+            <Input placeholder="Teléfono del contacto" value={form.emergency_contact_phone} onChange={e=>f('emergency_contact_phone',e.target.value)} />
+          </div>
         </div>
       </div>
       <div className="flex justify-between items-center pt-2">
