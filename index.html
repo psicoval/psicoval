@@ -6336,7 +6336,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
   // Load latest interview to show in ficha
   useEffect(() => {
     if (!patient?.id) return
-    sb.from('initial_interviews').select('consultation_reason,problem_intensity,global_severity,diag_clinical,symptoms_mood,symptoms_anxiety,ai_summary')
+    sb.from('initial_interviews').select('consultation_reason,problem_intensity,global_severity,diag_clinical,symptoms_mood,symptoms_anxiety,ai_summary,therapeutic_plan')
       .eq('patient_id', patient.id).order('created_at', {ascending: false}).limit(1)
       .then(({ data }) => { if (data?.[0]) setLatestInterview(data[0]) })
   }, [patient?.id])
