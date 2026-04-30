@@ -5654,10 +5654,8 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
   const [selInstrument, setSelInstrument] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  // suggestedInstruments loaded directly from DB in load()
-  const suggestedInstruments = suggestedFromDB
-
   const [suggestedFromDB, setSuggestedFromDB] = useState([])
+  const suggestedInstruments = suggestedFromDB
 
   const load = async () => {
     setLoading(true)
