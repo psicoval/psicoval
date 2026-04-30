@@ -624,16 +624,22 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
       })
       try { if (_uid2) await logAICall(_uid2, form.patient_id, 'interview_analysis') } catch(e){}
       const data = await res.json()
-      const raw = (data.result||data.text||'')
-        .replace(/```json/gi,'').replace(/```/g,'').trim()
+      const raw = (data.result||data.text||'').replace(/```json/gi,'').replace(/```/g,'').trim()
+      // Try to extract JSON, if fails use raw text as sintesis
+      let parsed
       const jsonMatch = raw.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('No JSON: ' + raw.slice(0,100))
-      const parsed = JSON.parse(jsonMatch[0])
+      if (jsonMatch) {
+        try { parsed = JSON.parse(jsonMatch[0]) } catch(e) { parsed = null }
+      }
+      if (!parsed) {
+        // Fallback: wrap raw response as sintesis
+        parsed = { sintesis: raw||'Sin respuesta de la IA.', hipotesis:'', riesgo_integrado:'', sesion2:'' }
+      }
       f('ai_summary', JSON.stringify(parsed))
       setAiDone(true)
     } catch(e) {
       console.error('Interview AI error:', e.message)
-      setErr('Error al generar el resumen: ' + e.message)
+      setErr('Error al conectar con la IA: ' + e.message)
       f('ai_summary','error')
     } finally {
       setAiLoading(false)
