@@ -331,11 +331,13 @@ Historia del problema: ${form.problem_history || 'No especificado'}
 
 Responde de forma estructurada, clara y concisa. Usa viñetas donde sea apropiado.`
 
-    // Rate limit: 1 llamada IA por consultante por día
-    const limited1 = await checkAIRateLimit(user.id, patientId, 'interview_summary')
-    if (limited1) { setAiLoading(false); setAiSummary('Ya generaste el análisis IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
-
     try {
+      // Rate limit (non-blocking)
+      try {
+        const limited1 = await checkAIRateLimit(user.id, patientId, 'interview_summary')
+        if (limited1) { setError('Ya generaste el análisis IA hoy para este consultante.'); setLoading(false); return }
+      } catch(e) { /* rate limit table missing, continue */ }
+
       const response = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
         method: 'POST',
         headers: {
@@ -345,16 +347,17 @@ Responde de forma estructurada, clara y concisa. Usa viñetas donde sea apropiad
         },
         body: JSON.stringify({ prompt })
       })
-      await logAICall(user.id, patientId, 'interview_summary')
+      try { await logAICall(user.id, patientId, 'interview_summary') } catch(e){}
       const data = await response.json()
       const text = data.result || ''
       if (!text) throw new Error('Sin respuesta')
       setResult(text)
       setExpanded(true)
     } catch(e) {
-      setError('Error al conectar con el análisis IA. Intenta de nuevo.')
+      setError('Error al conectar con el análisis IA: ' + e.message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
@@ -1760,7 +1763,7 @@ function HomeOverview({ user, role, planExpiry, onPage }) {
           </div>
           <div className="grid grid-cols-2 gap-3 mb-1">
             <div className="bg-white/10 rounded-xl p-3">
-              <p className="text-white font-bold text-lg">$10<span className="text-brand-200 text-xs font-normal">/mes</span></p>
+              <p className="text-white font-bold text-lg">$7<span className="text-brand-200 text-xs font-normal">/mes</span></p>
               <p className="text-white text-xs font-semibold mt-0.5">Plan Básico</p>
               <div className="mt-1.5 space-y-0.5">
                 {['Hasta 20 consultantes','9 instrumentos psicométricos','Plan terapéutico con IA','Registro de sesiones','Protocolo de riesgo suicida'].map(f=>(
@@ -1769,7 +1772,7 @@ function HomeOverview({ user, role, planExpiry, onPage }) {
               </div>
             </div>
             <div className="bg-white/10 rounded-xl p-3">
-              <p className="text-white font-bold text-lg">$15<span className="text-brand-200 text-xs font-normal">/mes</span></p>
+              <p className="text-white font-bold text-lg">$13<span className="text-brand-200 text-xs font-normal">/mes</span></p>
               <p className="text-white text-xs font-semibold mt-0.5">Plan Premium</p>
               <div className="mt-1.5 space-y-0.5">
                 {['Consultantes ilimitados','14 instrumentos (todos)','Todo lo del plan Básico','Acceso prioritario a novedades'].map(f=>(
@@ -7660,15 +7663,15 @@ DATOS DEL PACIENTE:
 - Motivo de consulta: ${iv?.consultation_reason||p.consultation_reason||'NS'}
 - Diagnóstico presuntivo: ${p.presumptive_diagnosis||'NS'}
 - Duración del problema: ${iv?.problem_duration||'NS'} | Intensidad: ${iv?.problem_intensity||'NS'}/10 | Severidad: ${iv?.global_severity||'NS'}
-- Áreas afectadas: ${(iv?.areas_affected||[]).join(', ')||'NS'}
-- Síntomas: ánimo [${(iv?.symptoms_mood||[]).join(', ')||'NS'}] | ansiedad [${(iv?.symptoms_anxiety||[]).join(', ')||'NS'}] | cognitivos [${(iv?.symptoms_cognitive||[]).join(', ')||'NS'}] | conductuales [${(iv?.symptoms_behavioral||[]).join(', ')||'NS'}]
-- Diagnóstico clínico: ${(iv?.diag_clinical||[]).join(', ')||'NS'}
-- Variables mantenedoras: ${(iv?.maintaining_variables||[]).join(', ')||'NS'}
-- Factores protectores: ${(iv?.protective_factors||[]).join(', ')||'NS'}
+- Áreas afectadas: ${safeJoin(iv?.areas_affected)||'NS'}
+- Síntomas: ánimo [${safeJoin(iv?.symptoms_mood)||'NS'}] | ansiedad [${safeJoin(iv?.symptoms_anxiety)||'NS'}] | cognitivos [${safeJoin(iv?.symptoms_cognitive)||'NS'}] | conductuales [${safeJoin(iv?.symptoms_behavioral)||'NS'}]
+- Diagnóstico clínico: ${safeJoin(iv?.diag_clinical)||'NS'}
+- Variables mantenedoras: ${safeJoin(iv?.maintaining_variables)||'NS'}
+- Factores protectores: ${safeJoin(iv?.protective_factors)||'NS'}
 - Expectativas del consultante: ${iv?.patient_expectations||'NS'}
 - Objetivo conductual observable: ${iv?.behavioral_objective||'NS'}
 - Motivación: ${iv?.motivation||'NS'}/10 | Insight: ${iv?.insight||'NS'}
-- Eje funcional — disparadores: ${(iv?.triggers||[]).join(', ')||'NS'} | consecuencias: ${(iv?.consequences||[]).join(', ')||'NS'}
+- Eje funcional — disparadores: ${safeJoin(iv?.triggers)||'NS'} | consecuencias: ${safeJoin(iv?.consequences)||'NS'}
 ${aiSummary?.hipotesis ? '- Hipótesis funcional (IA entrevista): ' + aiSummary.hipotesis : ''}
 
 INSTRUCCIONES CRÍTICAS:
