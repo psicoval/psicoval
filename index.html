@@ -5657,42 +5657,67 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
   const [suggestedFromDB, setSuggestedFromDB] = useState([])
   const suggestedInstruments = suggestedFromDB
 
+  // Recalculate suggested instruments from interview symptoms (same logic as InterviewForm)
+  const calcSuggestedFromIV = (iv) => {
+    if (!iv) return []
+    const map = {}
+    const hit = (instr) => instr.forEach(i => { map[i] = (map[i]||0) + 1 })
+    const toArr = v => Array.isArray(v) ? v : (typeof v==='string' && v.startsWith('{')) ? v.slice(1,-1).split(',').map(s=>s.replace(/^"|"$/g,'').trim()).filter(Boolean) : []
+    const mood = toArr(iv.symptoms_mood)
+    const anx  = toArr(iv.symptoms_anxiety)
+    const cog  = toArr(iv.symptoms_cognitive)
+    const beh  = toArr(iv.symptoms_behavioral)
+    const diag = [...toArr(iv.diag_clinical), ...toArr(iv.diag_contextual)]
+    const maint = toArr(iv.maintaining_variables)
+    const cons  = toArr(iv.consequences)
+    const trig  = toArr(iv.triggers)
+    if (mood.some(s=>['tristeza','anhedonia','desesperanza'].includes(s))) hit(['PHQ-9','DASS-21'])
+    if (mood.includes('labilidad') || mood.includes('irritabilidad')) hit(['CES-D'])
+    if (diag.includes('depresion')) hit(['PHQ-9','DASS-21','CES-D'])
+    if (anx.some(s=>['preocupacion','tension','hipervigilancia'].includes(s))) hit(['GAD-7','DASS-21'])
+    if (anx.includes('panico')) hit(['GAD-7'])
+    if (anx.includes('evitacion_social')) hit(['LSAS'])
+    if (diag.includes('tag')) hit(['GAD-7'])
+    if (beh.includes('flashbacks') || diag.includes('tept')) hit(['PCL-5'])
+    if (cog.includes('fusion')) hit(['CFQ-7'])
+    if (cog.includes('evitacion_exp') || maint.includes('evitacion_exp')) hit(['AAQ-II'])
+    if (cog.includes('valores') || maint.includes('valores')) hit(['VLQ'])
+    if (beh.includes('desregulacion') || diag.includes('personalidad')) hit(['DERS-16'])
+    if (beh.includes('sueno_alt') || (iv.sat_sleep && iv.sat_sleep <= 4)) hit(['PSQI'])
+    if (beh.includes('autoestima')) hit(['Rosenberg'])
+    if (beh.includes('aislamiento') || (iv.sat_social && iv.sat_social <= 3)) hit(['WHODAS'])
+    if (beh.includes('procrastinacion')) hit(['GPS'])
+    if (iv.global_severity === 'grave') hit(['WHODAS'])
+    if (cons.includes('evitacion')) hit(['AAQ-II'])
+    if (trig.includes('situaciones_sociales')) hit(['LSAS'])
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(e=>e[0]).slice(0,8)
+  }
+
   const load = async () => {
     setLoading(true)
     const [{ data: instrData }, { data: ivData }] = await Promise.all([
       sb.from('instrument_results').select('*').eq('patient_id', patientId).eq('user_id', user.id).order('applied_at', { ascending: false }),
-      sb.from('initial_interviews').select('instruments_confirmed,therapeutic_plan').eq('patient_id', patientId).eq('user_id', user.id).order('created_at', {ascending:false}).limit(1)
+      sb.from('initial_interviews').select('*').eq('patient_id', patientId).eq('user_id', user.id).order('created_at', {ascending:false}).limit(1)
     ])
     setResults(instrData || [])
-    // Build unified suggested list from both sources
-    const all = new Set()
     const iv = ivData?.[0]
-    if (iv) {
-      // From instruments_confirmed
-      const conf = iv.instruments_confirmed
-      const confArr = Array.isArray(conf) ? conf
-        : typeof conf === 'string' && conf.startsWith('{') ? conf.slice(1,-1).split(',').map(s=>s.replace(/^"|"$/g,'').trim())
-        : typeof conf === 'string' ? conf.split(',').map(s=>s.trim())
-        : []
-      confArr.filter(Boolean).forEach(i => all.add(i))
-      // From therapeutic_plan
-      try {
-        const plan = iv.therapeutic_plan
-          ? (typeof iv.therapeutic_plan === 'string' ? JSON.parse(iv.therapeutic_plan) : iv.therapeutic_plan)
-          : null
-        if (plan?.instrumentos_sugeridos) {
-          const planArr = Array.isArray(plan.instrumentos_sugeridos) ? plan.instrumentos_sugeridos : []
-          planArr.filter(Boolean).forEach(i => all.add(i))
-        }
-      } catch(e) {}
-    }
-    setSuggestedFromDB([...all])
+    // Use recalculated from symptoms as primary source
+    const fromSymptoms = calcSuggestedFromIV(iv)
+    // Also add any from instruments_confirmed that aren't already included
+    const conf = iv?.instruments_confirmed
+    const confArr = Array.isArray(conf) ? conf
+      : typeof conf === 'string' && conf.startsWith('{') ? conf.slice(1,-1).split(',').map(s=>s.replace(/^"|"$/g,'').trim())
+      : typeof conf === 'string' && conf ? conf.split(',').map(s=>s.trim())
+      : []
+    const all = new Set([...fromSymptoms, ...confArr.filter(Boolean)])
+    setSuggestedFromDB([...all].slice(0,8))
     setLoading(false)
   }
   useEffect(() => { load() }, [patientId])
 
   const effRole = effectiveRole(role, planExpiry)
-  const availableInstruments = Object.values(INSTRUMENTS).filter(ins => canUseInstrument(role, ins.key, planExpiry))
+  const isAdmin = role === 'admin'
+  const availableInstruments = Object.values(INSTRUMENTS).filter(ins => isAdmin || canUseInstrument(role, ins.key, planExpiry))
 
   const handleSaveInstrument = async (result) => {
     setBusy(true)
@@ -5843,7 +5868,7 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
                   words.some(w => insName.includes(w) || insKey.includes(w))
               })
               const alreadyApplied = results.some(r => r.instrument_key === match?.key)
-              const isLocked = match && role !== 'admin' && !canUseInstrument(role, match.key, planExpiry)
+              const isLocked = match && !isAdmin && !canUseInstrument(role, match.key, planExpiry)
               const tooltip = alreadyApplied ? 'Ya aplicado a este consultante'
                 : isLocked ? 'Requiere plan superior para usar este instrumento'
                 : match ? (match.description || 'Clic para aplicar')
