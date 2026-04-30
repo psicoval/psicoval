@@ -3522,7 +3522,8 @@ function InstrumentsPage({ user, role, planExpiry }) {
                     return (
                       <button key={inst.key}
                         onClick={()=>{ if(!locked){setSelectedInstrument(inst);setStep('patient')} }}
-                        className={`text-left p-4 rounded-xl border-2 transition-all relative ${locked?'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed':'border-slate-200 hover:border-brand-400 hover:bg-brand-50'}`}>
+                        title={ins.description || ins.name}
+                      className={`text-left p-4 rounded-xl border-2 transition-all relative ${locked?'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed':'border-slate-200 hover:border-brand-400 hover:bg-brand-50'}`}>
                         {locked && <span className="absolute top-2 right-2 text-xs">🔒</span>}
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${inst.categoryColor} mb-2 inline-block`}>{inst.category}</span>
                         <p className="font-semibold text-slate-800 text-sm">{inst.name}</p>
@@ -5624,15 +5625,14 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
   const [selInstrument, setSelInstrument] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  // Get suggested instruments from therapeutic plan
+  // Get suggested instruments from interview instruments_confirmed field only
   const suggestedInstruments = (() => {
     try {
-      if (!patientInterview?.therapeutic_plan) return []
-      const plan = typeof patientInterview.therapeutic_plan === 'string'
-        ? JSON.parse(patientInterview.therapeutic_plan)
-        : patientInterview.therapeutic_plan
-      const suggested = plan?.instrumentos_sugeridos || []
-      return Array.isArray(suggested) ? suggested : []
+      const confirmed = patientInterview?.instruments_confirmed
+      if (!confirmed) return []
+      if (Array.isArray(confirmed)) return confirmed.filter(Boolean)
+      if (typeof confirmed === 'string') return confirmed.split(',').map(s=>s.trim()).filter(Boolean)
+      return []
     } catch(e) { return [] }
   })()
 
@@ -5786,23 +5786,35 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
           </div>
           <div className="flex flex-wrap gap-2">
             {suggestedInstruments.map((name, i) => {
-              const match = Object.values(INSTRUMENTS).find(ins =>
-                ins.name.toLowerCase().includes(name.toLowerCase()) ||
-                name.toLowerCase().includes(ins.key.toLowerCase()) ||
-                name.toLowerCase().includes(ins.name.toLowerCase().split(' ')[0])
-              )
+              const nameLow = name.toLowerCase().replace(/[^a-záéíóúñ0-9]/gi,' ').trim()
+              const match = Object.values(INSTRUMENTS).find(ins => {
+                const insName = ins.name.toLowerCase()
+                const insKey = ins.key.toLowerCase()
+                const words = nameLow.split(' ').filter(w=>w.length>2)
+                return insName.includes(nameLow) || nameLow.includes(insKey) ||
+                  insKey.includes(nameLow) ||
+                  words.some(w => insName.includes(w) || insKey.includes(w))
+              })
               const alreadyApplied = results.some(r => r.instrument_key === match?.key)
+              const isLocked = match && role !== 'admin' && !canUseInstrument(role, match.key, planExpiry)
+              const tooltip = alreadyApplied ? 'Ya aplicado a este consultante'
+                : isLocked ? 'Requiere plan superior para usar este instrumento'
+                : match ? (match.description || 'Clic para aplicar')
+                : 'Instrumento no encontrado en el sistema'
               return (
                 <button key={i}
-                  onClick={() => { if(match && !alreadyApplied) { setSelInstrument(match); setModal('apply') } }}
+                  onClick={() => { if(match && !alreadyApplied && !isLocked) { setSelInstrument(match); setModal('apply') } }}
+                  title={tooltip}
                   className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
                     alreadyApplied
                       ? 'bg-green-100 text-green-700 border-green-300 cursor-default'
-                      : match
-                        ? 'bg-white text-brand-600 border-brand-300 hover:bg-brand-100 cursor-pointer'
-                        : 'bg-slate-100 text-slate-500 border-slate-200 cursor-default'
+                      : isLocked
+                        ? 'bg-amber-50 text-amber-600 border-amber-200 cursor-not-allowed'
+                        : match
+                          ? 'bg-white text-brand-600 border-brand-300 hover:bg-brand-100 cursor-pointer'
+                          : 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
                   }`}>
-                  {alreadyApplied ? '✓ ' : match ? '+ ' : ''}{name}
+                  {alreadyApplied ? '✓ ' : isLocked ? '🔒 ' : match ? '+ ' : ''}{name}
                 </button>
               )
             })}
