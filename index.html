@@ -328,6 +328,9 @@ Tratamientos previos: ${form.previous_treatments || 'No especificado'}
 Medicación actual: ${form.current_medication || 'No especificado'}
 Eventos vitales significativos: ${form.significant_events || 'No especificado'}
 Historia del problema: ${form.problem_history || 'No especificado'}
+Enfoque terapéutico del psicólogo: ${approach}
+
+IMPORTANTE: Adapta el resumen y las sugerencias al enfoque indicado arriba.
 
 Responde de forma estructurada, clara y concisa. Usa viñetas donde sea apropiado.`
 
@@ -520,6 +523,20 @@ function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, er
   const [form, setForm] = useState(initial || {...EMPTY_INTERVIEW, patient_id: patientId||''})
   const [block, setBlock] = useState(0)
   const [aiLoading, setAiLoading] = useState(false)
+  const [psychApproach, setPsychApproach] = useState('')
+  useEffect(() => {
+    sb.auth.getSession().then(async ({data:{session}}) => {
+      if (!session?.user?.id) return
+      const {data} = await sb.from('psychologist_profiles').select('therapeutic_approach').eq('user_id', session.user.id).single()
+      if (data?.therapeutic_approach) {
+        try {
+          const p = JSON.parse(data.therapeutic_approach)
+          const t = p.terapias?.length>0 ? ` con énfasis en: ${p.terapias.join(', ')}` : ''
+          setPsychApproach((p.enfoque||'basado en evidencia') + t)
+        } catch(e) { setPsychApproach(data.therapeutic_approach) }
+      }
+    })
+  }, [])
   const [aiDone, setAiDone] = useState(!!initial?.ai_summary)
   const f = (k,v) => setForm(p=>({...p,[k]:v}))
 
@@ -545,6 +562,16 @@ function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, er
     const sessionContext = form.session_course!=='si'
       ? `ATENCIÓN: La sesión no siguió el curso esperado. Razones: ${safeJoin(form.session_course_reasons)||'no especificadas'}. Notas: ${form.session_course_notes||'ninguna'}. Algunos datos pueden estar incompletos por esta razón.`
       : 'La sesión siguió el curso esperado.'
+
+    const approach = (() => {
+      try {
+        const ta = psychProfile?.therapeutic_approach
+        if (!ta) return 'basado en evidencia'
+        const parsed = JSON.parse(ta)
+        const terapias = parsed.terapias?.length > 0 ? ` con énfasis en: ${parsed.terapias.join(', ')}` : ''
+        return (parsed.enfoque || 'basado en evidencia') + terapias
+      } catch(e) { return psychProfile?.therapeutic_approach || 'basado en evidencia' }
+    })()
 
     const prompt = `Eres un asistente clínico de apoyo para psicólogos. Analiza los datos de esta entrevista inicial y genera un resumen clínico estructurado.
 
@@ -598,6 +625,8 @@ PLAN:
 - Frecuencia sesiones: ${form.session_frequency||'NS'} | Derivación: ${form.derivation||'no'}
 - Instrumentos confirmados: ${safeJoin(form.instruments_confirmed)||'NS'}
 
+ENFOQUE TERAPÉUTICO DEL PSICÓLOGO: ${psychApproach || 'basado en evidencia'}
+IMPORTANTE: El resumen, hipótesis y sugerencias deben estar alineados con el enfoque terapéutico indicado.
 CONTEXTO DE LA SESIÓN: ${sessionContext}
 OBSERVACIONES: ${form.evaluator_notes||'NS'}
 
@@ -5625,27 +5654,41 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
   const [selInstrument, setSelInstrument] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  // Get suggested instruments from interview instruments_confirmed field only
-  const suggestedInstruments = (() => {
-    try {
-      const confirmed = patientInterview?.instruments_confirmed
-      if (!confirmed) return []
-      // Handle array (Supabase returns arrays directly)
-      if (Array.isArray(confirmed)) return confirmed.filter(Boolean)
-      // Handle PostgreSQL array string format: {item1,item2}
-      if (typeof confirmed === 'string' && confirmed.startsWith('{')) {
-        return confirmed.slice(1,-1).split(',').map(s=>s.replace(/^"|"$/g,'').trim()).filter(Boolean)
-      }
-      // Handle comma-separated string
-      if (typeof confirmed === 'string') return confirmed.split(',').map(s=>s.trim()).filter(Boolean)
-      return []
-    } catch(e) { return [] }
-  })()
+  // suggestedInstruments loaded directly from DB in load()
+  const suggestedInstruments = suggestedFromDB
+
+  const [suggestedFromDB, setSuggestedFromDB] = useState([])
 
   const load = async () => {
     setLoading(true)
-    const { data } = await sb.from('instrument_results').select('*').eq('patient_id', patientId).eq('user_id', user.id).order('applied_at', { ascending: false })
-    setResults(data || [])
+    const [{ data: instrData }, { data: ivData }] = await Promise.all([
+      sb.from('instrument_results').select('*').eq('patient_id', patientId).eq('user_id', user.id).order('applied_at', { ascending: false }),
+      sb.from('initial_interviews').select('instruments_confirmed,therapeutic_plan').eq('patient_id', patientId).eq('user_id', user.id).order('created_at', {ascending:false}).limit(1)
+    ])
+    setResults(instrData || [])
+    // Build unified suggested list from both sources
+    const all = new Set()
+    const iv = ivData?.[0]
+    if (iv) {
+      // From instruments_confirmed
+      const conf = iv.instruments_confirmed
+      const confArr = Array.isArray(conf) ? conf
+        : typeof conf === 'string' && conf.startsWith('{') ? conf.slice(1,-1).split(',').map(s=>s.replace(/^"|"$/g,'').trim())
+        : typeof conf === 'string' ? conf.split(',').map(s=>s.trim())
+        : []
+      confArr.filter(Boolean).forEach(i => all.add(i))
+      // From therapeutic_plan
+      try {
+        const plan = iv.therapeutic_plan
+          ? (typeof iv.therapeutic_plan === 'string' ? JSON.parse(iv.therapeutic_plan) : iv.therapeutic_plan)
+          : null
+        if (plan?.instrumentos_sugeridos) {
+          const planArr = Array.isArray(plan.instrumentos_sugeridos) ? plan.instrumentos_sugeridos : []
+          planArr.filter(Boolean).forEach(i => all.add(i))
+        }
+      } catch(e) {}
+    }
+    setSuggestedFromDB([...all])
     setLoading(false)
   }
   useEffect(() => { load() }, [patientId])
@@ -5967,6 +6010,12 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
 
 // ── Panel de Entrevista del Consultante ─────────────────────
 function PatientInterviewPanel({ user, patientId, patientName }) {
+  const [psychProfile, setPsychProfile] = useState(null)
+  useEffect(() => {
+    if (!user?.id) return
+    sb.from('psychologist_profiles').select('therapeutic_approach,specialty').eq('user_id', user.id).single()
+      .then(({data}) => { if(data) setPsychProfile(data) })
+  }, [user?.id])
   const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
