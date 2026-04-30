@@ -539,7 +539,7 @@ function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, er
       ? `${form.risk_level} | Plan: ${form.risk_has_plan?'SÍ':'no'} | Medios: ${form.risk_has_means?'SÍ':'no'} | Intención inmediata: ${form.risk_immediate_intention?'SÍ':'no'} | Apoyo disponible: ${form.risk_support_available?'sí':'no'} | Puede estar solo: ${form.risk_can_stay_alone?'sí':'NO'}`
       : 'Sin ideación'
     const sessionContext = form.session_course!=='si'
-      ? `ATENCIÓN: La sesión no siguió el curso esperado. Razones: ${(form.session_course_reasons||[]).join(', ')||'no especificadas'}. Notas: ${form.session_course_notes||'ninguna'}. Algunos datos pueden estar incompletos por esta razón.`
+      ? `ATENCIÓN: La sesión no siguió el curso esperado. Razones: ${safeJoin(form.session_course_reasons)||'no especificadas'}. Notas: ${form.session_course_notes||'ninguna'}. Algunos datos pueden estar incompletos por esta razón.`
       : 'La sesión siguió el curso esperado.'
 
     const prompt = `Eres un asistente clínico de apoyo para psicólogos. Analiza los datos de esta entrevista inicial y genera un resumen clínico estructurado.
@@ -548,51 +548,51 @@ PACIENTE: ${pName}
 MOTIVO DE CONSULTA: ${form.consultation_reason||'No especificado'}
 INTENSIDAD: ${form.problem_intensity}/10 | DURACIÓN: ${form.problem_duration||'NS'} | INICIO: ${form.problem_onset||'NS'} | CURSO: ${form.problem_course||'NS'}
 FRECUENCIA: ${form.problem_frequency||'NS'}
-ÁREAS AFECTADAS: ${(form.areas_affected||[]).join(', ')||'NS'}
+ÁREAS AFECTADAS: ${safeJoin(form.areas_affected)||'NS'}
 
 EJE FUNCIONAL:
-- Disparadores/antecedentes: ${(form.triggers||[]).join(', ')||'NS'}${form.triggers_other?' | Otros: '+form.triggers_other:''}
-- Consecuencias: ${(form.consequences||[]).join(', ')||'NS'}
+- Disparadores/antecedentes: ${safeJoin(form.triggers)||'NS'}${form.triggers_other?' | Otros: '+form.triggers_other:''}
+- Consecuencias: ${safeJoin(form.consequences)||'NS'}
 
 INTENTOS DE SOLUCIÓN: ${(Array.isArray(form.previous_solutions) ? form.previous_solutions : (form.previous_solutions ? String(form.previous_solutions).split(', ') : [])).join(', ')||'NS'} | Resultados: ${form.previous_solutions_notes||'NS'}
 
 CONTEXTO VITAL:
 - Satisfacción laboral: ${form.sat_work}/10 | Pareja/familia: ${form.sat_family}/10 | Social: ${form.sat_social}/10 | Sueño: ${form.sat_sleep}/10
 - Actividad física: ${form.physical_activity||'NS'} | Alimentación: ${form.eating_habits||'NS'}
-- Red de apoyo: ${(form.support_network||[]).join(', ')||'NS'}
+- Red de apoyo: ${safeJoin(form.support_network)||'NS'}
 
 HISTORIA CLÍNICA:
 - Tratamientos previos: ${form.previous_treatments||'NS'} — ${form.previous_treatments_notes||''}
-- Medicación: ${(form.medication_type||[]).join(', ')||'NS'} ${form.medication_detail||''}
-- Eventos vitales: ${(form.significant_events||[]).join(', ')||'NS'}
+- Medicación: ${safeJoin(form.medication_type)||'NS'} ${form.medication_detail||''}
+- Eventos vitales: ${safeJoin(form.significant_events)||'NS'}
 - Sustancias: Alcohol ${form.substance_alcohol} | Tabaco ${form.substance_tobacco} | Cannabis ${form.substance_cannabis}
 
 EXAMEN MENTAL: Apariencia ${form.mse_appearance} | Lenguaje ${form.mse_language} | Pensamiento ${form.mse_thought} | Afecto ${form.mse_affect} | Realidad ${form.mse_reality}
 ESTADO ÁNIMO SUBJETIVO: ${form.mood_subjective||'NS'}
 
 SÍNTOMAS:
-- Estado ánimo: ${(form.symptoms_mood||[]).join(', ')||'NS'}
-- Ansiedad: ${(form.symptoms_anxiety||[]).join(', ')||'NS'}
-- Cognitivos: ${(form.symptoms_cognitive||[]).join(', ')||'NS'}
-- Conductuales: ${(form.symptoms_behavioral||[]).join(', ')||'NS'}
+- Estado ánimo: ${safeJoin(form.symptoms_mood)||'NS'}
+- Ansiedad: ${safeJoin(form.symptoms_anxiety)||'NS'}
+- Cognitivos: ${safeJoin(form.symptoms_cognitive)||'NS'}
+- Conductuales: ${safeJoin(form.symptoms_behavioral)||'NS'}
 
 RIESGO SUICIDA: ${riskDetails}
 SEVERIDAD GLOBAL: ${form.global_severity||'NS'}
-DIAGNÓSTICO PRESUNTIVO: ${(form.diag_clinical||[]).concat(form.diag_contextual||[]).join(', ')||'NS'}
+DIAGNÓSTICO PRESUNTIVO: ${(form.diag_clinical||[]).concatsafeJoin(form.diag_contextual)||'NS'}
 NOTAS DIAGNÓSTICAS: ${form.diag_notes||'NS'}
 
 FORMULACIÓN:
 - Problema operacionalizado: ${form.problem_operationalized||'NS'}
-- Variables mantenedoras: ${(form.maintaining_variables||[]).join(', ')||'NS'}
+- Variables mantenedoras: ${safeJoin(form.maintaining_variables)||'NS'}
 - Factores predisponentes: ${form.predisposing_factors||'NS'}
-- Factores protectores: ${(form.protective_factors||[]).join(', ')||'NS'}
+- Factores protectores: ${safeJoin(form.protective_factors)||'NS'}
 
 PLAN:
 - Expectativas del consultante: ${form.patient_expectations||'NS'}
 - Objetivo conductual observable: ${form.behavioral_objective||'NS'}
 - Motivación: ${form.motivation}/10 | Insight: ${form.insight||'NS'}
 - Frecuencia sesiones: ${form.session_frequency||'NS'} | Derivación: ${form.derivation||'no'}
-- Instrumentos confirmados: ${(form.instruments_confirmed||[]).join(', ')||'NS'}
+- Instrumentos confirmados: ${safeJoin(form.instruments_confirmed)||'NS'}
 
 CONTEXTO DE LA SESIÓN: ${sessionContext}
 OBSERVACIONES: ${form.evaluator_notes||'NS'}
@@ -2497,6 +2497,14 @@ async function checkAIRateLimit(userId, patientId, callType) {
 }
 async function logAICall(userId, patientId, callType) {
   await sb.from('ai_calls').insert({ user_id: userId, patient_id: patientId, call_type: callType, called_at: new Date().toISOString() })
+}
+
+// ── Safe array join ──────────────────────────────────────────
+const safeJoin = (val, sep=', ') => {
+  if (!val) return ''
+  if (Array.isArray(val)) return val.join(sep)
+  if (typeof val === 'string') return val
+  return String(val)
 }
 
 const PLAN_LIMITS = {
