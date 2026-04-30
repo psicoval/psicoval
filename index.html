@@ -554,7 +554,7 @@ EJE FUNCIONAL:
 - Disparadores/antecedentes: ${(form.triggers||[]).join(', ')||'NS'}${form.triggers_other?' | Otros: '+form.triggers_other:''}
 - Consecuencias: ${(form.consequences||[]).join(', ')||'NS'}
 
-INTENTOS DE SOLUCIÓN: ${(form.previous_solutions||[]).join(', ')||'NS'} | Resultados: ${form.previous_solutions_notes||'NS'}
+INTENTOS DE SOLUCIÓN: ${(Array.isArray(form.previous_solutions) ? form.previous_solutions : (form.previous_solutions ? String(form.previous_solutions).split(', ') : [])).join(', ')||'NS'} | Resultados: ${form.previous_solutions_notes||'NS'}
 
 CONTEXTO VITAL:
 - Satisfacción laboral: ${form.sat_work}/10 | Pareja/familia: ${form.sat_family}/10 | Social: ${form.sat_social}/10 | Sueño: ${form.sat_sleep}/10
@@ -5900,7 +5900,7 @@ function PatientInterviewPanel({ user, patientId, patientName }) {
       problem_duration: form.problem_duration||null, problem_onset: form.problem_onset||null,
       problem_course: form.problem_course||null, problem_intensity: form.problem_intensity||5,
       problem_frequency: form.problem_frequency||null,
-      areas_affected: form.areas_affected||[], previous_solutions: form.previous_solutions||[],
+      areas_affected: form.areas_affected||[], previous_solutions: Array.isArray(form.previous_solutions) ? form.previous_solutions : (form.previous_solutions ? String(form.previous_solutions).split(', ').filter(Boolean) : []),
       previous_solutions_notes: form.previous_solutions_notes||null,
       sat_work: form.sat_work||5, sat_family: form.sat_family||5,
       sat_social: form.sat_social||5, sat_sleep: form.sat_sleep||5,
@@ -6270,7 +6270,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
   // Load patient appointments to check if cita exists before allowing interview/sessions
   useEffect(() => {
     if (!patient?.id || !user?.id) return
-    sb.from('appointments').select('id,date,time,status,type')
+    sb.from('appointments').select('id,date,time,status,modality')
       .eq('user_id', user.id)
       .eq('patient_id', patient.id)
       .order('date', {ascending: true})
