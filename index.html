@@ -5630,7 +5630,13 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
     try {
       const confirmed = patientInterview?.instruments_confirmed
       if (!confirmed) return []
+      // Handle array (Supabase returns arrays directly)
       if (Array.isArray(confirmed)) return confirmed.filter(Boolean)
+      // Handle PostgreSQL array string format: {item1,item2}
+      if (typeof confirmed === 'string' && confirmed.startsWith('{')) {
+        return confirmed.slice(1,-1).split(',').map(s=>s.replace(/^"|"$/g,'').trim()).filter(Boolean)
+      }
+      // Handle comma-separated string
       if (typeof confirmed === 'string') return confirmed.split(',').map(s=>s.trim()).filter(Boolean)
       return []
     } catch(e) { return [] }
@@ -6348,7 +6354,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
   // Load latest interview to show in ficha
   useEffect(() => {
     if (!patient?.id) return
-    sb.from('initial_interviews').select('consultation_reason,problem_intensity,global_severity,diag_clinical,symptoms_mood,symptoms_anxiety,ai_summary,therapeutic_plan')
+    sb.from('initial_interviews').select('consultation_reason,problem_intensity,global_severity,diag_clinical,symptoms_mood,symptoms_anxiety,ai_summary,therapeutic_plan,instruments_confirmed')
       .eq('patient_id', patient.id).order('created_at', {ascending: false}).limit(1)
       .then(({ data }) => { if (data?.[0]) setLatestInterview(data[0]) })
   }, [patient?.id])
