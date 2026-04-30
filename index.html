@@ -5617,12 +5617,24 @@ function SuicideRiskPanel({ user, patientId, patientName }) {
 }
 
 // ── Panel de Instrumentos del Consultante ────────────────────
-function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpiry }) {
+function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpiry, patientInterview }) {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selInstrument, setSelInstrument] = useState(null)
   const [busy, setBusy] = useState(false)
+
+  // Get suggested instruments from therapeutic plan
+  const suggestedInstruments = (() => {
+    try {
+      if (!patientInterview?.therapeutic_plan) return []
+      const plan = typeof patientInterview.therapeutic_plan === 'string'
+        ? JSON.parse(patientInterview.therapeutic_plan)
+        : patientInterview.therapeutic_plan
+      const suggested = plan?.instrumentos_sugeridos || []
+      return Array.isArray(suggested) ? suggested : []
+    } catch(e) { return [] }
+  })()
 
   const load = async () => {
     setLoading(true)
@@ -5764,6 +5776,40 @@ function PatientInstrumentsPanel({ user, patientId, patientName, role, planExpir
           </button>
         </div>
       </div>
+
+      {/* Suggested instruments from therapeutic plan */}
+      {suggestedInstruments.length > 0 && (
+        <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">🎯</span>
+            <p className="text-sm font-semibold text-brand-700">Instrumentos sugeridos por el plan terapéutico</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {suggestedInstruments.map((name, i) => {
+              const match = Object.values(INSTRUMENTS).find(ins =>
+                ins.name.toLowerCase().includes(name.toLowerCase()) ||
+                name.toLowerCase().includes(ins.key.toLowerCase()) ||
+                name.toLowerCase().includes(ins.name.toLowerCase().split(' ')[0])
+              )
+              const alreadyApplied = results.some(r => r.instrument_key === match?.key)
+              return (
+                <button key={i}
+                  onClick={() => { if(match && !alreadyApplied) { setSelInstrument(match); setModal('apply') } }}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                    alreadyApplied
+                      ? 'bg-green-100 text-green-700 border-green-300 cursor-default'
+                      : match
+                        ? 'bg-white text-brand-600 border-brand-300 hover:bg-brand-100 cursor-pointer'
+                        : 'bg-slate-100 text-slate-500 border-slate-200 cursor-default'
+                  }`}>
+                  {alreadyApplied ? '✓ ' : match ? '+ ' : ''}{name}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs text-brand-500 mt-2">Haz clic en un instrumento para aplicarlo directamente</p>
+        </div>
+      )}
 
       {loading ? <div className="text-center py-8 text-slate-400 text-sm">Cargando...</div>
       : results.length === 0 ? (
@@ -6587,7 +6633,7 @@ function PatientExpedient({ user, role, planExpiry, patient, profile, allSession
         {/* INSTRUMENTOS */}
         {tab === 'instrumentos' && (
           <div className="max-w-2xl">
-            <PatientInstrumentsPanel user={user} patientId={p.id} patientName={p.name} role={role} planExpiry={planExpiry} />
+            <PatientInstrumentsPanel user={user} patientId={p.id} patientName={p.name} role={role} planExpiry={planExpiry} patientInterview={latestInterview} />
           </div>
         )}
 
