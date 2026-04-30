@@ -578,7 +578,7 @@ SÍNTOMAS:
 
 RIESGO SUICIDA: ${riskDetails}
 SEVERIDAD GLOBAL: ${form.global_severity||'NS'}
-DIAGNÓSTICO PRESUNTIVO: ${(form.diag_clinical||[]).concatsafeJoin(form.diag_contextual)||'NS'}
+DIAGNÓSTICO PRESUNTIVO: ${safeJoin([...(Array.isArray(form.diag_clinical)?form.diag_clinical:(form.diag_clinical?[form.diag_clinical]:[])), ...(Array.isArray(form.diag_contextual)?form.diag_contextual:(form.diag_contextual?[form.diag_contextual]:[]))])||'NS'}
 NOTAS DIAGNÓSTICAS: ${form.diag_notes||'NS'}
 
 FORMULACIÓN:
