@@ -537,6 +537,7 @@ function InterviewForm({ initial, patients, patientId, onSave, onClose, busy, er
 
   const generateAI = async () => {
     setAiLoading(true)
+    try { // outer safety wrapper
     const pName = patients?.find(p=>p.id===form.patient_id)?.name || 'el consultante'
     const riskDetails = form.risk_level && form.risk_level!=='sin_ideacion'
       ? `${form.risk_level} | Plan: ${form.risk_has_plan?'SÍ':'no'} | Medios: ${form.risk_has_means?'SÍ':'no'} | Intención inmediata: ${form.risk_immediate_intention?'SÍ':'no'} | Apoyo disponible: ${form.risk_support_available?'sí':'no'} | Puede estar solo: ${form.risk_can_stay_alone?'sí':'NO'}`
@@ -645,6 +646,11 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
       setErr('Error al conectar con la IA: ' + e.message)
       f('ai_summary','error')
     } finally {
+      setAiLoading(false)
+    }
+    } catch(outerE) {
+      console.error('Interview AI outer error:', outerE.message)
+      setErr('Error inesperado al generar resumen: ' + outerE.message)
       setAiLoading(false)
     }
   }
@@ -7632,6 +7638,7 @@ function TherapeuticPlan({ patient, profile, supabaseUrl }) {
     }
     setError('')
     setLoading(true); setError('')
+    try { // outer safety wrapper
     // Parse profile approach (stored as JSON {enfoque, terapias})
     const profileApproach = (() => {
       if (!profile?.therapeutic_approach) return null
@@ -7692,11 +7699,13 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
   "observaciones": "consideraciones clínicas y contextuales relevantes"
 }`
 
-    // Rate limit: 1 llamada IA por consultante por día
-    const limited3 = await checkAIRateLimit(user.id, patient.id, 'therapeutic_plan')
-    if (limited3) { setLoading(false); setError('Ya generaste el plan terapéutico con IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
-
     try {
+      // Rate limit (non-blocking)
+      try {
+        const limited3 = await checkAIRateLimit(user.id, patient.id, 'therapeutic_plan')
+        if (limited3) { setError('Ya generaste el plan terapéutico con IA para este consultante hoy.'); setLoading(false); return }
+      } catch(e) { /* rate limit table missing, continue */ }
+
       const res = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
         method:'POST',
         headers:{
@@ -7706,7 +7715,7 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
         },
         body: JSON.stringify({prompt})
       })
-      await logAICall(user.id, patient.id, 'therapeutic_plan')
+      try { await logAICall(user.id, patient.id, 'therapeutic_plan') } catch(e){}
       const data = await res.json()
       const raw = (data.result||data.text||'')
         .replace(/```json/gi,'').replace(/```/g,'').trim()
@@ -7736,10 +7745,16 @@ Responde EXCLUSIVAMENTE en este formato JSON (sin texto adicional, sin markdown)
         observaciones: toStr(parsed.observaciones)
       })
     } catch(e) {
-      console.error('Plan parse error:', e.message)
+      console.error('Plan error:', e.message)
       setError('Error al generar el plan: ' + e.message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
+    } catch(outerE) { // outer safety wrapper catch
+      console.error('Plan outer error:', outerE.message)
+      setError('Error inesperado: ' + outerE.message)
+      setLoading(false)
+    }
   }
 
   const savePlan = () => {
