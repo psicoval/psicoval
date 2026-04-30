@@ -605,21 +605,24 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
   "sesion2": "Sugerencias concretas y accionables para la sesión 2: qué trabajar primero, qué técnica o estrategia usar, qué instrumentos priorizar y en qué orden aplicarlos, considerando el enfoque terapéutico y el objetivo conductual observable. 3-5 líneas."
 }`
 
-    // Rate limit: 1 llamada IA por consultante por día
-    const { data: { session: _sess2 } } = await sb.auth.getSession()
-    const _uid2 = _sess2?.user?.id
-    if (_uid2) {
-      const limited2 = await checkAIRateLimit(_uid2, form.patient_id, 'interview_analysis')
-      if (limited2) { setAiLoading(false); setErr('Ya generaste el análisis IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
-    }
-
     try {
+      // Rate limit check (non-blocking — skip if table doesn't exist)
+      let _uid2 = null
+      try {
+        const { data: { session: _sess2 } } = await sb.auth.getSession()
+        _uid2 = _sess2?.user?.id
+        if (_uid2) {
+          const limited2 = await checkAIRateLimit(_uid2, form.patient_id, 'interview_analysis')
+          if (limited2) { setAiLoading(false); setErr('Ya generaste el análisis IA para este consultante hoy. Podrás generar uno nuevo mañana.'); return }
+        }
+      } catch(rateErr) { /* rate limit table may not exist, continue */ }
+
       const res = await fetch('https://lgbpuddqjzcbszmnuclb.supabase.co/functions/v1/ai-analysis', {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYnB1ZGRxanpjYnN6bW51Y2xiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1MDUxMjAsImV4cCI6MjA5MTA4MTEyMH0.WSW3O6AEtWvYLW7njiKpQfQGptxPzf_zt2ai_eey_vM'},
         body: JSON.stringify({prompt})
       })
-      if (_uid2) await logAICall(_uid2, form.patient_id, 'interview_analysis')
+      try { if (_uid2) await logAICall(_uid2, form.patient_id, 'interview_analysis') } catch(e){}
       const data = await res.json()
       const raw = (data.result||data.text||'')
         .replace(/```json/gi,'').replace(/```/g,'').trim()
@@ -630,9 +633,11 @@ Genera el siguiente output EXACTAMENTE en JSON sin markdown ni texto adicional:
       setAiDone(true)
     } catch(e) {
       console.error('Interview AI error:', e.message)
+      setErr('Error al generar el resumen: ' + e.message)
       f('ai_summary','error')
+    } finally {
+      setAiLoading(false)
     }
-    setAiLoading(false)
   }
 
   const aiData = (() => { try { return form.ai_summary && form.ai_summary!=='error' ? JSON.parse(form.ai_summary) : null } catch(e){return null} })()
